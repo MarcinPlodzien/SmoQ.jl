@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="SmoQ.jl Logo" width="300">
+  <img src="assets/hero.jpg" alt="SmoQ.jl Logo" width="300">
 </p>
 
 <p align="center">
