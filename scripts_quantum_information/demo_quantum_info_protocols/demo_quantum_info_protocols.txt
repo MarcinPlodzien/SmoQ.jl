@@ -1,0 +1,1346 @@
+
+======================================================================
+  QUANTUM INFORMATION PROTOCOLS
+  Demonstrating fundamental QI protocols with bitwise operations
+======================================================================
+
+  This demo showcases:
+  ─────────────────────
+  - Bell state preparation and verification
+  - GHZ state creation and noisy sampling
+  - Quantum teleportation with mid-circuit measurements
+  - Decoherence effects on quantum correlations
+
+  All protocols use BITWISE gate operations (no matrix construction)
+  Noise is simulated via MCWF trajectory unraveling
+
+======================================================================
+
+======================================================================
+  PROTOCOL 1: BELL STATE PREPARATION
+======================================================================
+
+  PHYSICS BACKGROUND
+  ───────────────────
+  A Bell state is a maximally entangled 2-qubit state.
+  The four Bell states form a basis:
+    |Φ⁺⟩ = (|00⟩ + |11⟩)/√2   |Φ⁻⟩ = (|00⟩ - |11⟩)/√2
+    |Ψ⁺⟩ = (|01⟩ + |10⟩)/√2   |Ψ⁻⟩ = (|01⟩ - |10⟩)/√2
+
+  Properties of |Φ⁺⟩:
+    - ⟨Z₁⟩ = ⟨Z₂⟩ = 0   (locally random)
+    - ⟨Z₁Z₂⟩ = +1       (perfectly correlated)
+    - Tr₂(ρ) = I/2      (maximally mixed subsystem)
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  GATE-BY-GATE VISUALIZATION                                │
+  └─────────────────────────────────────────────────────────────┘
+
+  STEP 0: Initial state |00⟩
+  ──────────────────────────────────────────────────
+  |ψ₀⟩ = |00⟩ (product state):
+    ┌──────────┬─────────────────┐
+    │ |q1 q2⟩  │    Amplitude    │
+    ├──────────┼─────────────────┤
+    │ |0  0⟩  │  +1.0000       │
+    │ |1  0⟩  │    0.0000      │
+    │ |0  1⟩  │    0.0000      │
+    │ |1  1⟩  │    0.0000      │
+    └──────────┴─────────────────┘
+  Properties: ⟨Z₁⟩ = +1, ⟨Z₂⟩ = +1, ⟨Z₁Z₂⟩ = +1
+  Entanglement: NONE (separable)
+
+  STEP 1: Apply Hadamard to qubit 1
+  ──────────────────────────────────────────────────
+  Gate: H(1) = (1/√2)[[1,1],[1,-1]]
+  Effect: |0⟩ → (|0⟩+|1⟩)/√2, |1⟩ → (|0⟩-|1⟩)/√2
+
+  |ψ₁⟩ = H(1)|00⟩ = |+⟩₁ ⊗ |0⟩₂:
+    ┌──────────┬─────────────────┐
+    │ |q1 q2⟩  │    Amplitude    │
+    ├──────────┼─────────────────┤
+    │ |0  0⟩  │  +0.7071       │
+    │ |1  0⟩  │  +0.7071       │
+    │ |0  1⟩  │    0.0000      │
+    │ |1  1⟩  │    0.0000      │
+    └──────────┴─────────────────┘
+  In standard notation: = (|00⟩ + |10⟩)/√2
+  Properties: ⟨Z₁⟩ = 0, ⟨Z₂⟩ = +1, ⟨Z₁Z₂⟩ = 0
+  Entanglement: STILL NONE (still separable)
+
+  STEP 2: Apply CNOT(1→2)
+  ──────────────────────────────────────────────────
+  Gate: CNOT flips target (q2) when control (q1) is |1⟩
+  Implementation: CNOT = H(2)·CZ(1,2)·H(2)
+  Effect: |00⟩ → |00⟩, |10⟩ → |11⟩
+
+  |Φ⁺⟩ = CNOT(1,2)|ψ₁⟩ = (|00⟩ + |11⟩)/√2:
+    ┌──────────┬─────────────────┐
+    │ |q1 q2⟩  │    Amplitude    │
+    ├──────────┼─────────────────┤
+    │ |0  0⟩  │  +0.7071       │
+    │ |1  0⟩  │    0.0000      │
+    │ |0  1⟩  │    0.0000      │
+    │ |1  1⟩  │  +0.7071       │
+    └──────────┴─────────────────┘
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  VERIFICATION                                              │
+  └─────────────────────────────────────────────────────────────┘
+
+  Local observables:
+    ┌────────┬───────────┬──────────────────────────────────┐
+    │ Obs.   │  Value    │  Interpretation                  │
+    ├────────┼───────────┼──────────────────────────────────┤
+    │ ⟨Z₁⟩   │  +0.0000   │  Locally random (maximally mixed)│
+    │ ⟨Z₂⟩   │  +0.0000   │  Locally random (maximally mixed)│
+    │ ⟨X₁⟩   │  +0.0000   │  No X preference                 │
+    │ ⟨X₂⟩   │  +0.0000   │  No X preference                 │
+    └────────┴───────────┴──────────────────────────────────┘
+
+  Correlations:
+    ┌────────────┬───────────┬────────────────────────────────┐
+    │ Correlation│  Value    │  Interpretation                │
+    ├────────────┼───────────┼────────────────────────────────┤
+    │ ⟨Z₁Z₂⟩     │  +1.0000   │  PERFECT correlation in Z      │
+    │ ⟨X₁X₂⟩     │  +1.0000   │  PERFECT correlation in X      │
+    └────────────┴───────────┴────────────────────────────────┘
+
+  Full density matrix |Φ⁺⟩⟨Φ⁺|:
+  ρ = |Φ⁺⟩⟨Φ⁺| (4x4):
+
+    Real part:
+      +0.500  +0.000  +0.000  +0.500
+      +0.000  +0.000  +0.000  +0.000
+      +0.000  +0.000  +0.000  +0.000
+      +0.500  +0.000  +0.000  +0.500
+
+  Reduced density matrix (tracing out qubit 2):
+  ρ₁ = Tr₂(ρ) (2x2):
+
+    Real part:
+      +0.500  +0.000
+      +0.000  +0.500
+  Purity Tr(ρ₁²) = 0.5000 (0.5 = maximally mixed)
+
+  KEY INSIGHT: Despite total state being pure, each subsystem is
+  maximally mixed! This is the signature of maximal entanglement.
+
+  -- Bell state verified!
+
+======================================================================
+  PROTOCOL 2: GHZ STATE + NOISY SAMPLING
+======================================================================
+
+  PHYSICS BACKGROUND
+  ───────────────────
+  The GHZ (Greenberger-Horne-Zeilinger) state is a maximally entangled
+  N-qubit state with unique properties:
+
+    |GHZ_N⟩ = (|00...0⟩ + |11...1⟩)/√2
+
+  Properties:
+    - All qubits perfectly correlated: ⟨ZᵢZⱼ⟩ = +1 for all pairs
+    - Tracing out ANY qubit gives maximally mixed state on others
+    - Extremely fragile: any single qubit error destroys coherence
+    - Violates Mermin inequality (generalization of Bell)
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  GATE-BY-GATE VISUALIZATION (3-qubit GHZ)                  │
+  └─────────────────────────────────────────────────────────────┘
+
+  STEP 0: Initial state |000⟩
+  ───────────────────────────────────────────────────────
+  |ψ₀⟩ = |000⟩ (product state):
+    ┌────────────┬─────────────────┐
+    │ |q1 q2 q3⟩ │    Amplitude    │
+    ├────────────┼─────────────────┤
+    │ |0  0  0⟩ │  +1.0000       │
+    │ |1  0  0⟩ │    0.0000      │
+    │ |0  1  0⟩ │    0.0000      │
+    │ |1  1  0⟩ │    0.0000      │
+    │ |0  0  1⟩ │    0.0000      │
+    │ |1  0  1⟩ │    0.0000      │
+    │ |0  1  1⟩ │    0.0000      │
+    │ |1  1  1⟩ │    0.0000      │
+    └────────────┴─────────────────┘
+  Correlations: ⟨Z₁Z₂⟩ = ⟨Z₁Z₃⟩ = ⟨Z₂Z₃⟩ = +1 (trivial)
+  Entanglement: NONE (separable state)
+
+  STEP 1: Apply Hadamard to qubit 1
+  ───────────────────────────────────────────────────────
+  Gate: H(1)
+  Effect: Creates superposition on qubit 1
+
+  |ψ₁⟩ = H(1)|000⟩ = |+⟩₁ ⊗ |00⟩₂₃:
+    ┌────────────┬─────────────────┐
+    │ |q1 q2 q3⟩ │    Amplitude    │
+    ├────────────┼─────────────────┤
+    │ |0  0  0⟩ │  +0.7071       │
+    │ |1  0  0⟩ │  +0.7071       │
+    │ |0  1  0⟩ │    0.0000      │
+    │ |1  1  0⟩ │    0.0000      │
+    │ |0  0  1⟩ │    0.0000      │
+    │ |1  0  1⟩ │    0.0000      │
+    │ |0  1  1⟩ │    0.0000      │
+    │ |1  1  1⟩ │    0.0000      │
+    └────────────┴─────────────────┘
+  = (|000⟩ + |100⟩)/√2
+  Entanglement: STILL NONE (separable: |+⟩ ⊗ |00⟩)
+
+  STEP 2: Apply CNOT(1→2)
+  ───────────────────────────────────────────────────────
+  Gate: CNOT(1,2) = H(2)·CZ(1,2)·H(2)
+  Effect: If q1=1, flip q2
+
+  |ψ₂⟩ = CNOT(1,2)|ψ₁⟩:
+    ┌────────────┬─────────────────┐
+    │ |q1 q2 q3⟩ │    Amplitude    │
+    ├────────────┼─────────────────┤
+    │ |0  0  0⟩ │  +0.7071       │
+    │ |1  0  0⟩ │    0.0000      │
+    │ |0  1  0⟩ │    0.0000      │
+    │ |1  1  0⟩ │  +0.7071       │
+    │ |0  0  1⟩ │    0.0000      │
+    │ |1  0  1⟩ │    0.0000      │
+    │ |0  1  1⟩ │    0.0000      │
+    │ |1  1  1⟩ │    0.0000      │
+    └────────────┴─────────────────┘
+  = (|000⟩ + |110⟩)/√2
+  Correlations: ⟨Z₁Z₂⟩ = +1 (perfect), ⟨Z₂Z₃⟩ = ⟨Z₁Z₃⟩ = 0
+  Entanglement: BIPARTITE (qubits 1,2 entangled, 3 separate)
+
+  STEP 3: Apply CNOT(2→3)
+  ───────────────────────────────────────────────────────
+  Gate: CNOT(2,3) = H(3)·CZ(2,3)·H(3)
+  Effect: If q2=1, flip q3 → creates GHZ!
+
+  |GHZ₃⟩ = CNOT(2,3)|ψ₂⟩ = (|000⟩ + |111⟩)/√2:
+    ┌────────────┬─────────────────┐
+    │ |q1 q2 q3⟩ │    Amplitude    │
+    ├────────────┼─────────────────┤
+    │ |0  0  0⟩ │  +0.7071       │
+    │ |1  0  0⟩ │    0.0000      │
+    │ |0  1  0⟩ │    0.0000      │
+    │ |1  1  0⟩ │    0.0000      │
+    │ |0  0  1⟩ │    0.0000      │
+    │ |1  0  1⟩ │    0.0000      │
+    │ |0  1  1⟩ │    0.0000      │
+    │ |1  1  1⟩ │  +0.7071       │
+    └────────────┴─────────────────┘
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  VERIFICATION                                              │
+  └─────────────────────────────────────────────────────────────┘
+
+  Pairwise correlations:
+    ┌────────────┬───────────┬─────────────────────────────────┐
+    │ Correlation│  Value    │  Interpretation                 │
+    ├────────────┼───────────┼─────────────────────────────────┤
+    │ ⟨Z₁Z₂⟩     │  +1.0000   │  Qubits 1,2 perfectly correlated│
+    │ ⟨Z₁Z₃⟩     │  +1.0000   │  Qubits 1,3 perfectly correlated│
+    │ ⟨Z₂Z₃⟩     │  +1.0000   │  Qubits 2,3 perfectly correlated│
+    └────────────┴───────────┴─────────────────────────────────┘
+
+  Subsystem states:
+    Tr(ρ²)   = 1.0000 (pure state)
+    Tr(ρ₁²)  = 0.5000 (maximally mixed single qubit)
+    Tr(ρ₁₂²) = 0.5000 (mixed 2-qubit state)
+
+  KEY INSIGHT: GHZ is "genuinely tripartite entangled" - 
+  tracing out ANY qubit leaves a MIXED state on the remaining two!
+  This is different from |Φ⁺⟩₁₂ ⊗ |0⟩₃ where tracing q3 is harmless.
+
+  ────────────────────────────────────────────────────────────
+
+  Now comparing DM vs MCWF for noisy GHZ sampling...
+
+  Configuration:
+    N = 4 qubits
+    p = 0.02 depolarizing noise
+    M = 500 MCWF trajectories
+
+  DM Approach (exact Kraus operators):
+    Created |GHZ><GHZ|
+    Tr(rho^2) = 1.0000 (pure state)
+    After noise: Tr(rho^2) = 0.8522 (mixed)
+
+    Exact probabilities:
+      P(|0000>) = 0.4739
+      P(|1111>) = 0.4739
+      P(other)  = 0.0523
+
+  MCWF CONVERGENCE WITH NUMBER OF TRAJECTORIES:
+  ┌────────────────────────────────────────────────────────────┐
+  │  Traj M   P(|0000>)   P(|1111>)   Error |0000>  Error |1111>│
+  ├────────────────────────────────────────────────────────────┤
+  │  10        0.4000     0.3000      0.0739        0.1739     │
+  │  20        0.5000     0.3500      0.0261        0.1239     │
+  │  50        0.4000     0.5000      0.0739        0.0261     │
+  │  100       0.4700     0.4600      0.0039        0.0139     │
+  │  200       0.4900     0.4700      0.0161        0.0039     │
+  │  500       0.4860     0.4680      0.0121        0.0059     │
+  │  1000      0.4970     0.4550      0.0231        0.0189     │
+  └────────────────────────────────────────────────────────────┘
+
+  Observation: Error decreases as 1/sqrt(M) (Central Limit Theorem)
+  DM exact:    P(|0000>) = 0.4739, P(|1111>) = 0.4739
+
+  -- GHZ noisy sampling convergence demonstrated!
+
+======================================================================
+  PROTOCOL 3: CORRELATOR DECAY (DECOHERENCE)
+======================================================================
+
+  Initial state: |Φ⁺⟩ Bell pair (⟨Z₁Z₂⟩ = +1)
+  Apply noise:   Depolarizing with p = 0, 0.05, 0.1, 0.2, 0.5
+  Observe:       ⟨Z₁Z₂⟩ decays from +1 toward 0
+
+  This demonstrates DECOHERENCE destroying quantum correlations!
+
+  p       ⟨Z₁Z₂⟩_DM   ⟨Z₁Z₂⟩_MCWF   |Decay|   Interpretation
+  ─────   ──────────  ───────────   ───────   ─────────────────
+  0.00    +1.0000      +1.0000        0.0000    Perfect correlation
+  0.05    +0.8711      +0.8100        0.1289    Slight decay
+  0.10    +0.7511      +0.6800        0.2489    Significant decay
+  0.20    +0.5378      +0.4000        0.4622    Significant decay
+  0.50    +0.1111      +0.0600        0.8889    Mostly decohered
+
+  -- Decoherence successfully demonstrated!
+    As noise increases: quantum correlations → classical (uncorrelated)
+
+======================================================================
+  PROTOCOL 4: QUANTUM TELEPORTATION
+======================================================================
+
+  Goal: Transfer quantum state |ψ⟩ from Alice to Bob using entanglement
+
+  Setup:
+    Qubit 1: Alice's input |ψ_in⟩ (to teleport)
+    Qubit 2: Alice's half of Bell pair
+    Qubit 3: Bob's half of Bell pair
+
+  Protocol:
+    1. Create Bell pair on qubits 2,3
+    2. Alice prepares |ψ_in⟩ on qubit 1
+    3. Alice: CNOT(1,2) → H(1) → Measure qubits 1,2
+    4. Bob: If m₂=1 apply X₃, If m₁=1 apply Z₃
+    5. Bob's qubit 3 is now in state |ψ_in⟩
+
+  Testing teleportation fidelity for different input states:
+  ─────────────────────────────────────────────────────────
+
+  Input state              ⟨Z⟩_expected   ⟨Z⟩_teleported   Fidelity
+  ──────────────────────   ────────────   ──────────────   ────────
+  |0⟩                      +1.0000         +1.0000           1.0000
+  |1⟩                      -1.0000         -1.0000           1.0000
+  |+⟩ = (|0⟩+|1⟩)/√2       +0.0000         +0.0000           1.0000
+  Ry(π/4)|0⟩               +0.7071         +0.7071           1.0000
+  Ry(3π/4)|0⟩              -0.7071         -0.7071           1.0000
+
+  ─────────────────────────────────────────────────────────
+
+  DETAILED EXAMPLE: Teleporting |+⟩
+
+    1. Initialize |000⟩
+    2. Create Bell pair: H(2)·CNOT(2,3)
+       ⟨Z₂Z₃⟩ = +1.0000 (entangled)
+    3. Prepare |+⟩ on qubit 1: Ry(π/2)
+       ⟨X₁⟩ = +1.0000, ⟨Z₁⟩ = +0.0000
+    4. Alice's Bell measurement: CNOT(1,2)·H(1)
+    5. Measure qubits 1,2
+       Outcomes: m₁=1, m₂=0
+    6. Bob's corrections
+       m₂=0 → No X needed
+       m₁=1 → Apply Z₃
+    7. Verify Bob's qubit
+       ⟨X₃⟩ = +1.0000 (expect +1 for |+⟩)
+       ⟨Z₃⟩ = +0.0000 (expect  0 for |+⟩)
+       Fidelity = 1.0000
+
+  -- Quantum teleportation successful!
+    State transferred via entanglement + classical communication
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  GATE-BY-GATE VISUALIZATION: TELEPORTING |+⟩               │
+  └─────────────────────────────────────────────────────────────┘
+
+  Qubits: 1=Alice's input, 2=Alice's Bell, 3=Bob's Bell
+
+  STEP 0: Initial state |000⟩
+  ───────────────────────────────────────────────────────
+  |ψ₀⟩ = |000⟩:
+    ┌────────────┬─────────────────┐
+    │ |q1 q2 q3⟩ │    Amplitude    │
+    ├────────────┼─────────────────┤
+    │ |0  0  0⟩ │  +1.0000       │
+    │ |1  0  0⟩ │    0.0000      │
+    │ |0  1  0⟩ │    0.0000      │
+    │ |1  1  0⟩ │    0.0000      │
+    │ |0  0  1⟩ │    0.0000      │
+    │ |1  0  1⟩ │    0.0000      │
+    │ |0  1  1⟩ │    0.0000      │
+    │ |1  1  1⟩ │    0.0000      │
+    └────────────┴─────────────────┘
+
+  STEP 1: Create Bell pair on qubits 2,3
+  ───────────────────────────────────────────────────────
+  Gates: H(2) → CNOT(2,3)
+
+  After H(2):
+  |ψ⟩ = (1/√2)(|000⟩ + |010⟩):
+    ┌────────────┬─────────────────┐
+    │ |q1 q2 q3⟩ │    Amplitude    │
+    ├────────────┼─────────────────┤
+    │ |0  0  0⟩ │  +0.7071       │
+    │ |1  0  0⟩ │    0.0000      │
+    │ |0  1  0⟩ │  +0.7071       │
+    │ |1  1  0⟩ │    0.0000      │
+    │ |0  0  1⟩ │    0.0000      │
+    │ |1  0  1⟩ │    0.0000      │
+    │ |0  1  1⟩ │    0.0000      │
+    │ |1  1  1⟩ │    0.0000      │
+    └────────────┴─────────────────┘
+
+  After CNOT(2,3):
+  |ψ⟩ = |0⟩₁ ⊗ |Φ⁺⟩₂₃ = (1/√2)(|000⟩ + |011⟩):
+    ┌────────────┬─────────────────┐
+    │ |q1 q2 q3⟩ │    Amplitude    │
+    ├────────────┼─────────────────┤
+    │ |0  0  0⟩ │  +0.7071       │
+    │ |1  0  0⟩ │    0.0000      │
+    │ |0  1  0⟩ │    0.0000      │
+    │ |1  1  0⟩ │    0.0000      │
+    │ |0  0  1⟩ │    0.0000      │
+    │ |1  0  1⟩ │    0.0000      │
+    │ |0  1  1⟩ │  +0.7071       │
+    │ |1  1  1⟩ │    0.0000      │
+    └────────────┴─────────────────┘
+
+  STEP 2: Prepare input |+⟩ on qubit 1
+  ───────────────────────────────────────────────────────
+  Gate: Ry(π/2) on qubit 1
+
+  Full state:
+  |ψ⟩ = |+⟩₁ ⊗ |Φ⁺⟩₂₃:
+    ┌────────────┬─────────────────┐
+    │ |q1 q2 q3⟩ │    Amplitude    │
+    ├────────────┼─────────────────┤
+    │ |0  0  0⟩ │  +0.5000       │
+    │ |1  0  0⟩ │  +0.5000       │
+    │ |0  1  0⟩ │    0.0000      │
+    │ |1  1  0⟩ │    0.0000      │
+    │ |0  0  1⟩ │    0.0000      │
+    │ |1  0  1⟩ │    0.0000      │
+    │ |0  1  1⟩ │  +0.5000       │
+    │ |1  1  1⟩ │  +0.5000       │
+    └────────────┴─────────────────┘
+  In standard notation:
+    = (1/2)(|000⟩ + |011⟩ + |100⟩ + |111⟩)
+
+  STEP 3: Alice's Bell measurement (transform to comp. basis)
+  ───────────────────────────────────────────────────────
+  Gates: CNOT(1,2) → H(1)
+
+  After CNOT(1,2):
+  |ψ⟩ after CNOT(1,2):
+    ┌────────────┬─────────────────┐
+    │ |q1 q2 q3⟩ │    Amplitude    │
+    ├────────────┼─────────────────┤
+    │ |0  0  0⟩ │  +0.5000       │
+    │ |1  0  0⟩ │    0.0000      │
+    │ |0  1  0⟩ │    0.0000      │
+    │ |1  1  0⟩ │  +0.5000       │
+    │ |0  0  1⟩ │    0.0000      │
+    │ |1  0  1⟩ │  +0.5000       │
+    │ |0  1  1⟩ │  +0.5000       │
+    │ |1  1  1⟩ │    0.0000      │
+    └────────────┴─────────────────┘
+
+  After H(1) - ready to measure in Z basis:
+  |ψ⟩ = superposition of 4 terms:
+    ┌────────────┬─────────────────┐
+    │ |q1 q2 q3⟩ │    Amplitude    │
+    ├────────────┼─────────────────┤
+    │ |0  0  0⟩ │  +0.3536       │
+    │ |1  0  0⟩ │  +0.3536       │
+    │ |0  1  0⟩ │  +0.3536       │
+    │ |1  1  0⟩ │  -0.3536       │
+    │ |0  0  1⟩ │  +0.3536       │
+    │ |1  0  1⟩ │  -0.3536       │
+    │ |0  1  1⟩ │  +0.3536       │
+    │ |1  1  1⟩ │  +0.3536       │
+    └────────────┴─────────────────┘
+
+  Each term |m1 m2 *⟩ corresponds to a measurement outcome.
+  Bob's qubit (3) is in |+⟩ or needs correction based on m1,m2.
+
+  STEP 4: Measurement outcomes and corrections
+  ───────────────────────────────────────────────────────
+  ┌─────────┬───────────────────────────┬──────────────────┐
+  │ m1  m2  │ Bob's state before corr.  │ Correction       │
+  ├─────────┼───────────────────────────┼──────────────────┤
+  │  0   0  │ (|0⟩ + |1⟩)/√2 = |+⟩      │ None             │
+  │  0   1  │ (|1⟩ + |0⟩)/√2 = |+⟩      │ X (= no change)  │
+  │  1   0  │ (|0⟩ - |1⟩)/√2 = |-⟩      │ Z → |+⟩          │
+  │  1   1  │ (|1⟩ - |0⟩)/√2 = -|-⟩     │ X then Z → |+⟩   │
+  └─────────┴───────────────────────────┴──────────────────┘
+
+  After Bob's conditional correction, qubit 3 is always in |+⟩!
+  The original state has been TELEPORTED from qubit 1 to qubit 3.
+
+======================================================================
+  PROTOCOL 5: NOISY TELEPORTATION - COMPREHENSIVE STUDY
+======================================================================
+
+  ╔═════════════════════════════════════════════════════════════╗
+  ║       TUTORIAL: QUANTUM NOISE MODELS                       ║
+  ╚═════════════════════════════════════════════════════════════╝
+
+  In real quantum systems, qubits interact with their environment,
+  causing DECOHERENCE. We model this using quantum channels.
+
+  ─────────────────────────────────────────────────────────────────
+  1. DEPOLARIZING CHANNEL (Isotropic Noise)
+  ─────────────────────────────────────────────────────────────────
+
+    Physical origin: Random interactions with an unknown environment
+
+    What happens:
+      • With probability (1-p): state unchanged
+      • With probability p/3:   X error (bit flip)
+      • With probability p/3:   Y error (bit+phase flip)
+      • With probability p/3:   Z error (phase flip)
+
+    Mathematical form:
+      ρ → (1-p)ρ + (p/3)(XρX + YρY + ZρZ)
+        = (1-p)ρ + p·I/2   (completely mixed at p=3/4)
+
+    Effect on Bloch sphere:
+      • Contracts Bloch vector uniformly: r⃗ → (1-4p/3)r⃗
+      • All states drift toward maximally mixed I/2
+
+    Kraus operators: K₀ = √(1-p)I, K₁ = √(p/3)X, K₂ = √(p/3)Y, K₃ = √(p/3)Z
+
+  ─────────────────────────────────────────────────────────────────
+  2. DEPHASING CHANNEL (Phase Noise / T2 Decay)
+  ─────────────────────────────────────────────────────────────────
+
+    Physical origin: Fluctuations in qubit energy (e.g., magnetic field)
+
+    What happens:
+      • With probability (1-p): state unchanged
+      • With probability p:     Z error (phase flip)
+
+    Mathematical form:
+      ρ → (1-p)ρ + p·ZρZ
+
+    Effect on density matrix:
+      ┌         ┐      ┌              ┐
+      │ ρ₀₀ ρ₀₁ │  →   │ ρ₀₀   (1-2p)ρ₀₁ │
+      │ ρ₁₀ ρ₁₁ │      │ (1-2p)ρ₁₀   ρ₁₁ │
+      └         ┘      └              ┘
+
+    Key insight:
+      • Diagonal elements (populations) UNCHANGED
+      • Off-diagonal elements (coherences) DECAY by factor (1-2p)
+      • |0⟩ and |1⟩ unaffected, but |+⟩ and |-⟩ destroyed!
+
+    Kraus operators: K₀ = √(1-p)I, K₁ = √(p)Z
+
+  ─────────────────────────────────────────────────────────────────
+  3. AMPLITUDE DAMPING (T1 Decay / Energy Relaxation)
+  ─────────────────────────────────────────────────────────────────
+
+    Physical origin: Spontaneous emission (qubit loses energy to env)
+
+    What happens:
+      • |0⟩ → |0⟩ (ground state stable)
+      • |1⟩ → |0⟩ with probability γ (excited state decays)
+
+    Mathematical form:
+      ρ₀₀ → ρ₀₀ + γ·ρ₁₁  (population flows to ground)
+      ρ₁₁ → (1-γ)·ρ₁₁
+      ρ₀₁ → √(1-γ)·ρ₀₁  (coherences decay)
+
+    Effect on Bloch sphere:
+      • Contraction toward |0⟩ (north pole)
+      • NOT symmetric! |0⟩ is a fixed point, |1⟩ is not
+
+    Kraus operators:
+      K₀ = [[1, 0], [0, √(1-γ)]]
+      K₁ = [[0, √γ], [0, 0]]
+
+  ═══════════════════════════════════════════════════════════════
+  COMPARISON OF NOISE MODELS
+  ═══════════════════════════════════════════════════════════════
+
+  ┌─────────────────┬─────────────────────────────────────────────┐
+  │   Property      │ Depolarizing   │ Dephasing   │ Amp Damping │
+  ├─────────────────┼─────────────────────────────────────────────┤
+  │ Bit flips?      │     Yes        │     No      │    Yes*     │
+  │ Phase flips?    │     Yes        │     Yes     │    No       │
+  │ Symmetric?      │     Yes        │     Yes     │    No       │
+  │ Fixed point     │     I/2        │  diag(ρ)    │    |0⟩      │
+  │ Physical origin │   Unknown env  │  E fluct.   │  Sp. emiss. │
+  └─────────────────┴─────────────────────────────────────────────┘
+  (* Amplitude damping: |1⟩→|0⟩ only)
+
+  ═══════════════════════════════════════════════════════════════
+  TELEPORTATION FIDELITY ANALYSIS
+  ═══════════════════════════════════════════════════════════════
+
+  Teleportation fidelity F measures how well the state is transferred:
+    F = ⟨ψ_target|ρ_output|ψ_target⟩
+
+  Benchmarks:
+    F = 1.0:   Perfect teleportation
+    F = 0.5:   Random guessing (no information transferred)
+    F > 2/3:   Quantum advantage (no classical protocol can beat 2/3)
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  SCENARIO A: NOISE ON BELL PAIR ONLY                       │
+  │  (Simulates imperfect entanglement distribution)           │
+  └─────────────────────────────────────────────────────────────┘
+
+  Teleporting |+⟩ = (|0⟩+|1⟩)/√2
+
+  TELEPORTATION FIDELITY F = ⟨ψ_target|ρ_out|ψ_target⟩
+  (F=1: perfect, F=0.5: random guessing, F>2/3: quantum advantage)
+
+  ┌────────────────────────────────────────────────────────────┐
+  │  Noise p   F(Depol)      F(Dephase)  F(AmpDamp)           │
+  ├────────────────────────────────────────────────────────────┤
+  │  0.00       1.0000        1.0000      1.0000           │
+  │  0.01       0.9800        0.9900      0.9900           │
+  │  0.02       0.9500        0.9900      0.9849           │
+  │  0.05       0.9200        0.9600      0.9694           │
+  │  0.10       0.8600        0.9100      0.9575           │
+  │  0.20       0.7500        0.8800      0.8905           │
+  │  0.50       0.5900        0.7000      0.7287           │
+  │  1.00       0.5700        0.5600      0.5000           │
+  └────────────────────────────────────────────────────────────┘
+
+  OBSERVATIONS (Scenario A):
+  ──────────────────────────
+  - Depolarizing: Isotropic decay, affects all states equally
+  - Dephasing: Strong effect on |+⟩ (superposition), mild on |0⟩,|1⟩
+  - Amp Damping: Asymmetric - |1⟩ decays to |0⟩
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  SCENARIO B: NOISE ON ALL GATES                            │
+  │  (Simulates noisy quantum computer)                        │
+  └─────────────────────────────────────────────────────────────┘
+
+  Teleporting |+⟩ = (|0⟩+|1⟩)/√2
+
+  TELEPORTATION FIDELITY (noise on all gates)
+
+  ┌────────────────────────────────────────────────────────────┐
+  │  Noise p   F(Depol)      F(Dephase)  F(AmpDamp)           │
+  ├────────────────────────────────────────────────────────────┤
+  │  0.00       1.0000        1.0000      1.0000           │
+  │  0.01       0.9700        0.9900      0.9899           │
+  │  0.02       0.9300        0.9800      0.9848           │
+  │  0.05       0.8800        0.9400      0.9487           │
+  │  0.10       0.7100        0.8900      0.8913           │
+  │  0.20       0.6400        0.8400      0.7871           │
+  │  0.50       0.5100        0.6500      0.6278           │
+  │  1.00       0.5600        0.5300      0.5000           │
+  └────────────────────────────────────────────────────────────┘
+
+  OBSERVATIONS (Scenario B):
+  ──────────────────────────
+  - Fidelity degrades faster (noise accumulates at each gate)
+  - Even small p has noticeable effect
+  - Depolarizing is most destructive (all error types)
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  INPUT STATE VS NOISE CHANNEL COMPARISON                   │
+  └─────────────────────────────────────────────────────────────┘
+
+  Depolarizing noise (Bell pair only):
+  ┌──────────────────────────────────────────────────────────┐
+  │  State      p=0.0   p=0.05  p=0.1   p=0.2   p=0.5       │
+  ├──────────────────────────────────────────────────────────┤
+  │  |0>        1.000   0.900   0.860   0.700   0.580       │
+  │  |1>        1.000   0.900   0.860   0.700   0.580       │
+  │  |+>        1.000   0.900   0.860   0.680   0.540       │
+  │  Ry.Rx|0>   1.000   0.907   0.839   0.707   0.574       │
+  └──────────────────────────────────────────────────────────┘
+
+  Dephasing noise (Bell pair only):
+  ┌──────────────────────────────────────────────────────────┐
+  │  State      p=0.0   p=0.05  p=0.1   p=0.2   p=0.5       │
+  ├──────────────────────────────────────────────────────────┤
+  │  |0>        1.000   1.000   1.000   1.000   1.000       │
+  │  |1>        1.000   1.000   1.000   1.000   1.000       │
+  │  |+>        1.000   0.960   0.900   0.860   0.700       │
+  │  Ry.Rx|0>   1.000   0.973   0.933   0.906   0.798       │
+  └──────────────────────────────────────────────────────────┘
+
+  Amp Damping noise (Bell pair only):
+  ┌──────────────────────────────────────────────────────────┐
+  │  State      p=0.0   p=0.05  p=0.1   p=0.2   p=0.5       │
+  ├──────────────────────────────────────────────────────────┤
+  │  |0>        1.000   0.981   0.981   0.944   0.873       │
+  │  |1>        1.000   0.921   0.901   0.844   0.833       │
+  │  |+>        1.000   0.949   0.928   0.851   0.725       │
+  │  Ry.Rx|0>   1.000   0.967   0.957   0.898   0.788       │
+  └──────────────────────────────────────────────────────────┘
+
+
+  -- Comprehensive noisy teleportation study complete!
+
+  KEY PHYSICS INSIGHTS:
+  ──────────────────────
+  1. Entanglement quality directly limits teleportation fidelity
+  2. Dephasing has state-dependent effects (worst for superpositions)
+  3. Amplitude damping breaks symmetry between |0⟩ and |1⟩
+  4. Noise on all gates is more damaging than noise on Bell pair alone
+  5. F > 2/3 indicates quantum advantage over classical strategies
+
+======================================================================
+  PROTOCOL 6: ENTANGLEMENT MEASURES
+======================================================================
+
+  PHYSICS BACKGROUND
+  ───────────────────
+  For mixed states, we need TWO distinct entanglement measures:
+
+  1. Von Neumann Entropy (S_vN):
+     S(ρ) = -Tr(ρ log ρ)
+     - Measures mixedness of reduced state ρ_A = Tr_B(ρ)
+     - S = 0 for pure states, S = log(d) for maximally mixed
+     - For mixed states: captures BOTH classical AND quantum correlations!
+
+  2. Negativity (N):
+     N(ρ) = (||ρ^{T_A}||₁ - 1) / 2
+     - Based on partial transpose criterion (PPT)
+     - N > 0 ⟺ state is entangled (for 2×2 and 2×3 systems)
+     - N = 0 for separable states
+     - ROBUST measure of quantum entanglement!
+
+  WHY BOTH MATTER:
+  - A noisy Bell pair can have high S_vN (mixed) but still N > 0 (entangled)
+  - A classical mixture has S_vN > 0 but N = 0 (no quantum correlations)
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  GHZ STATE ENTANGLEMENT DECAY UNDER NOISE                  │
+  └─────────────────────────────────────────────────────────────┘
+
+  State: |GHZ⟩ = (|0000⟩ + |1111⟩)/√2  (4 qubits)
+  Bipartition: Half-split (qubits 1,2 | qubits 3,4)
+  Quantities: S_half = entanglement entropy, N_half = negativity
+
+  ┌────────────────────────────────────────────────────────────┐
+  │  Noise p   S_half(Depol)  N_half(Depol)  Interpretation   │
+  ├────────────────────────────────────────────────────────────┤
+  │  0.00       0.6931        0.5000         Strong entanglement│
+  │  0.01       0.7636        0.4738         Strong entanglement│
+  │  0.02       0.8148        0.4486         Strong entanglement│
+  │  0.05       0.9322        0.3784         Moderate entanglement│
+  │  0.10       1.0688        0.2782         Moderate entanglement│
+  │  0.20       1.2338        0.1312         Moderate entanglement│
+  │  0.50       1.3801        -0.0000         Separable         │
+  │  1.00       1.3801        -0.0000         Separable         │
+  └────────────────────────────────────────────────────────────┘
+
+  COMPARING NOISE MODELS:
+  ────────────────────────
+
+  ┌────────────────────────────────────────────────────────────┐
+  │  Noise p   N(Depol)   N(Dephase)  N(AmpDamp)  Best        │
+  ├────────────────────────────────────────────────────────────┤
+  │  0.00       0.5000     0.5000      0.5000     Depol      │
+  │  0.05       0.3784     0.4512      0.4501     Dephase    │
+  │  0.10       0.2782     0.4050      0.4009     Dephase    │
+  │  0.20       0.1312     0.3200      0.3072     Dephase    │
+  │  0.50       -0.0000     0.1250      0.0937     Dephase    │
+  └────────────────────────────────────────────────────────────┘
+
+  KEY OBSERVATIONS:
+  ------------------
+  1. S_vN is NOT a valid entanglement measure for mixed states!
+     - It measures total correlations (classical + quantum)
+     - A classical mixture can have S_vN > 0 but zero entanglement
+
+  2. Negativity N is a TRUE entanglement measure:
+     - N > 0 iff state has quantum entanglement (for 2x2, 2x3)
+     - N = 0 means state is separable (or PPT-entangled)
+     - Depolarizing destroys entanglement fastest
+
+  3. MCWF LIMITATION for entanglement measures:
+     - S_vN and N are NONLINEAR functions of rho
+     - Cannot simply average over trajectories!
+     - Must reconstruct rho = (1/M) * sum(|psi_m><psi_m|)
+     - Then compute S_vN(rho_red) and N(rho) on full DM
+     - This is why DM approach is used above for entanglement
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  MCWF TOMOGRAPHY: CONVERGENCE WITH TRAJECTORY COUNT M      │
+  └─────────────────────────────────────────────────────────────┘
+
+  Demonstrating proper MCWF -> entanglement workflow:
+  1. Generate M noisy trajectories
+  2. Reconstruct rho = (1/M) * sum(|psi_m><psi_m|)
+  3. Compute entanglement on reconstructed rho (using existing utils)
+  4. Compare with exact DM reference
+
+  Reference (exact DM, p=0.10):
+    Purity     = 0.6731
+    S_vN       = 0.6864
+    Negativity = 0.3133
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  Traj M   Purity   S_vN    |S-S_ref|   N_half   |N-N_ref|          │
+  ├─────────────────────────────────────────────────────────────────────┤
+  │  10       0.3400   1.0889  0.4025      -0.0000    0.3133           │
+  │  20       0.5350   0.8188  0.1324      0.2000    0.1133           │
+  │  50       0.5992   0.7978  0.1114      0.2600    0.0533           │
+  │  100      0.6110   0.7888  0.1024      0.2700    0.0433           │
+  │  200      0.5902   0.8246  0.1382      0.2550    0.0583           │
+  │  500      0.6359   0.7495  0.0631      0.2880    0.0253           │
+  │  1000     0.6624   0.7037  0.0173      0.3060    0.0073           │
+  └─────────────────────────────────────────────────────────────────────┘
+
+  Observation: Error decreases as 1/sqrt(M) (Central Limit Theorem)
+
+  -- Entanglement measures demonstrated!
+
+======================================================================
+  PROTOCOL 7: CHSH BELL INEQUALITY
+======================================================================
+
+  PHYSICS BACKGROUND
+  -------------------
+  The CHSH inequality tests quantum nonlocality:
+
+    S = <A0*B0> + <A0*B1> + <A1*B0> - <A1*B1>
+
+  where A0,A1 are Alice's measurement settings, B0,B1 are Bob's.
+
+  Classical bound:   |S| <= 2
+  Quantum bound:     |S| <= 2*sqrt(2) = 2.828...
+  Tsirelson bound:   Maximum quantum violation
+
+  Optimal settings for Bell state |Phi+> = (|00> + |11>)/sqrt(2):
+    A0 = Z,  A1 = X
+    B0 = (Z+X)/sqrt(2),  B1 = (Z-X)/sqrt(2)
+
+  Pure Bell state: S = 2.8284 (Tsirelson bound = 2.8284)
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  CHSH VALUE UNDER DIFFERENT NOISE MODELS                   │
+  └─────────────────────────────────────────────────────────────┘
+
+  Classical bound: |S| <= 2,  Quantum bound: |S| <= 2.828
+
+  ┌────────────────────────────────────────────────────────────┐
+  │  Noise p   S(Depol)   S(Dephase)  S(AmpDamp)  Violation   │
+  ├────────────────────────────────────────────────────────────┤
+  │  0.00       2.8284     2.8284      2.8284     Quantum    │
+  │  0.01       2.7535     2.8143      2.7863     Quantum    │
+  │  0.02       2.6796     2.8001      2.7447     Quantum    │
+  │  0.05       2.4639     2.7577      2.6234     Quantum    │
+  │  0.10       2.1245     2.6870      2.4324     Quantum    │
+  │  0.20       1.5211     2.5456      2.0930     Quantum    │
+  │  0.50       0.3143     2.1213      1.4142     Quantum    │
+  │  1.00       0.3143     1.4142      1.4142     Classical  │
+  └────────────────────────────────────────────────────────────┘
+
+  KEY OBSERVATIONS:
+  ------------------
+  - S > 2 indicates Bell inequality VIOLATION (quantum correlations)
+  - Depolarizing: S decays isotropically toward 0
+  - Dephasing: S decays but preserves some correlations longer
+  - Threshold: When S <= 2, state becomes classically simulable
+
+  -- CHSH Bell inequality demonstrated!
+
+======================================================================
+  PROTOCOL 8: ENTANGLEMENT SWAPPING
+======================================================================
+
+  PHYSICS BACKGROUND
+  -------------------
+  Entanglement swapping allows A and D to become entangled even though
+  they NEVER directly interacted! This is the basis for quantum repeaters.
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  STEP-BY-STEP: BOTH DM AND MCWF APPROACHES                 │
+  └─────────────────────────────────────────────────────────────┘
+
+  STEP 0: Initial state |0000>
+  ──────────────────────────────────────────────────
+  MCWF psi:
+    ┌────────────┬─────────────────┐
+    │ |A B C D⟩  │    Amplitude    │
+    ├────────────┼─────────────────┤
+    │ |0 0 0 0⟩  │  +1.0000       │
+    │ |1 0 0 0⟩  │    0.0000      │
+    │ |0 1 0 0⟩  │    0.0000      │
+    │ |1 1 0 0⟩  │    0.0000      │
+    │ |0 0 1 0⟩  │    0.0000      │
+    │ |1 0 1 0⟩  │    0.0000      │
+    │ |0 1 1 0⟩  │    0.0000      │
+    │ |1 1 1 0⟩  │    0.0000      │
+    │ |0 0 0 1⟩  │    0.0000      │
+    │ |1 0 0 1⟩  │    0.0000      │
+    │ |0 1 0 1⟩  │    0.0000      │
+    │ |1 1 0 1⟩  │    0.0000      │
+    │ |0 0 1 1⟩  │    0.0000      │
+    │ |1 0 1 1⟩  │    0.0000      │
+    │ |0 1 1 1⟩  │    0.0000      │
+    │ |1 1 1 1⟩  │    0.0000      │
+    └────────────┴─────────────────┘
+  DM rho: |0000><0000| (pure product state)
+  rho_AD Negativity = 0.0000 (NO entanglement between A and D)
+
+  STEP 1: Create Bell pair (A,B)
+  ──────────────────────────────────────────────────
+  Circuit: H(A) -> CNOT(A,B)
+
+  MCWF psi = |Phi+>_AB ⊗ |00>_CD:
+    ┌────────────┬─────────────────┐
+    │ |A B C D⟩  │    Amplitude    │
+    ├────────────┼─────────────────┤
+    │ |0 0 0 0⟩  │  +0.7071       │
+    │ |1 0 0 0⟩  │    0.0000      │
+    │ |0 1 0 0⟩  │    0.0000      │
+    │ |1 1 0 0⟩  │  +0.7071       │
+    │ |0 0 1 0⟩  │    0.0000      │
+    │ |1 0 1 0⟩  │    0.0000      │
+    │ |0 1 1 0⟩  │    0.0000      │
+    │ |1 1 1 0⟩  │    0.0000      │
+    │ |0 0 0 1⟩  │    0.0000      │
+    │ |1 0 0 1⟩  │    0.0000      │
+    │ |0 1 0 1⟩  │    0.0000      │
+    │ |1 1 0 1⟩  │    0.0000      │
+    │ |0 0 1 1⟩  │    0.0000      │
+    │ |1 0 1 1⟩  │    0.0000      │
+    │ |0 1 1 1⟩  │    0.0000      │
+    │ |1 1 1 1⟩  │    0.0000      │
+    └────────────┴─────────────────┘
+  = (1/sqrt(2))(|0000> + |1100>)
+  rho_AD Negativity = -0.0000 (A entangled with B, but NOT with D)
+
+  STEP 2: Create Bell pair (C,D)
+  ──────────────────────────────────────────────────
+  Circuit: H(C) -> CNOT(C,D)
+
+  MCWF psi = |Phi+>_AB ⊗ |Phi+>_CD:
+    ┌────────────┬─────────────────┐
+    │ |A B C D⟩  │    Amplitude    │
+    ├────────────┼─────────────────┤
+    │ |0 0 0 0⟩  │  +0.5000       │
+    │ |1 0 0 0⟩  │    0.0000      │
+    │ |0 1 0 0⟩  │    0.0000      │
+    │ |1 1 0 0⟩  │  +0.5000       │
+    │ |0 0 1 0⟩  │    0.0000      │
+    │ |1 0 1 0⟩  │    0.0000      │
+    │ |0 1 1 0⟩  │    0.0000      │
+    │ |1 1 1 0⟩  │    0.0000      │
+    │ |0 0 0 1⟩  │    0.0000      │
+    │ |1 0 0 1⟩  │    0.0000      │
+    │ |0 1 0 1⟩  │    0.0000      │
+    │ |1 1 0 1⟩  │    0.0000      │
+    │ |0 0 1 1⟩  │  +0.5000       │
+    │ |1 0 1 1⟩  │    0.0000      │
+    │ |0 1 1 1⟩  │    0.0000      │
+    │ |1 1 1 1⟩  │  +0.5000       │
+    └────────────┴─────────────────┘
+  = (1/2)(|0000> + |0011> + |1100> + |1111>)
+  rho_AD Negativity = -0.0000 (A-B and C-D entangled, but A-D: NONE!)
+
+  rho_AD = I/4 (maximally mixed) because A and D are uncorrelated:
+  rho_AD = Tr_BC(rho) (4x4):
+
+    Real part:
+      +0.250  +0.000  +0.000  +0.000
+      +0.000  +0.250  +0.000  +0.000
+      +0.000  +0.000  +0.250  +0.000
+      +0.000  +0.000  +0.000  +0.250
+
+  STEP 3: Bell measurement on (B,C)
+  ──────────────────────────────────────────────────
+
+  ╔═════════════════════════════════════════════════════════════╗
+  ║          TUTORIAL: UNDERSTANDING BELL MEASUREMENTS         ║
+  ╚═════════════════════════════════════════════════════════════╝
+
+  THE PROBLEM:
+  ─────────────
+  Standard quantum measurements are in the computational basis {|0⟩, |1⟩}.
+  But we need to measure in the BELL BASIS - a basis of entangled states!
+
+  The Bell basis for two qubits (B and C) is:
+
+    |Φ⁺⟩ = (|00⟩ + |11⟩)/√2   ← both same, positive phase
+    |Φ⁻⟩ = (|00⟩ - |11⟩)/√2   ← both same, negative phase
+    |Ψ⁺⟩ = (|01⟩ + |10⟩)/√2   ← both different, positive phase
+    |Ψ⁻⟩ = (|01⟩ - |10⟩)/√2   ← both different, negative phase
+
+  THE SOLUTION: Transform Bell basis → Computational basis
+  ─────────────────────────────────────────────────────────────
+
+  We use a clever circuit: CNOT(B,C) followed by H(B)
+
+  INTUITION:
+  • Bell states encode TWO pieces of information:
+    1) PARITY: Are B and C the same (Φ) or different (Ψ)?
+    2) PHASE:  Is the superposition + or - ?
+
+  • CNOT extracts the PARITY:
+    - |Φ±⟩: B,C same    → CNOT makes C=|0⟩ (XOR = 0)
+    - |Ψ±⟩: B,C differ  → CNOT makes C=|1⟩ (XOR = 1)
+
+  • Hadamard extracts the PHASE:
+    - Positive phase (+) → H gives |0⟩
+    - Negative phase (-) → H gives |1⟩
+
+  ─────────────────────────────────────────────────────────────
+  WORKED EXAMPLE: How CNOT+H transforms each Bell state
+  ─────────────────────────────────────────────────────────────
+
+  |Φ⁺⟩ = (|00⟩ + |11⟩)/√2
+    → CNOT: (|00⟩ + |10⟩)/√2  = |+⟩⊗|0⟩
+    → H(B): (|00⟩ + |00⟩)/2 + (|10⟩ - |10⟩)/2 = |00⟩  ✓
+
+  |Φ⁻⟩ = (|00⟩ - |11⟩)/√2
+    → CNOT: (|00⟩ - |10⟩)/√2  = |-⟩⊗|0⟩
+    → H(B): (|00⟩ - |00⟩)/2 + (|10⟩ + |10⟩)/2 = |10⟩  ✓
+
+  |Ψ⁺⟩ = (|01⟩ + |10⟩)/√2
+    → CNOT: (|01⟩ + |11⟩)/√2  = |+⟩⊗|1⟩
+    → H(B): |01⟩  ✓
+
+  |Ψ⁻⟩ = (|01⟩ - |10⟩)/√2
+    → CNOT: (|01⟩ - |11⟩)/√2  = |-⟩⊗|1⟩
+    → H(B): |11⟩  ✓
+
+  SUMMARY TABLE:
+  ┌──────────┬────────────┬─────────────┬───────────────────────┐
+  │ Bell St. │ After CNOT │ After H(B)  │ Measurement = ?       │
+  ├──────────┼────────────┼─────────────┼───────────────────────┤
+  │  |Φ⁺⟩    │  |+⟩⊗|0⟩   │   |00⟩      │  B=0, C=0             │
+  │  |Φ⁻⟩    │  |-⟩⊗|0⟩   │   |10⟩      │  B=1, C=0             │
+  │  |Ψ⁺⟩    │  |+⟩⊗|1⟩   │   |01⟩      │  B=0, C=1             │
+  │  |Ψ⁻⟩    │  |-⟩⊗|1⟩   │   |11⟩      │  B=1, C=1             │
+  └──────────┴────────────┴─────────────┴───────────────────────┘
+
+  KEY INSIGHT: After CNOT+H, we can decode the Bell state from
+  a simple Z-basis measurement:
+    • C tells us PARITY (0=same, 1=different)
+    • B tells us PHASE  (0=positive, 1=negative)
+
+  ═══════════════════════════════════════════════════════════
+  NOW LET'S APPLY THIS TO OUR 4-QUBIT STATE
+  ═══════════════════════════════════════════════════════════
+
+  Circuit: CNOT(B,C) → H(B) → Measure(B,C)
+
+  State after Bell-basis transform (CNOT·H):
+    ┌────────────┬─────────────────┐
+    │ |A B C D⟩  │    Amplitude    │
+    ├────────────┼─────────────────┤
+    │ |0 0 0 0⟩  │  +0.3536       │
+    │ |1 0 0 0⟩  │    0.0000      │
+    │ |0 1 0 0⟩  │  +0.3536       │
+    │ |1 1 0 0⟩  │    0.0000      │
+    │ |0 0 1 0⟩  │    0.0000      │
+    │ |1 0 1 0⟩  │  +0.3536       │
+    │ |0 1 1 0⟩  │    0.0000      │
+    │ |1 1 1 0⟩  │  -0.3536       │
+    │ |0 0 0 1⟩  │    0.0000      │
+    │ |1 0 0 1⟩  │  +0.3536       │
+    │ |0 1 0 1⟩  │    0.0000      │
+    │ |1 1 0 1⟩  │  -0.3536       │
+    │ |0 0 1 1⟩  │  +0.3536       │
+    │ |1 0 1 1⟩  │    0.0000      │
+    │ |0 1 1 1⟩  │  +0.3536       │
+    │ |1 1 1 1⟩  │    0.0000      │
+    └────────────┴─────────────────┘
+
+  INTERPRETATION:
+  ─────────────────
+  The state is now a superposition of 4 equally-likely outcomes.
+  Looking at the B,C qubits (middle two columns):
+
+    • |A 0 0 D⟩ terms: B,C measured as |00⟩ → Bell state was |Φ⁺⟩
+    • |A 0 1 D⟩ terms: B,C measured as |01⟩ → Bell state was |Ψ⁺⟩
+    • |A 1 0 D⟩ terms: B,C measured as |10⟩ → Bell state was |Φ⁻⟩
+    • |A 1 1 D⟩ terms: B,C measured as |11⟩ → Bell state was |Ψ⁻⟩
+
+  WHAT HAPPENS TO A AND D?
+  ───────────────────────────
+  This is the magic of entanglement swapping!
+  The Bell measurement on B,C 'projects' A and D into a Bell state,
+  even though A and D have NEVER directly interacted!
+
+  ┌─────────────┬────────────────────────────────────────────────┐
+  │ B,C outcome │ State of A,D after measurement                 │
+  ├─────────────┼────────────────────────────────────────────────┤
+  │   |00⟩      │ |Φ⁺⟩_AD = (|00⟩+|11⟩)/√2  ← no correction     │
+  │   |01⟩      │ |Ψ⁺⟩_AD = (|01⟩+|10⟩)/√2  ← apply X_D         │
+  │   |10⟩      │ |Φ⁻⟩_AD = (|00⟩-|11⟩)/√2  ← apply Z_D         │
+  │   |11⟩      │ |Ψ⁻⟩_AD = (|01⟩-|10⟩)/√2  ← apply X_D then Z_D│
+  └─────────────┴────────────────────────────────────────────────┘
+
+  STEP 4: Condition on outcome |00>_BC
+  ──────────────────────────────────────────────────
+
+  MCWF psi after projecting onto |00>_BC:
+    ┌────────────┬─────────────────┐
+    │ |A B C D⟩  │    Amplitude    │
+    ├────────────┼─────────────────┤
+    │ |0 0 0 0⟩  │  +0.7071       │
+    │ |1 0 0 0⟩  │    0.0000      │
+    │ |0 1 0 0⟩  │    0.0000      │
+    │ |1 1 0 0⟩  │    0.0000      │
+    │ |0 0 1 0⟩  │    0.0000      │
+    │ |1 0 1 0⟩  │    0.0000      │
+    │ |0 1 1 0⟩  │    0.0000      │
+    │ |1 1 1 0⟩  │    0.0000      │
+    │ |0 0 0 1⟩  │    0.0000      │
+    │ |1 0 0 1⟩  │  +0.7071       │
+    │ |0 1 0 1⟩  │    0.0000      │
+    │ |1 1 0 1⟩  │    0.0000      │
+    │ |0 0 1 1⟩  │    0.0000      │
+    │ |1 0 1 1⟩  │    0.0000      │
+    │ |0 1 1 1⟩  │    0.0000      │
+    │ |1 1 1 1⟩  │    0.0000      │
+    └────────────┴─────────────────┘
+  Probability of outcome |00> = 0.2500 (expect 0.25)
+
+  FINAL rho_AD after entanglement swapping:
+  rho_AD (4x4):
+
+    Real part:
+      +0.500  +0.000  +0.000  +0.500
+      +0.000  +0.000  +0.000  +0.000
+      +0.000  +0.000  +0.000  +0.000
+      +0.500  +0.000  +0.000  +0.500
+
+  COMPARISON WITH REFERENCE BELL STATE |Phi+><Phi+|:
+  |Φ⁺⟩⟨Φ⁺| where |Φ⁺⟩ = (|00⟩+|11⟩)/√2 (4x4):
+
+    Real part:
+      +0.500  +0.000  +0.000  +0.500
+      +0.000  +0.000  +0.000  +0.000
+      +0.000  +0.000  +0.000  +0.000
+      +0.500  +0.000  +0.000  +0.500
+
+  Fidelity F(rho_AD, |Phi+>) = 1.0000
+  Negativity(A:D) = 0.5000 (0.5 = maximally entangled)
+
+  RESULT: A and D are now in Bell state |Phi+> - maximally entangled!
+  This entanglement was SWAPPED from (A-B) and (C-D) pairs.
+  ┌─────────────────────────────────────────────────────────────┐
+  │  STEP-BY-STEP ENTANGLEMENT SWAPPING                        │
+  └─────────────────────────────────────────────────────────────┘
+
+  STEP 0: Initial state
+  ----------------------
+    |psi_0> = |0000>_ABCD
+    State: A=|0>, B=|0>, C=|0>, D=|0>
+    Entanglement between A-D: NONE (product state)
+
+  STEP 1: Create Bell pair (A,B)
+  -------------------------------
+    Circuit: H(A) -> CNOT(A,B)
+    Result: |Phi+>_AB = (|00> + |11>)/sqrt(2)
+    
+    Full state: |Phi+>_AB ⊗ |00>_CD
+    
+    Qubits A-B: ENTANGLED (maximally)
+    Qubits C-D: not entangled yet
+    Qubits A-D: NO entanglement!
+
+  STEP 2: Create Bell pair (C,D)
+  -------------------------------
+    Circuit: H(C) -> CNOT(C,D)
+    Result: |Phi+>_CD = (|00> + |11>)/sqrt(2)
+    
+    Full state: |Phi+>_AB ⊗ |Phi+>_CD
+             = (1/2)(|0000> + |0011> + |1100> + |1111>)
+
+    Now we have TWO independent Bell pairs:
+    - A is entangled with B
+    - C is entangled with D
+    - A and D: STILL NO ENTANGLEMENT (just classical correlations)
+
+  rho_AD at this point (tracing out B,C):
+  rho_AD = Tr_BC[|Phi+><Phi+| ⊗ |Phi+><Phi+|] (4x4):
+
+    Real part:
+      +0.250  +0.000  +0.000  +0.000
+      +0.000  +0.250  +0.000  +0.000
+      +0.000  +0.000  +0.250  +0.000
+      +0.000  +0.000  +0.000  +0.250
+
+    Imaginary part:
+      +0.000  +0.000  +0.000  +0.000
+      +0.000  +0.000  +0.000  +0.000
+      +0.000  +0.000  +0.000  +0.000
+      +0.000  +0.000  +0.000  +0.000
+
+    Negativity(A:D) = -0.0000
+    -> A and D are SEPARABLE (rho_AD = I/4, maximally mixed)
+
+  STEP 3: Bell measurement on qubits B and C
+  -------------------------------------------
+    We measure B,C in Bell basis. This PROJECTS the full state.
+    Circuit: CNOT(B,C) -> H(B) -> Measure(B,C)
+
+    Four possible outcomes with equal probability 1/4:
+      |00>_BC -> A,D collapse to |Phi+> = (|00>+|11>)/sqrt(2)
+      |01>_BC -> A,D collapse to |Psi+> = (|01>+|10>)/sqrt(2)
+      |10>_BC -> A,D collapse to |Phi-> = (|00>-|11>)/sqrt(2)
+      |11>_BC -> A,D collapse to |Psi-> = (|01>-|10>)/sqrt(2)
+
+    MAGIC: After measurement, A and D become maximally entangled!
+    (Even though they never interacted directly)
+
+  STEP 4: Conditioned on outcome |00>_BC
+  ----------------------------------------
+  rho_AD after conditioning on |00> (4x4):
+
+    Real part:
+      +0.500  +0.000  +0.000  +0.500
+      +0.000  +0.000  +0.000  +0.000
+      +0.000  +0.000  +0.000  +0.000
+      +0.500  +0.000  +0.000  +0.500
+
+    Imaginary part:
+      +0.000  +0.000  +0.000  +0.000
+      +0.000  +0.000  +0.000  +0.000
+      +0.000  +0.000  +0.000  +0.000
+      +0.000  +0.000  +0.000  +0.000
+
+  COMPARISON WITH REFERENCE BELL STATE:
+  |Φ⁺⟩⟨Φ⁺| = (|00⟩+|11⟩)(⟨00|+⟨11|)/2 (4x4):
+
+    Real part:
+      +0.500  +0.000  +0.000  +0.500
+      +0.000  +0.000  +0.000  +0.000
+      +0.000  +0.000  +0.000  +0.000
+      +0.500  +0.000  +0.000  +0.500
+
+    Imaginary part:
+      +0.000  +0.000  +0.000  +0.000
+      +0.000  +0.000  +0.000  +0.000
+      +0.000  +0.000  +0.000  +0.000
+      +0.000  +0.000  +0.000  +0.000
+
+    Fidelity F(rho_AD, |Phi+>) = 1.0000  (expect 1.0)
+    Negativity(A:D)            = 0.5000  (expect 0.5 for Bell state)
+
+  CONCLUSION: rho_AD = |Phi+><Phi+| is a maximally entangled Bell state!
+  A and D now share the SAME entanglement that A-B and C-D had originally.
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  NOISE EFFECTS ON SWAPPED ENTANGLEMENT                     │
+  └─────────────────────────────────────────────────────────────┘
+
+  ┌────────────────────────────────────────────────────────────┐
+  │  Noise p   P(|00>)   Purity(AD)   Neg(AD)   Entangled?   │
+  ├────────────────────────────────────────────────────────────┤
+  │  0.00       0.2500   1.0000       0.5000    Yes         │
+  │  0.02       0.2500   0.8542       0.4231    Yes         │
+  │  0.05       0.2500   0.6819       0.3191    Yes         │
+  │  0.10       0.2500   0.4887       0.1731    Yes         │
+  │  0.20       0.2500   0.3127       0.0000    No          │
+  │  0.50       0.2500   0.2501       0.0000    No          │
+  └────────────────────────────────────────────────────────────┘
+
+  -- Entanglement swapping demonstrated!
+
+======================================================================
+  -- ALL PROTOCOLS DEMONSTRATED SUCCESSFULLY!
+======================================================================
+
+  ╔═════════════════════════════════════════════════════════════╗
+  ║                SUMMARY OF PROTOCOLS                        ║
+  ╚═════════════════════════════════════════════════════════════╝
+
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  PROTOCOL    │  KEY PHYSICS CONCEPT                             │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  1. Bell St. │  Maximal entanglement: perfect correlation but   │
+  │              │  local randomness. Subsystems maximally mixed.   │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  2. GHZ      │  N-party entanglement: all qubits correlated,    │
+  │              │  tracing ANY qubit → mixed state. Very fragile.  │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  3. Decay    │  Decoherence destroys correlations: ⟨Z₁Z₂⟩       │
+  │              │  drops from +1 toward 0 as noise increases.      │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  4. Teleport │  Entanglement + classical bits = state transfer. │
+  │              │  Mid-circuit measurement, conditional correction.│
+  ├──────────────────────────────────────────────────────────────────┤
+  │  5. Noisy T. │  Noise channels (depol, dephase, amp damp)       │
+  │              │  degrade fidelity. F > 2/3 → quantum advantage.  │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  6. Ent.Meas │  Quantify entanglement: SvN entropy, negativity. │
+  │              │  Mixed states need PPT/negativity criteria.      │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  7. CHSH     │  Bell inequality: classical max √2, quantum 2√2. │
+  │              │  Noise degrades violation toward classical.      │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  8. Swapping │  Bell measurement on B,C entangles A and D that  │
+  │              │  NEVER interacted! Foundation of quantum relays. │
+  └──────────────────────────────────────────────────────────────────┘
+
+  ═══════════════════════════════════════════════════════════════
+  KEY CONCEPTS DEMONSTRATED
+  ═══════════════════════════════════════════════════════════════
+
+  ENTANGLEMENT:
+    • Created via CNOT after H: |00⟩ → H(1)·CNOT(1,2) → |Φ⁺⟩
+    • Quantified by: von Neumann entropy, negativity, purity
+    • Cannot send information faster than light (requires classical bits)
+
+  QUANTUM CHANNELS (NOISE):
+    • Depolarizing: isotropic errors, F → 0.5 as p → 1
+    • Dephasing: phase-only errors, destroys superpositions
+    • Amp Damping: energy loss, asymmetric decay toward |0⟩
+
+  MEASUREMENTS:
+    • Computational basis: project onto |0⟩, |1⟩
+    • Bell basis: project onto entangled states via CNOT+H transform
+    • Mid-circuit measurement: collapse + conditional operations
+
+  DM vs MCWF:
+    • DM: exact expectation values, requires O(4^N) memory
+    • MCWF: stochastic sampling, scales as O(2^N), converges ∝ 1/√M
+
+  ═══════════════════════════════════════════════════════════════
+  MATHEMATICAL NOTATION REFERENCE
+  ═══════════════════════════════════════════════════════════════
+
+  STATES:
+    |0⟩, |1⟩           Computational basis (Z eigenstates)
+    |+⟩, |-⟩           X eigenstates: (|0⟩±|1⟩)/√2
+    |Φ⁺⟩               Bell state: (|00⟩+|11⟩)/√2
+    |GHZ_N⟩            (|00...0⟩+|11...1⟩)/√2
+
+  OPERATORS:
+    ρ                  Density matrix (pure: ρ=|ψ⟩⟨ψ|)
+    Tr(ρ²)             Purity (=1 if pure, <1 if mixed)
+    Tr_B(ρ)            Partial trace over subsystem B
+    ⟨O⟩ = Tr(ρO)       Expectation value
+
+  GATES:
+    H = (X+Z)/√2       Hadamard (creates superposition)
+    CNOT               Flips target if control=|1⟩
+    CZ                 Phase flip on |11⟩
+
+  ENTANGLEMENT MEASURES:
+    S_vN = -Tr(ρ log ρ)      von Neumann entropy
+    N(ρ) = (||ρᵀᴬ||-1)/2     Negativity (PPT criterion)
+
+  ═══════════════════════════════════════════════════════════════
+
+  Output saved to: demo_quantum_info_protocols/demo_quantum_info_protocols.txt
+

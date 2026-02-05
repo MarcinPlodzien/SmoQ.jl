@@ -1,0 +1,21 @@
+# Stabilizer Rényi Entropy (SRE) Benchmark
+# Date: 2026-02-01T23:11:06.827
+# Threads: 16
+#
+# States tested:
+# - |+...+⟩: Product of |+⟩ states (stabilizer)
+# - T⊗N|+...+⟩: T gate on each qubit of |+...+⟩
+# - |Star⟩: Star graph (CZ from center to all leaves)
+# - T⊗N|Star⟩: T gate on ALL qubits of star graph
+# - T₁|Star⟩: T gate on CENTER qubit only
+#
+# N    M2_plus    M2_T_plus   M2_star    M2_star_T_all   M2_star_T_center   time[s]
+ 2   -0.00000   +0.83007   -0.00000   +0.83007        +0.41504          0.000
+ 3   +0.00000   +1.24511   +0.00000   +1.24511        +0.41504          0.000
+ 4   -0.00000   +1.66015   -0.00000   +1.66015        +0.41504          0.000
+ 5   +0.00000   +2.07519   +0.00000   +2.07519        +0.41504          0.000
+ 6   -0.00000   +2.49022   -0.00000   +2.49022        +0.41504          0.000
+ 7   +0.00000   +2.90526   +0.00000   +2.90526        +0.41504          0.001
+ 8   -0.00000   +3.32030   -0.00000   +3.32030        +0.41504          0.009
+ 9   +0.00000   +3.73534   +0.00000   +3.73534        +0.41504          0.088
+10   -0.00000   +4.15037   -0.00000   +4.15037        +0.41504          0.604
