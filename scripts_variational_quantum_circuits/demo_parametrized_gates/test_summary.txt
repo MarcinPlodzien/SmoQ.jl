@@ -1,0 +1,732 @@
+
+======================================================================
+  PARAMETRIZED QUANTUM GATE TESTS
+  Matrix-Free Bitwise Operations (CPU)
+======================================================================
+
+  PURPOSE
+  ───────
+  This test suite validates BITWISE quantum gate implementations
+  that operate on state vectors |ψ⟩ and density matrices ρ
+  WITHOUT constructing explicit gate matrices.
+
+  QUANTUM STATE REPRESENTATIONS
+  ──────────────────────────────
+  Pure state:    |ψ⟩ ∈ ℂ^(2^N)     - state vector
+  Mixed state:   ρ = Σᵢ pᵢ |ψᵢ⟩⟨ψᵢ| - density matrix ∈ ℂ^(2^N × 2^N)
+
+  SIMULATING NOISY QUANTUM SYSTEMS
+  ─────────────────────────────────
+  Two equivalent approaches:
+
+  1. DENSITY MATRIX (DM) with KRAUS OPERATORS
+     - Exact evolution: ρ → Σₖ Kₖ ρ Kₖ†
+     - Memory: O(2^(2N)) - scales poorly!
+     - For N=14: ρ needs 4.3 GB
+
+  2. MONTE CARLO WAVE FUNCTION (MCWF) TRAJECTORIES
+     - Stochastic unraveling: sample trajectories |ψₘ⟩
+     - Average: ρ ≈ (1/M) Σₘ |ψₘ⟩⟨ψₘ|
+     - Memory: O(2^N) per trajectory - SCALES!
+     - For N=14: ψ needs only 262 KB
+
+  BITWISE GATE OPERATIONS
+  ───────────────────────
+  Gates are applied using bit manipulation (XOR, AND, shifts)
+  without constructing 2^N × 2^N matrices.
+  Scaling: O(2^N) for |ψ⟩, O(2^(2N)) for ρ
+
+  OBSERVABLES
+  ───────────
+  expect_local(ψ/ρ, k, N, :z) - ⟨Zₖ⟩ using bitwise operations
+  expect_corr(ψ/ρ, i, j, N, :zz) - ⟨ZᵢZⱼ⟩ correlators
+
+======================================================================
+
+--------------------------------------------------
+  TEST 1: Single-qubit rotations (analytical)
+--------------------------------------------------
+
+  Initial state: |ψ₀⟩ = |0⟩  (single qubit, N=1)
+  Apply gate:    R(θ)|0⟩ → |ψ_gate⟩
+  Compare:
+    |ψ_gate⟩ vs |ψ_analytic⟩   (analytical formula)
+    ρ_rho!    vs |ψ⟩⟨ψ|        (DM direct vs outer product)
+
+  ✓ Ry(1.57): |ψ_gate - ψ_analytic| = 1.1e-16, |ρ_rho! - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ Ry(3.14): |ψ_gate - ψ_analytic| = 6.1e-17, |ρ_rho! - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ Rx(1.57): |ψ_gate - ψ_analytic| = 1.1e-16, |ρ_rho! - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ Rx(3.14): |ψ_gate - ψ_analytic| = 6.1e-17, |ρ_rho! - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ Rz(1.57): |ψ_gate - ψ_analytic| = 0.0e+00, |ρ_rho! - |ψ⟩⟨ψ|| = 0.0e+00
+
+--------------------------------------------------
+  TEST 2: Multi-qubit rotations (N=4,6)
+--------------------------------------------------
+
+  Initial state: |ψ₀⟩ = |0⟩^⊗N  and  ρ₀ = |0...0⟩⟨0...0|
+  Apply:         R_k(θ) on qubit k
+  Verify:        ρ from apply_*_rho! = |ψ⟩⟨ψ| from apply_*_psi!
+
+  ✓ N=4, ry(1.57) on q1: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rx(3.14) on q1: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, ry(1.57) on q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rx(3.14) on q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, ry(1.57) on q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rx(3.14) on q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, ry(1.57) on q1: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rx(3.14) on q1: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, ry(1.57) on q3: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rx(3.14) on q3: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, ry(1.57) on q6: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rx(3.14) on q6: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+
+--------------------------------------------------
+  TEST 3: Hadamard on all qubits vs analytical
+--------------------------------------------------
+
+  Initial state: |ψ₀⟩ = |0⟩^⊗N
+  Apply:         H⊗N (Hadamard on each qubit)
+  Expected:      |+⟩^⊗N = (1/√2^N) Σₓ |x⟩  (uniform superposition)
+
+  ✓ N=2: Hadamard⊗N |0⟩⊗N: |ψ - ψ_analytic| = 1.1e-16, |ρ_direct - |ψ⟩⟨ψ|| = 2.8e-17
+  ✓ N=4: Hadamard⊗N |0⟩⊗N: |ψ - ψ_analytic| = 8.3e-17, |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+
+--------------------------------------------------
+  TEST 4: Gate sequence (Ry + Rz + CZ)
+--------------------------------------------------
+
+  Initial state: |ψ₀⟩ = |0⟩^⊗N  and  ρ₀ = |0...0⟩⟨0...0|
+  Apply:         Ry(π/3) → Rz(π/5) on each qubit, then CZ(1,2)
+  Verify:        ρ from apply_*_rho! = |ψ⟩⟨ψ| from apply_*_psi!
+
+  ✓ N=2: Ry(1.05)+Rz(0.63)+CZ: |ρ_direct - |ψ⟩⟨ψ|| = 1.1e-16
+  ✓ N=4: Ry(1.05)+Rz(0.63)+CZ: |ρ_direct - |ψ⟩⟨ψ|| = 1.1e-16
+
+--------------------------------------------------
+  TEST 5: Gates + Depolarizing Noise (DM vs MCWF)
+--------------------------------------------------
+
+  Initial state: |ψ₀⟩ = |0⟩^⊗N
+  Apply:         Ry(π/4) on each qubit
+  Apply noise:   Depolarizing channel with probability p
+
+  DM method:     ρ → Σₖ Kₖ ρ Kₖ†  (exact Kraus)
+  MCWF method:   Sample M trajectories, average ρ = (1/M) Σₘ |ψₘ⟩⟨ψₘ|
+
+  ✓ N=2, p=0.05, M=100: |ρ_Kraus - ρ_MCWF_avg| = 0.015
+  ✓ N=4, p=0.02, M=200: |ρ_Kraus - ρ_MCWF_avg| = 0.006
+
+--------------------------------------------------
+  TEST 5B: Two-qubit gates (Rxx, Ryy, Rzz)
+  Comparing: ρ from apply_*_rho! vs |ψ⟩⟨ψ| from apply_*_psi!
+--------------------------------------------------
+  ✓ N=4, rxx(0.79) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, ryy(0.79) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rzz(0.79) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rxx(1.57) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, ryy(1.57) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rzz(1.57) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rxx(3.14) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, ryy(3.14) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rzz(3.14) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rxx(0.79) on q1,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, ryy(0.79) on q1,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rzz(0.79) on q1,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rxx(1.57) on q1,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, ryy(1.57) on q1,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rzz(1.57) on q1,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rxx(3.14) on q1,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, ryy(3.14) on q1,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rzz(3.14) on q1,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rxx(0.79) on q2,q3: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, ryy(0.79) on q2,q3: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rzz(0.79) on q2,q3: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rxx(1.57) on q2,q3: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, ryy(1.57) on q2,q3: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rzz(1.57) on q2,q3: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rxx(3.14) on q2,q3: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, ryy(3.14) on q2,q3: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=4, rzz(3.14) on q2,q3: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rxx(0.79) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, ryy(0.79) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rzz(0.79) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rxx(1.57) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, ryy(1.57) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rzz(1.57) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rxx(3.14) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, ryy(3.14) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rzz(3.14) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rxx(0.79) on q1,q6: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, ryy(0.79) on q1,q6: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rzz(0.79) on q1,q6: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rxx(1.57) on q1,q6: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, ryy(1.57) on q1,q6: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rzz(1.57) on q1,q6: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rxx(3.14) on q1,q6: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, ryy(3.14) on q1,q6: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rzz(3.14) on q1,q6: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rxx(0.79) on q3,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, ryy(0.79) on q3,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rzz(0.79) on q3,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rxx(1.57) on q3,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, ryy(1.57) on q3,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rzz(1.57) on q3,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rxx(3.14) on q3,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, ryy(3.14) on q3,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=6, rzz(3.14) on q3,q4: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rxx(0.79) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, ryy(0.79) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rzz(0.79) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rxx(1.57) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, ryy(1.57) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rzz(1.57) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rxx(3.14) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, ryy(3.14) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rzz(3.14) on q1,q2: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rxx(0.79) on q1,q8: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, ryy(0.79) on q1,q8: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rzz(0.79) on q1,q8: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rxx(1.57) on q1,q8: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, ryy(1.57) on q1,q8: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rzz(1.57) on q1,q8: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rxx(3.14) on q1,q8: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, ryy(3.14) on q1,q8: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rzz(3.14) on q1,q8: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rxx(0.79) on q4,q5: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, ryy(0.79) on q4,q5: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rzz(0.79) on q4,q5: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rxx(1.57) on q4,q5: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, ryy(1.57) on q4,q5: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rzz(1.57) on q4,q5: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rxx(3.14) on q4,q5: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, ryy(3.14) on q4,q5: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+  ✓ N=8, rzz(3.14) on q4,q5: |ρ_direct - |ψ⟩⟨ψ|| = 0.0e+00
+
+--------------------------------------------------
+  TEST 5C: MCWF Trajectory Convergence (M dependence)
+--------------------------------------------------
+  N=3, p=0.05:
+    M=  10: |ρ_Kraus - ρ_MCWF_avg| = 0.1560
+    M=  50: |ρ_Kraus - ρ_MCWF_avg| = 0.0280
+    M= 100: |ρ_Kraus - ρ_MCWF_avg| = 0.0117
+    M= 200: |ρ_Kraus - ρ_MCWF_avg| = 0.0122
+    M= 500: |ρ_Kraus - ρ_MCWF_avg| = 0.0047
+  ✓ Convergence: 0.156 → 0.005 (should decrease with M)
+  N=4, p=0.02:
+    M=  10: |ρ_Kraus - ρ_MCWF_avg| = 0.1089
+    M=  50: |ρ_Kraus - ρ_MCWF_avg| = 0.0209
+    M= 100: |ρ_Kraus - ρ_MCWF_avg| = 0.0094
+    M= 200: |ρ_Kraus - ρ_MCWF_avg| = 0.0061
+    M= 500: |ρ_Kraus - ρ_MCWF_avg| = 0.0043
+  ✓ Convergence: 0.109 → 0.004 (should decrease with M)
+
+--------------------------------------------------
+  TEST 6: Large N (pure state, fidelity check)
+--------------------------------------------------
+  ✓ N=10 (dim=1024): Hadamard⊗N fidelity with uniform = 1.0000000000
+  ✓ N=12 (dim=4096): Hadamard⊗N fidelity with uniform = 1.0000000000
+
+--------------------------------------------------
+  TEST 7: Gate sequence equivalence (N=10,14)
+--------------------------------------------------
+  ✓ N=10: Ry(π/2)² ≡ Ry(π), fidelity = 1.0000000000
+  ✓ N=14: Ry(π/2)² ≡ Ry(π), fidelity = 1.0000000000
+
+--------------------------------------------------
+  TEST 8: Large N timing (N=16,18)
+--------------------------------------------------
+  N=16 (dim=7e+04):
+    Ry(π/4) on all 16 qubits: 0.001 sec
+    Norm after all gates: 1.0000000000
+  N=18 (dim=3e+05):
+    Ry(π/4) on all 18 qubits: 0.003 sec
+    Norm after all gates: 1.0000000000
+
+--------------------------------------------------
+  TEST 9: LARGE N + NOISE (MCWF-only, DM exceeds memory)
+--------------------------------------------------
+
+  Initial state: |ψ₀⟩ = |0...0⟩  (N qubits)
+
+  WHY MCWF?
+  ─────────
+  Memory formula:
+    ψ (state vector) = 2^N × 16 bytes  (ComplexF64)
+    ρ (density matrix) = 2^N × 2^N × 16 bytes
+
+  For N=14:
+    ψ = 2^14 × 16 = 262 KB
+    ρ = 2^28 × 16 = 4.3 GB → exceeds typical RAM!
+
+  MCWF uses ONLY state vector ψ, not full ρ → SCALES to N=20+!
+
+  N=14 qubits (dim=2^14=16384):
+    ψ memory: 2^14 × 16 bytes = 262.1 KB → OK!
+    ρ memory: 2^28 × 16 bytes = 4.3 GB → exceeds RAM
+
+    Running MCWF with M trajectories...
+    Circuit: 2 layers × [Ry(0.79) + Rz(0.52) + CZ_chain + depol(p=0.01)]
+
+    M=  20: ⟨Z₁⟩ = +0.1438 ± 0.0487  (std/√M)
+    M= 100: ⟨Z₁⟩ = +0.1761 ± 0.0113  (std/√M)
+    M= 500: ⟨Z₁⟩ = +0.1821 ± 0.0037  (std/√M)
+
+    ✓ MCWF successfully simulated N=14 noisy circuit!
+
+  N=16 qubits (dim=2^16=65536):
+    ψ memory: 2^16 × 16 bytes = 1048.6 KB → OK!
+    ρ memory: 2^32 × 16 bytes = 68.7 GB → exceeds RAM
+
+    Running MCWF with M trajectories...
+    Circuit: 2 layers × [Ry(0.79) + Rz(0.52) + CZ_chain + depol(p=0.01)]
+
+    M=  20: ⟨Z₁⟩ = +0.1438 ± 0.0487  (std/√M)
+    M= 100: ⟨Z₁⟩ = +0.1761 ± 0.0113  (std/√M)
+    M= 500: ⟨Z₁⟩ = +0.1836 ± 0.0035  (std/√M)
+
+    ✓ MCWF successfully simulated N=16 noisy circuit!
+
+--------------------------------------------------
+  TEST 10: VQC with Multiple Noise Models
+  Comparing: DM (exact Kraus) vs MCWF (stochastic)
+--------------------------------------------------
+
+  --- Small N (N=4): DM vs MCWF comparison ---
+
+  Depolarizing       (N=4, p=0.02): DM ⟨Z₁⟩ = +0.1836
+    MCWF M=    10: ⟨Z₁⟩ = +0.0938 ± 0.0949  |⟨Z₁⟩_MCWF - ⟨Z₁⟩_Kraus| = 0.0898
+    MCWF M=   100: ⟨Z₁⟩ = +0.1922 ± 0.0177  |⟨Z₁⟩_MCWF - ⟨Z₁⟩_Kraus| = 0.0086
+    MCWF M=  1000: ⟨Z₁⟩ = +0.1875 ± 0.0036  |⟨Z₁⟩_MCWF - ⟨Z₁⟩_Kraus| = 0.0039
+
+  Dephasing          (N=4, p=0.05): DM ⟨Z₁⟩ = +0.2016
+    MCWF M=    10: ⟨Z₁⟩ = +0.2551 ± 0.0581  |⟨Z₁⟩_MCWF - ⟨Z₁⟩_Kraus| = 0.0535
+    MCWF M=   100: ⟨Z₁⟩ = +0.2061 ± 0.0086  |⟨Z₁⟩_MCWF - ⟨Z₁⟩_Kraus| = 0.0045
+    MCWF M=  1000: ⟨Z₁⟩ = +0.1999 ± 0.0019  |⟨Z₁⟩_MCWF - ⟨Z₁⟩_Kraus| = 0.0016
+
+  Amplitude Damping  (N=4, p=0.03): DM ⟨Z₁⟩ = +0.2285
+    MCWF M=    10: ⟨Z₁⟩ = +0.2610 ± 0.0478  |⟨Z₁⟩_MCWF - ⟨Z₁⟩_Kraus| = 0.0325
+    MCWF M=   100: ⟨Z₁⟩ = +0.2168 ± 0.0052  |⟨Z₁⟩_MCWF - ⟨Z₁⟩_Kraus| = 0.0117
+    MCWF M=  1000: ⟨Z₁⟩ = +0.2217 ± 0.0028  |⟨Z₁⟩_MCWF - ⟨Z₁⟩_Kraus| = 0.0068
+
+  Bit Flip           (N=4, p=0.01): DM ⟨Z₁⟩ = +0.1801
+    MCWF M=    10: ⟨Z₁⟩ = +0.0938 ± 0.0949  |⟨Z₁⟩_MCWF - ⟨Z₁⟩_Kraus| = 0.0863
+    MCWF M=   100: ⟨Z₁⟩ = +0.1738 ± 0.0140  |⟨Z₁⟩_MCWF - ⟨Z₁⟩_Kraus| = 0.0063
+    MCWF M=  1000: ⟨Z₁⟩ = +0.1833 ± 0.0029  |⟨Z₁⟩_MCWF - ⟨Z₁⟩_Kraus| = 0.0032
+
+  Phase Flip         (N=4, p=0.02): DM ⟨Z₁⟩ = +0.2061
+    MCWF M=    10: ⟨Z₁⟩ = +0.2551 ± 0.0581  |⟨Z₁⟩_MCWF - ⟨Z₁⟩_Kraus| = 0.0490
+    MCWF M=   100: ⟨Z₁⟩ = +0.2244 ± 0.0133  |⟨Z₁⟩_MCWF - ⟨Z₁⟩_Kraus| = 0.0184
+    MCWF M=  1000: ⟨Z₁⟩ = +0.2061 ± 0.0027  |⟨Z₁⟩_MCWF - ⟨Z₁⟩_Kraus| = 0.0000
+
+
+  --- System Size Scaling: MCWF with M=200 (NOISY circuits) ---
+  DM would require 2^(2N) entries → exceeds memory for N>12
+  MCWF needs only 2^N entries per trajectory → SCALES to N=20+!
+
+  N= 6 (dim=     64): ⟨Z₁⟩ = +0.1991 ± 0.0098, time= 0.0s, ψ=    1KB, ρ would need     0MB
+  N= 8 (dim=    256): ⟨Z₁⟩ = +0.1894 ± 0.0107, time= 0.0s, ψ=    4KB, ρ would need     1MB
+  N=10 (dim=   1024): ⟨Z₁⟩ = +0.1911 ± 0.0106, time= 0.0s, ψ=   16KB, ρ would need    17MB
+  N=12 (dim=   4096): ⟨Z₁⟩ = +0.1914 ± 0.0106, time= 0.1s, ψ=   66KB, ρ would need   268MB
+  N=14 (dim=  16384): ⟨Z₁⟩ = +0.1772 ± 0.0117, time= 0.4s, ψ=  262KB, ρ would need     4GB
+  N=16 (dim=  65536): ⟨Z₁⟩ = +0.1833 ± 0.0113, time= 1.7s, ψ= 1049KB, ρ would need    69GB
+
+  ✓ MCWF scales gracefully while DM hits memory wall at N≈12!
+  For N=16: MCWF uses 1MB, DM would need 64GB → 64,000× difference!
+  This is the GAME-CHANGER for noisy quantum simulation!
+
+  --- Trajectory Scaling (N=8): M = 10 → 10k ---
+
+  Showing MCWF convergence as M → ∞:
+  (Standard error should decrease as 1/√M)
+
+  M=    10: ⟨Z₁⟩ = +0.09381 ± 0.09487  (time=0.00s)
+  M=   100: ⟨Z₁⟩ = +0.18056 ± 0.01886  (time=0.00s)
+  M=  1000: ⟨Z₁⟩ = +0.18557 ± 0.00368  (time=0.02s)
+  M= 10000: ⟨Z₁⟩ = +0.18461 ± 0.00107  (time=0.23s)
+
+--------------------------------------------------
+  TEST 11: Bitwise Observable Scaling
+  Using CPUObservables: expect_local + expect_corr
+--------------------------------------------------
+
+  --- Observable calculation times (bitwise) ---
+
+  N= 4 (dim=     16): local X,Y,Z (3×4): 0.0000s, corr XX,YY,ZZ (3×6 pairs): 0.0000s
+  N= 6 (dim=     64): local X,Y,Z (3×6): 0.0000s, corr XX,YY,ZZ (3×15 pairs): 0.0000s
+  N= 8 (dim=    256): local X,Y,Z (3×8): 0.0000s, corr XX,YY,ZZ (3×28 pairs): 0.0000s
+  N=10 (dim=   1024): local X,Y,Z (3×10): 0.0000s, corr XX,YY,ZZ (3×45 pairs): 0.0001s
+  N=12 (dim=   4096): local X,Y,Z (3×12): 0.0001s, corr XX,YY,ZZ (3×66 pairs): 0.0007s
+  N=14 (dim=  16384): local X,Y,Z (3×14): 0.0004s, corr XX,YY,ZZ (3×91 pairs): 0.0035s
+  N=16 (dim=  65536): local X,Y,Z (3×16): 0.0017s, corr XX,YY,ZZ (3×120 pairs): 0.0201s
+
+  --- Sample observable values (N=6) ---
+
+  Local observables:
+    Qubit 1: ⟨X⟩=+0.8660, ⟨Y⟩=+0.0000, ⟨Z⟩=+0.5000
+    Qubit 2: ⟨X⟩=+0.8660, ⟨Y⟩=+0.0000, ⟨Z⟩=+0.5000
+    Qubit 3: ⟨X⟩=+0.8660, ⟨Y⟩=+0.0000, ⟨Z⟩=+0.5000
+    Qubit 4: ⟨X⟩=+0.8660, ⟨Y⟩=+0.0000, ⟨Z⟩=+0.5000
+    Qubit 5: ⟨X⟩=+0.8660, ⟨Y⟩=+0.0000, ⟨Z⟩=+0.5000
+    Qubit 6: ⟨X⟩=+0.8660, ⟨Y⟩=+0.0000, ⟨Z⟩=+0.5000
+
+  Two-body correlators (selected pairs):
+    Pair (1,2): ⟨XX⟩=+0.7500, ⟨YY⟩=-0.0000, ⟨ZZ⟩=+0.2500
+    Pair (1,6): ⟨XX⟩=+0.7500, ⟨YY⟩=+0.0000, ⟨ZZ⟩=+0.2500
+    Pair (5,6): ⟨XX⟩=+0.7500, ⟨YY⟩=+0.0000, ⟨ZZ⟩=+0.2500
+
+  --- Bitwise Observables: ψ vs ρ = ψψ† comparison ---
+
+  Verifying: expect_local(ψ) ≡ expect_local(ρ=ψψ†)
+             expect_corr(ψ) ≡ expect_corr(ρ=ψψ†)
+
+  Local X,Y,Z (N=8):     max|⟨O⟩_ψ - ⟨O⟩_ρ| = 1.1e-16  ✓
+  Correlators XX,YY,ZZ:  max|⟨OO⟩_ψ - ⟨OO⟩_ρ| = 5.6e-17  ✓
+
+  Both expect_local(ψ/ρ) and expect_corr(ψ/ρ) use BITWISE operations.
+  No tensor products or explicit matrix construction needed.
+
+--------------------------------------------------
+  TEST 12: Partial Trace, Measurement, Reset, Full Workflow
+--------------------------------------------------
+
+  --- 12A: Partial Trace & partial_trace_regions ---
+
+  ✓ partial_trace_regions: trace[2,4] → 3 regions
+    Region sizes: 2×2 2×2 4×4 
+    |ρ_regions(ψ) - ρ_regions(ρ)| = 0.0e+00
+
+  --- 12B: Projective Measurement ---
+
+  ✓ Projective measurement: |+⟩ → |0⟩ 49%, |1⟩ 51% (expect ~50/50)
+
+  --- 12C: State Reset (non-neighboring qubits) ---
+
+    ✓ Qubit 1: ⟨Z⟩ = 1.0000 (expect +1.0)
+    ✓ Qubit 3: ⟨Z⟩ = 1.0000 (expect +1.0)
+    ✓ Qubit 5: ⟨Z⟩ = 1.0000 (expect +1.0)
+
+======================================================================
+  TEST 12D: STEP-BY-STEP WORKFLOW REPORT
+  Gates → Noise → partial_trace_regions → Observables
+======================================================================
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  CONFIGURATION                                              │
+  └─────────────────────────────────────────────────────────────┘
+    Number of qubits:        N = 6 (dim = 2^6 = 64)
+    Gate angle:              θ = π/4 = 0.7854 rad
+    Noise probability:       p = 0.020 (depolarizing)
+    Qubits to trace out:     [2, 4] (non-neighboring)
+    Kept qubits:             [1, 3, 5, 6]
+    Resulting regions:       3 disconnected subsystems
+      Region 1: qubits [1] (1 qubit)
+      Region 2: qubits [3] (1 qubit)
+      Region 3: qubits [5, 6] (2 qubits)
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  DM APPROACH (Density Matrix with exact Kraus operators)    │
+  └─────────────────────────────────────────────────────────────┘
+
+    STEP 1: Initialize ρ = |0...0⟩⟨0...0|
+      ρ[1,1] = 1.0 (pure state |0⟩^⊗6)
+      Tr(ρ) = 1.0000, Tr(ρ²) = 1.0000 (purity)
+
+    STEP 2: Apply Ry(θ=π/4) to each of 6 qubits
+      After gates: ⟨Z₁⟩ = +0.7071 (no longer |0⟩)
+      Tr(ρ) = 1.0000, Tr(ρ²) = 1.0000 (still pure)
+
+    STEP 3: Apply CZ chain (CZ on pairs 1-2, 2-3, ..., 5-6)
+      After CZ: ⟨Z₁⟩ = +0.7071, ⟨Z₁Z₂⟩ = +0.5000 (entangled)
+      Tr(ρ) = 1.0000, Tr(ρ²) = 1.0000 (still pure)
+
+    STEP 4: Apply depolarizing noise (p=0.020) on all 6 qubits
+      After noise: ⟨Z₁⟩ = +0.6883 (slightly decohered)
+      Tr(ρ) = 1.0000, Tr(ρ²) = 0.8298 (MIXED state now!)
+
+    STEP 5: Trace out qubits [2, 4] → 3 disconnected regions
+      Reduced density matrices:
+        Region 1 (2×2): Tr(ρ)=1.0000, Tr(ρ²)=0.8553, ⟨Z₁⟩=+0.6883
+        Region 2 (2×2): Tr(ρ)=1.0000, Tr(ρ²)=0.7961, ⟨Z₁⟩=+0.6883
+        Region 3 (4×4): Tr(ρ)=1.0000, Tr(ρ²)=0.8281, ⟨Z₁⟩=+0.6883
+
+    STEP 6: DM RESULT (ground truth)
+      ⟨Z₁⟩ per region: +0.6883  +0.6883  +0.6883  
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  MCWF APPROACH (Monte Carlo Wave Function, stochastic)      │
+  └─────────────────────────────────────────────────────────────┘
+
+    MCWF performs the same steps, but noise is STOCHASTIC:
+    - Each trajectory samples a random error (or no error) with prob p
+    - After M trajectories, we average: ⟨O⟩ = (1/M) Σₘ ⟨ψₘ|O|ψₘ⟩
+    - Error decreases as 1/√M (Central Limit Theorem)
+
+    M = 20 trajectories:
+      Sample trajectory 1: ⟨Z₁⟩ after gates = +0.7071, after noise = +0.7071
+      MCWF average ⟨Z₁⟩ per region: +0.6364±0.0689  +0.6364±0.0689  +0.7071±0.0000  
+      DM reference ⟨Z₁⟩ per region: +0.6883        +0.6883        +0.6883        
+      |MCWF - DM| per region:        0.0519         0.0519         0.0189        
+      Maximum error: 0.0519 (decreases as 1/√M)
+
+    M = 200 trajectories:
+      Sample trajectory 1: ⟨Z₁⟩ after gates = +0.7071, after noise = +0.7071
+      MCWF average ⟨Z₁⟩ per region: +0.6930±0.0099  +0.6859±0.0122  +0.7000±0.0071  
+      DM reference ⟨Z₁⟩ per region: +0.6883        +0.6883        +0.6883        
+      |MCWF - DM| per region:        0.0047         0.0024         0.0118        
+      Maximum error: 0.0118 (decreases as 1/√M)
+
+    ✓ MCWF converges to DM as M → ∞
+
+
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  CONFIGURATION                                              │
+  └─────────────────────────────────────────────────────────────┘
+    Number of qubits:        N = 8 (dim = 2^8 = 256)
+    Gate angle:              θ = π/4 = 0.7854 rad
+    Noise probability:       p = 0.010 (depolarizing)
+    Qubits to trace out:     [2, 4, 6] (non-neighboring)
+    Kept qubits:             [1, 3, 5, 7, 8]
+    Resulting regions:       4 disconnected subsystems
+      Region 1: qubits [1] (1 qubit)
+      Region 2: qubits [3] (1 qubit)
+      Region 3: qubits [5] (1 qubit)
+      Region 4: qubits [7, 8] (2 qubits)
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  DM APPROACH (Density Matrix with exact Kraus operators)    │
+  └─────────────────────────────────────────────────────────────┘
+
+    STEP 1: Initialize ρ = |0...0⟩⟨0...0|
+      ρ[1,1] = 1.0 (pure state |0⟩^⊗8)
+      Tr(ρ) = 1.0000, Tr(ρ²) = 1.0000 (purity)
+
+    STEP 2: Apply Ry(θ=π/4) to each of 8 qubits
+      After gates: ⟨Z₁⟩ = +0.7071 (no longer |0⟩)
+      Tr(ρ) = 1.0000, Tr(ρ²) = 1.0000 (still pure)
+
+    STEP 3: Apply CZ chain (CZ on pairs 1-2, 2-3, ..., 7-8)
+      After CZ: ⟨Z₁⟩ = +0.7071, ⟨Z₁Z₂⟩ = +0.5000 (entangled)
+      Tr(ρ) = 1.0000, Tr(ρ²) = 1.0000 (still pure)
+
+    STEP 4: Apply depolarizing noise (p=0.010) on all 8 qubits
+      After noise: ⟨Z₁⟩ = +0.6977 (slightly decohered)
+      Tr(ρ) = 1.0000, Tr(ρ²) = 0.8825 (MIXED state now!)
+
+    STEP 5: Trace out qubits [2, 4, 6] → 4 disconnected regions
+      Reduced density matrices:
+        Region 1 (2×2): Tr(ρ)=1.0000, Tr(ρ²)=0.8651, ⟨Z₁⟩=+0.6977
+        Region 2 (2×2): Tr(ρ)=1.0000, Tr(ρ²)=0.8042, ⟨Z₁⟩=+0.6977
+        Region 3 (2×2): Tr(ρ)=1.0000, Tr(ρ²)=0.8042, ⟨Z₁⟩=+0.6977
+        Region 4 (4×4): Tr(ρ)=1.0000, Tr(ρ²)=0.8512, ⟨Z₁⟩=+0.6977
+
+    STEP 6: DM RESULT (ground truth)
+      ⟨Z₁⟩ per region: +0.6977  +0.6977  +0.6977  +0.6977  
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  MCWF APPROACH (Monte Carlo Wave Function, stochastic)      │
+  └─────────────────────────────────────────────────────────────┘
+
+    MCWF performs the same steps, but noise is STOCHASTIC:
+    - Each trajectory samples a random error (or no error) with prob p
+    - After M trajectories, we average: ⟨O⟩ = (1/M) Σₘ ⟨ψₘ|O|ψₘ⟩
+    - Error decreases as 1/√M (Central Limit Theorem)
+
+    M = 50 trajectories:
+      Sample trajectory 1: ⟨Z₁⟩ after gates = +0.7071, after noise = +0.7071
+      MCWF average ⟨Z₁⟩ per region: +0.6788±0.0280  +0.6788±0.0280  +0.7071±0.0000  +0.7071±0.0000  
+      DM reference ⟨Z₁⟩ per region: +0.6977        +0.6977        +0.6977        +0.6977        
+      |MCWF - DM| per region:        0.0189         0.0189         0.0094         0.0094        
+      Maximum error: 0.0189 (decreases as 1/√M)
+
+    M = 500 trajectories:
+      Sample trajectory 1: ⟨Z₁⟩ after gates = +0.7071, after noise = +0.7071
+      MCWF average ⟨Z₁⟩ per region: +0.6958±0.0056  +0.6901±0.0069  +0.6986±0.0049  +0.6930±0.0063  
+      DM reference ⟨Z₁⟩ per region: +0.6977        +0.6977        +0.6977        +0.6977        
+      |MCWF - DM| per region:        0.0019         0.0075         0.0009         0.0047        
+      Maximum error: 0.0075 (decreases as 1/√M)
+
+    ✓ MCWF converges to DM as M → ∞
+
+  ✓ Full workflow: gates → noise → partial_trace_regions → observables works!
+  Both DM and MCWF give consistent results for disconnected regions.
+
+--------------------------------------------------
+  TEST 13: Mid-Circuit Measurement + Reset + Continue
+--------------------------------------------------
+
+  Initial state: |ψ₀⟩ = |0⟩^⊗N
+  Circuit:       Ry(π/4) → Measure qubit 1 → Reset to |0⟩ → Ry(π/3)
+  Verify:        After reset, qubit 1 is in |0⟩ (⟨Z₁⟩ = +1)
+                 After second Ry, ⟨Z₁⟩ = cos(π/3) = 0.5
+
+  After Ry(π/4) on all qubits: ⟨Z₁⟩ = +0.7071
+  After reset qubit 1 to |0⟩:  ⟨Z₁⟩ = +1.0000 (should be +1.0)
+  After Ry(π/3) on qubit 1:    ⟨Z₁⟩ = +0.5000 (expect 0.5000 = cos(π/3))
+
+  ✓ Mid-circuit measurement + reset + continue works!
+
+--------------------------------------------------
+  TEST 14: Noise Composition (Multiple Noise Channels)
+--------------------------------------------------
+
+  Initial state: |ψ₀⟩ = |+⟩^⊗N  (all qubits in |+⟩)
+  Apply noise:   Depolarizing → Dephasing → Amplitude Damping
+  Compare:       DM (Kraus) vs MCWF average
+
+  DM (Kraus exact):
+    Before noise: ⟨X₁⟩ = +1.0000, ⟨Z₁⟩ = +0.0000
+    After noise:  ⟨X₁⟩ = +0.9719, ⟨Z₁⟩ = +0.0100, Tr(ρ²) = 0.8937
+
+  MCWF (M=200 trajectories):
+    After noise:  ⟨X₁⟩ = +0.9700, ⟨Z₁⟩ = +0.0150
+    |MCWF - DM|:  ⟨X₁⟩ error = 0.0019, ⟨Z₁⟩ error = 0.0050
+
+  ✓ Noise composition: Depol → Deph → AmpDamp consistent!
+
+--------------------------------------------------
+  TEST 15: Bell State Preparation + Verification
+--------------------------------------------------
+
+  Initial state: |ψ₀⟩ = |00⟩
+  Circuit:       H(1) → CNOT(1,2)  (using H + CZ + H)
+  Result:        |Φ⁺⟩ = (|00⟩ + |11⟩)/√2
+
+  Expected:
+    ⟨Z₁⟩ = ⟨Z₂⟩ = 0  (maximally uncertain)
+    ⟨Z₁Z₂⟩ = +1      (perfect correlation)
+    Tr₂(ρ) = I/2     (maximally mixed)
+
+  Bell state amplitudes:
+    ⟨00|Φ⁺⟩ = 0.7071 (expect 1/√2 ≈ 0.707)
+    ⟨11|Φ⁺⟩ = 0.7071 (expect 1/√2 ≈ 0.707)
+
+  Observables:
+    ⟨Z₁⟩ = +0.0000 (expect 0)
+    ⟨Z₂⟩ = +0.0000 (expect 0)
+    ⟨Z₁Z₂⟩ = +1.0000 (expect +1)
+
+  Reduced density matrix (Tr₂):
+    ρ₁[1,1] = 0.5000 (expect 0.5)
+    ρ₁[2,2] = 0.5000 (expect 0.5)
+    Tr(ρ₁²) = 0.5000 (expect 0.5 for max mixed)
+
+  ✓ Bell state verification complete!
+
+--------------------------------------------------
+  TEST 16: Noisy GHZ State Sampling (DM vs MCWF)
+--------------------------------------------------
+
+  Initial state: |ψ₀⟩ = |0⟩^⊗N
+  Circuit:       H(1) → CNOT(1,2) → CNOT(2,3) → ... → CNOT(N-1,N)
+  Result:        |GHZ⟩ = (|00...0⟩ + |11...1⟩)/√2
+  Apply noise:   Depolarizing (p=0.01)
+  Sample:        Measure all qubits in Z-basis
+  Compare:       Probability distribution DM vs MCWF
+
+  DM exact probabilities (after noise p=0.01):
+    P(|0000⟩) = 0.4868
+    P(|1111⟩) = 0.4868
+    Sum = 1.0000 (expect ~1.0)
+
+  MCWF sampling (M=500 trajectories):
+    P(|0000⟩) = 0.5000 (count=250)
+    P(|1111⟩) = 0.4740 (count=237)
+
+  Comparison:
+    |P_MCWF - P_DM| for |0000⟩: 0.0132
+    |P_MCWF - P_DM| for |1111⟩: 0.0128
+
+  ✓ Noisy GHZ sampling: DM and MCWF distributions match!
+
+--------------------------------------------------
+  TEST 17: Correlator Decay with Noise
+--------------------------------------------------
+
+  Initial state: |ψ₀⟩ = |00⟩
+  Circuit:       H(1) → CNOT(1,2)  →  |Φ⁺⟩ Bell pair
+  Apply noise:   Depolarizing with varying p = 0, 0.05, 0.1, 0.2, 0.5
+  Observe:       ⟨Z₁Z₂⟩ decays from +1 toward 0 as p increases
+
+  p       ⟨Z₁Z₂⟩_DM   ⟨Z₁Z₂⟩_MCWF (M=200)   Decay from +1
+  ─────   ──────────  ────────────────────   ──────────────
+  0.00    +1.0000      +1.0000               0.0000
+  0.05    +0.8711      +0.8100               0.1289
+  0.10    +0.7511      +0.6800               0.2489
+  0.20    +0.5378      +0.4000               0.4622
+  0.50    +0.1111      +0.0600               0.8889
+
+  ✓ Correlator decay demonstrates decoherence!
+  As noise increases, ⟨Z₁Z₂⟩ → 0 (uncorrelated)
+
+======================================================================
+  TEST 18: QUANTUM TELEPORTATION
+======================================================================
+
+  Protocol:
+  ─────────
+  Alice wants to teleport |ψ_in⟩ = cos(θ/2)|0⟩ + sin(θ/2)|1⟩ to Bob
+
+  Initial setup:
+    Qubit 1: Alice's input state |ψ_in⟩ (to be teleported)
+    Qubit 2: Alice's half of Bell pair
+    Qubit 3: Bob's half of Bell pair (will receive |ψ_in⟩)
+
+  Steps:
+    1. Create Bell pair: H(2) → CNOT(2,3)
+    2. Prepare |ψ_in⟩ on qubit 1
+    3. Alice's Bell measurement: CNOT(1,2) → H(1) → Measure qubits 1,2
+    4. Bob's corrections based on outcomes:
+       - If qubit 2 = 1: Apply X to qubit 3
+       - If qubit 1 = 1: Apply Z to qubit 3
+    5. Bob's qubit 3 is now in state |ψ_in⟩
+
+  Testing teleportation for different input states:
+  ─────────────────────────────────────────────────
+
+  θ        |ψ_in⟩               ⟨Z₃⟩_after   ⟨Z₃⟩_expected   Fidelity
+  ──────   ──────────────────   ──────────   ─────────────   ────────
+  0.0000   |0⟩                 +1.0000      +1.0000         1.0000
+  0.7854   Ry(0.79)|0⟩         +0.7071      +0.7071         1.0000
+  1.5708   |+⟩                 +0.0000      +0.0000         1.0000
+  3.1416   |1⟩                 -1.0000      -1.0000         1.0000
+  2.3562   Ry(2.36)|0⟩         -0.7071      -0.7071         1.0000
+
+  ───────────────────────────────────────────────────────────────
+
+  Detailed example: Teleporting |+⟩ = (|0⟩ + |1⟩)/√2
+  ─────────────────────────────────────────────────────────────
+
+    Step 1: Initial state |000⟩
+      |ψ⟩ = |000⟩, ‖ψ‖ = 1.0000
+
+    Step 2: Create Bell pair on qubits 2,3
+      After Bell pair: ⟨Z₂Z₃⟩ = +1.0000 (entangled)
+
+    Step 3: Prepare |+⟩ on qubit 1 (state to teleport)
+      ⟨Z₁⟩ = +0.0000 (expect 0 for |+⟩)
+      ⟨X₁⟩ = +1.0000 (expect 1 for |+⟩)
+
+    Step 4: Alice's Bell measurement circuit (CNOT + H)
+
+    Step 5: Measure qubits 1,2 (Alice's measurement)
+      Measurement outcomes: m₁ = 1, m₂ = 0
+
+    Step 6: Bob's corrections (conditional gates)
+      m₂ = 0 → No X correction needed
+      m₁ = 1 → Apply Z₃
+
+    Step 7: Verify Bob's qubit is in |+⟩
+      ⟨Z₃⟩ = +0.0000 (expect 0)
+      ⟨X₃⟩ = +1.0000 (expect 1)
+      Fidelity with |+⟩: 1.0000
+
+  ✓ Quantum teleportation successful!
+    State transferred from qubit 1 → qubit 3 via entanglement
+
+======================================================================
+  ✓ ALL TESTS PASSED!
+======================================================================
+
+  Test suite complete. See test_summary.txt for detailed results.
+

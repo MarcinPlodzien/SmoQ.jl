@@ -1,0 +1,180 @@
+
+  Running 8 VQE configurations...
+
+------------------------------------------------------------
+  [1/8] XXZ | N=6 | hea | L=2 | spsa_adam
+------------------------------------------------------------
+  GS: E=-11.1927, ⟨Z₁⟩=-0.0000, ⟨ZZ⟩=-0.1713, ⟨ZZZ⟩=0.0000
+  Training VQE...
+    [hea|L=2|spsa] ep=100: E=-6.9693 (ΔE=4.22e+00), F=0.1728
+    [hea|L=2|spsa] ep=200: E=-9.3754 (ΔE=1.82e+00), F=0.5739
+    [hea|L=2|spsa] ep=300: E=-10.7146 (ΔE=4.78e-01), F=0.8934
+    [hea|L=2|spsa] ep=400: E=-11.0942 (ΔE=9.85e-02), F=0.9822
+    [hea|L=2|spsa] ep=500: E=-11.1194 (ΔE=7.33e-02), F=0.9880
+  Final: E=-11.1194 (ΔE=7.33e-02), F=0.9880
+  ⟨Z⟩: GS=-0.0000 | VQE=0.0063 (Δ=6.27e-03)
+  Classical Shadows (Pauli):
+    M=   1000: ⟨Z₁⟩=0.066±0.057 (exact=0.006) | E=-10.91±0.40 (VQE=-11.12, GS=-11.19)
+    M=  10000: ⟨Z₁⟩=0.028±0.017 (exact=0.006) | E=-11.19±0.13 (VQE=-11.12, GS=-11.19)
+    M= 100000: ⟨Z₁⟩=0.016±0.005 (exact=0.006) | E=-11.11±0.04 (VQE=-11.12, GS=-11.19)
+
+------------------------------------------------------------
+  [2/8] XY | N=6 | hea | L=2 | spsa_adam
+------------------------------------------------------------
+  GS: E=-11.7069, ⟨Z₁⟩=-0.0000, ⟨ZZ⟩=-0.3105, ⟨ZZZ⟩=0.0000
+  Training VQE...
+    [hea|L=2|spsa] ep=100: E=-5.6650 (ΔE=6.04e+00), F=0.1362
+    [hea|L=2|spsa] ep=200: E=-9.5299 (ΔE=2.18e+00), F=0.5737
+    [hea|L=2|spsa] ep=300: E=-11.1440 (ΔE=5.63e-01), F=0.9020
+    [hea|L=2|spsa] ep=400: E=-11.5222 (ΔE=1.85e-01), F=0.9772
+    [hea|L=2|spsa] ep=500: E=-11.5208 (ΔE=1.86e-01), F=0.9737
+  Final: E=-11.5208 (ΔE=1.86e-01), F=0.9737
+  ⟨Z⟩: GS=-0.0000 | VQE=-0.0038 (Δ=3.76e-03)
+  Classical Shadows (Pauli):
+    M=   1000: ⟨Z₁⟩=-0.036±0.057 (exact=-0.004) | E=-11.17±0.39 (VQE=-11.52, GS=-11.71)
+    M=  10000: ⟨Z₁⟩=-0.002±0.017 (exact=-0.004) | E=-11.46±0.12 (VQE=-11.52, GS=-11.71)
+    M= 100000: ⟨Z₁⟩=-0.009±0.005 (exact=-0.004) | E=-11.49±0.04 (VQE=-11.52, GS=-11.71)
+
+------------------------------------------------------------
+  [3/8] XXZ | N=6 | brick | L=2 | spsa_adam
+------------------------------------------------------------
+  Training VQE...
+    [brick|L=2|spsa] ep=100: E=-6.6512 (ΔE=4.54e+00), F=0.1476
+    [brick|L=2|spsa] ep=200: E=-8.8560 (ΔE=2.34e+00), F=0.4465
+    [brick|L=2|spsa] ep=300: E=-10.3458 (ΔE=8.47e-01), F=0.8095
+    [brick|L=2|spsa] ep=400: E=-11.0359 (ΔE=1.57e-01), F=0.9733
+    [brick|L=2|spsa] ep=500: E=-11.1160 (ΔE=7.67e-02), F=0.9870
+  Final: E=-11.1160 (ΔE=7.67e-02), F=0.9870
+  ⟨Z⟩: GS=-0.0000 | VQE=-0.0437 (Δ=4.37e-02)
+  Classical Shadows (Pauli):
+    M=   1000: ⟨Z₁⟩=0.015±0.054 (exact=-0.044) | E=-11.28±0.41 (VQE=-11.12, GS=-11.19)
+    M=  10000: ⟨Z₁⟩=-0.045±0.017 (exact=-0.044) | E=-11.00±0.13 (VQE=-11.12, GS=-11.19)
+    M= 100000: ⟨Z₁⟩=-0.043±0.005 (exact=-0.044) | E=-11.05±0.04 (VQE=-11.12, GS=-11.19)
+
+------------------------------------------------------------
+  [4/8] XY | N=6 | brick | L=2 | spsa_adam
+------------------------------------------------------------
+  Training VQE...
+    [brick|L=2|spsa] ep=100: E=-5.2315 (ΔE=6.48e+00), F=0.1179
+    [brick|L=2|spsa] ep=200: E=-8.5075 (ΔE=3.20e+00), F=0.4162
+    [brick|L=2|spsa] ep=300: E=-10.6197 (ΔE=1.09e+00), F=0.8102
+    [brick|L=2|spsa] ep=400: E=-11.4079 (ΔE=2.99e-01), F=0.9560
+    [brick|L=2|spsa] ep=500: E=-11.4877 (ΔE=2.19e-01), F=0.9700
+  Final: E=-11.4877 (ΔE=2.19e-01), F=0.9700
+  ⟨Z⟩: GS=-0.0000 | VQE=-0.0383 (Δ=3.83e-02)
+  Classical Shadows (Pauli):
+    M=   1000: ⟨Z₁⟩=-0.015±0.054 (exact=-0.038) | E=-11.44±0.38 (VQE=-11.49, GS=-11.71)
+    M=  10000: ⟨Z₁⟩=-0.070±0.017 (exact=-0.038) | E=-11.52±0.12 (VQE=-11.49, GS=-11.71)
+    M= 100000: ⟨Z₁⟩=-0.035±0.005 (exact=-0.038) | E=-11.43±0.04 (VQE=-11.49, GS=-11.71)
+
+------------------------------------------------------------
+  [5/8] XXZ | N=6 | hea | L=4 | spsa_adam
+------------------------------------------------------------
+  Training VQE...
+    [hea|L=4|spsa] ep=100: E=-6.3084 (ΔE=4.88e+00), F=0.1210
+    [hea|L=4|spsa] ep=200: E=-9.3680 (ΔE=1.82e+00), F=0.5487
+    [hea|L=4|spsa] ep=300: E=-10.7375 (ΔE=4.55e-01), F=0.8912
+    [hea|L=4|spsa] ep=400: E=-11.0875 (ΔE=1.05e-01), F=0.9821
+    [hea|L=4|spsa] ep=500: E=-11.1157 (ΔE=7.70e-02), F=0.9868
+  Final: E=-11.1157 (ΔE=7.70e-02), F=0.9868
+  ⟨Z⟩: GS=-0.0000 | VQE=0.0234 (Δ=2.34e-02)
+  Classical Shadows (Pauli):
+    M=   1000: ⟨Z₁⟩=0.024±0.055 (exact=0.023) | E=-11.17±0.41 (VQE=-11.12, GS=-11.19)
+    M=  10000: ⟨Z₁⟩=0.031±0.017 (exact=0.023) | E=-11.05±0.13 (VQE=-11.12, GS=-11.19)
+    M= 100000: ⟨Z₁⟩=0.032±0.005 (exact=0.023) | E=-11.11±0.04 (VQE=-11.12, GS=-11.19)
+
+------------------------------------------------------------
+  [6/8] XY | N=6 | hea | L=4 | spsa_adam
+------------------------------------------------------------
+  Training VQE...
+    [hea|L=4|spsa] ep=100: E=-4.8617 (ΔE=6.85e+00), F=0.0954
+    [hea|L=4|spsa] ep=200: E=-9.3533 (ΔE=2.35e+00), F=0.5380
+    [hea|L=4|spsa] ep=300: E=-11.1238 (ΔE=5.83e-01), F=0.8939
+    [hea|L=4|spsa] ep=400: E=-11.4908 (ΔE=2.16e-01), F=0.9672
+    [hea|L=4|spsa] ep=500: E=-11.5271 (ΔE=1.80e-01), F=0.9765
+  Final: E=-11.5271 (ΔE=1.80e-01), F=0.9765
+  ⟨Z⟩: GS=-0.0000 | VQE=0.0221 (Δ=2.21e-02)
+  Classical Shadows (Pauli):
+    M=   1000: ⟨Z₁⟩=-0.012±0.055 (exact=0.022) | E=-11.72±0.39 (VQE=-11.53, GS=-11.71)
+    M=  10000: ⟨Z₁⟩=0.027±0.017 (exact=0.022) | E=-11.37±0.12 (VQE=-11.53, GS=-11.71)
+    M= 100000: ⟨Z₁⟩=0.027±0.005 (exact=0.022) | E=-11.56±0.04 (VQE=-11.53, GS=-11.71)
+
+------------------------------------------------------------
+  [7/8] XXZ | N=6 | brick | L=4 | spsa_adam
+------------------------------------------------------------
+  Training VQE...
+    [brick|L=4|spsa] ep=100: E=-6.6064 (ΔE=4.59e+00), F=0.1427
+    [brick|L=4|spsa] ep=200: E=-9.4186 (ΔE=1.77e+00), F=0.5871
+    [brick|L=4|spsa] ep=300: E=-10.7359 (ΔE=4.57e-01), F=0.8882
+    [brick|L=4|spsa] ep=400: E=-11.1268 (ΔE=6.60e-02), F=0.9871
+    [brick|L=4|spsa] ep=500: E=-11.0944 (ΔE=9.84e-02), F=0.9842
+  Final: E=-11.0944 (ΔE=9.84e-02), F=0.9842
+  ⟨Z⟩: GS=-0.0000 | VQE=0.0014 (Δ=1.42e-03)
+  Classical Shadows (Pauli):
+    M=   1000: ⟨Z₁⟩=-0.051±0.052 (exact=0.001) | E=-10.89±0.42 (VQE=-11.09, GS=-11.19)
+    M=  10000: ⟨Z₁⟩=-0.018±0.017 (exact=0.001) | E=-11.31±0.13 (VQE=-11.09, GS=-11.19)
+    M= 100000: ⟨Z₁⟩=-0.003±0.005 (exact=0.001) | E=-11.04±0.04 (VQE=-11.09, GS=-11.19)
+
+------------------------------------------------------------
+  [8/8] XY | N=6 | brick | L=4 | spsa_adam
+------------------------------------------------------------
+  Training VQE...
+    [brick|L=4|spsa] ep=100: E=-5.0198 (ΔE=6.69e+00), F=0.0939
+    [brick|L=4|spsa] ep=200: E=-9.2695 (ΔE=2.44e+00), F=0.5380
+    [brick|L=4|spsa] ep=300: E=-11.1110 (ΔE=5.96e-01), F=0.8911
+    [brick|L=4|spsa] ep=400: E=-11.5373 (ΔE=1.70e-01), F=0.9763
+    [brick|L=4|spsa] ep=500: E=-11.5925 (ΔE=1.14e-01), F=0.9808
+  Final: E=-11.5925 (ΔE=1.14e-01), F=0.9808
+  ⟨Z⟩: GS=-0.0000 | VQE=0.1248 (Δ=1.25e-01)
+  Classical Shadows (Pauli):
+    M=   1000: ⟨Z₁⟩=0.213±0.052 (exact=0.125) | E=-11.93±0.39 (VQE=-11.59, GS=-11.71)
+    M=  10000: ⟨Z₁⟩=0.140±0.017 (exact=0.125) | E=-11.78±0.12 (VQE=-11.59, GS=-11.71)
+    M= 100000: ⟨Z₁⟩=0.128±0.005 (exact=0.125) | E=-11.53±0.04 (VQE=-11.59, GS=-11.71)
+
+------------------------------------------------------------
+  SHADOW TRACKING DEMO (observables vs epochs)
+------------------------------------------------------------
+  Config: XXZ, N=6, hea, L=2
+  Tracking shadows at each epoch for M=[1000, 10000, 100000]...
+    ep=100: E=-6.4623 (ΔE=4.73e+00), F=0.1372
+    ep=200: E=-9.2021 (ΔE=1.99e+00), F=0.5016
+    ep=300: E=-10.7101 (ΔE=4.83e-01), F=0.8801
+    ep=400: E=-11.1189 (ΔE=7.38e-02), F=0.9886
+    ep=500: E=-11.1358 (ΔE=5.69e-02), F=0.9916
+  → Saved: fig_shadow_training_convergence_xxz_N6_hea_L2.png
+
+============================================================
+  GENERATING PLOTS
+============================================================
+  → Saved: fig_vqe_training_ham_xy_N6_opt_spsa_adam.png
+  → Saved: fig_vqe_training_ham_xxz_N6_opt_spsa_adam.png
+  → Saved: fig_shadow_comparison_ham_xxz_N6_ansatz_brick_L4_opt_spsa_adam.png
+  → Saved: fig_energy_vs_shadows_ham_xxz_N6_ansatz_brick_L4_opt_spsa_adam.png
+  → Saved: fig_energy_error_scaling_ham_xxz_N6_ansatz_brick_L4_opt_spsa_adam.png
+  → Saved: fig_shadow_comparison_ham_xy_N6_ansatz_hea_L2_opt_spsa_adam.png
+  → Saved: fig_energy_vs_shadows_ham_xy_N6_ansatz_hea_L2_opt_spsa_adam.png
+  → Saved: fig_energy_error_scaling_ham_xy_N6_ansatz_hea_L2_opt_spsa_adam.png
+  → Saved: fig_shadow_comparison_ham_xy_N6_ansatz_brick_L2_opt_spsa_adam.png
+  → Saved: fig_energy_vs_shadows_ham_xy_N6_ansatz_brick_L2_opt_spsa_adam.png
+  → Saved: fig_energy_error_scaling_ham_xy_N6_ansatz_brick_L2_opt_spsa_adam.png
+  → Saved: fig_shadow_comparison_ham_xy_N6_ansatz_hea_L4_opt_spsa_adam.png
+  → Saved: fig_energy_vs_shadows_ham_xy_N6_ansatz_hea_L4_opt_spsa_adam.png
+  → Saved: fig_energy_error_scaling_ham_xy_N6_ansatz_hea_L4_opt_spsa_adam.png
+  → Saved: fig_shadow_comparison_ham_xxz_N6_ansatz_hea_L2_opt_spsa_adam.png
+  → Saved: fig_energy_vs_shadows_ham_xxz_N6_ansatz_hea_L2_opt_spsa_adam.png
+  → Saved: fig_energy_error_scaling_ham_xxz_N6_ansatz_hea_L2_opt_spsa_adam.png
+  → Saved: fig_shadow_comparison_ham_xxz_N6_ansatz_hea_L4_opt_spsa_adam.png
+  → Saved: fig_energy_vs_shadows_ham_xxz_N6_ansatz_hea_L4_opt_spsa_adam.png
+  → Saved: fig_energy_error_scaling_ham_xxz_N6_ansatz_hea_L4_opt_spsa_adam.png
+  → Saved: fig_shadow_comparison_ham_xy_N6_ansatz_brick_L4_opt_spsa_adam.png
+  → Saved: fig_energy_vs_shadows_ham_xy_N6_ansatz_brick_L4_opt_spsa_adam.png
+  → Saved: fig_energy_error_scaling_ham_xy_N6_ansatz_brick_L4_opt_spsa_adam.png
+  → Saved: fig_shadow_comparison_ham_xxz_N6_ansatz_brick_L2_opt_spsa_adam.png
+  → Saved: fig_energy_vs_shadows_ham_xxz_N6_ansatz_brick_L2_opt_spsa_adam.png
+  → Saved: fig_energy_error_scaling_ham_xxz_N6_ansatz_brick_L2_opt_spsa_adam.png
+  → Data saved: vqe_shadow_results.txt
+
+============================================================
+  VQE + CLASSICAL SHADOWS DEMO COMPLETE
+============================================================
+  Output: demo_variational_quantum_eigensolver_and_classical_shadow/
