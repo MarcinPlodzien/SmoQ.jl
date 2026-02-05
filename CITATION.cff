@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "SmoQ.jl"
+version: "0.1.0"
+date-released: 2026-01-30
+authors:
+  - family-names: "Płodzień"
+    given-names: "Marcin"
+    orcid: "https://orcid.org/0000-0002-0835-1644"
+abstract: "Matrix-free quantum simulator for pure states and mixed states. Supports digital and analog quantum computing, open and closed systems via density matrices or Monte Carlo wave function trajectories. Applications include VQE, quantum autoencoders, and quantum metrology."
+license: MIT
+repository-code: "https://github.com/MarcinPlodzien/SmoQ.jl"
+keywords:
+  - quantum simulation
+  - quantum computing
+  - Julia
+  - matrix-free
+  - VQE
+  - quantum metrology
+  - spin squeezing
+  - open quantum systems
+  - noisy quantum circuits
