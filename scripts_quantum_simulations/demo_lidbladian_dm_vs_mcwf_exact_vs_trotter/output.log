@@ -1,0 +1,622 @@
+================================================================================
+  4-WAY LINDBLADIAN COMPARISON (N-SCALING)
+  DM×{Exact,Trotter} vs MCWF×{Exact,Trotter}
+================================================================================
+
+Parameters:
+  N values: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]
+  DM cutoff: N < 10
+  γ=0.1, dt=0.05, n_steps=200, T_max=10
+  n_traj=1000 (for MCWF)
+
+================================================================================
+  N = 2 (dim = 4)
+================================================================================
+
+Building Hamiltonian...
+  ✓ Exact propagator U = exp(-iH*dt)
+  ✓ Trotter gates (3 gates)
+
+--------------------------------------------------
+1. DM + Exact propagator (gold standard)...
+   Done in 0.29s
+2. DM + Trotter gates...
+   Done in 0.31s
+3. MCWF + Exact propagator (1000 trajectories)...
+   1000/1000   Done in 0.99s
+4. MCWF + Trotter gates (1000 trajectories)...
+   1000/1000   Done in 0.16s
+
+--------------------------------------------------
+Generating 2×3 grid plot with error bands...
+✓ Saved figure: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/figures/fig_lindbladian_allzero_N02_Ntraj1000.png
+
+Saving data files...
+✓ Saved data to: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/data
+
+================================================================================
+FINAL VALUES (t = 10)
+================================================================================
+
+Observable | DM+Exact  | DM+Trotter| MCWF+Exact|MCWF+Trotter
+--------------------------------------------------------------------------------
+  ⟨X⟩      |   -0.0655 |   -0.0657 |   -0.0626 |   -0.0716
+  ⟨Y⟩      |   -0.0013 |     0.002 |   -0.0028 |    0.0121
+  ⟨Z⟩      |   -0.0328 |   -0.0327 |   -0.0436 |   -0.0328
+  ⟨XX⟩     |       0.0 |       0.0 |       0.0 |       0.0
+  ⟨YY⟩     |     0.129 |    0.1291 |     0.109 |    0.0904
+  ⟨ZZ⟩     |     0.035 |    0.0347 |    0.0338 |    0.0411
+--------------------------------------------------------------------------------
+
+DEVIATIONS FROM DM+Exact (gold standard):
+------------------------------------------------------------
+Observable | DM+Trotter | MCWF+Exact |MCWF+Trotter
+------------------------------------------------------------
+  ⟨X⟩      |   -0.00015 |    0.00292 |   -0.00602
+  ⟨Y⟩      |    0.00322 |   -0.00152 |    0.01341
+  ⟨Z⟩      |    0.00011 |   -0.01081 |    -2.0e-5
+  ⟨XX⟩     |        0.0 |       -0.0 |       -0.0
+  ⟨YY⟩     |     9.0e-5 |   -0.01998 |   -0.03862
+  ⟨ZZ⟩     |   -0.00028 |    -0.0012 |    0.00606
+================================================================================
+
+================================================================================
+TIMING SUMMARY (includes evolution + observables)
+================================================================================
+
+Method       | Time (s) | Time/step (ms)
+------------------------------------------------
+  DM+Exact     |     0.29 |          1.448
+  DM+Trotter   |     0.31 |          1.552
+  MCWF+Exact   |     0.99 |          4.928
+  MCWF+Trotter |     0.16 |          0.804
+================================================================================
+
+================================================================================
+  N = 4 (dim = 16)
+================================================================================
+
+Building Hamiltonian...
+  ✓ Exact propagator U = exp(-iH*dt)
+  ✓ Trotter gates (7 gates)
+
+--------------------------------------------------
+1. DM + Exact propagator (gold standard)...
+   Done in 0.0s
+2. DM + Trotter gates...
+   Done in 0.0s
+3. MCWF + Exact propagator (1000 trajectories)...
+   1000/1000   Done in 0.11s
+4. MCWF + Trotter gates (1000 trajectories)...
+   1000/1000   Done in 0.07s
+
+--------------------------------------------------
+Generating 2×3 grid plot with error bands...
+✓ Saved figure: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/figures/fig_lindbladian_allzero_N04_Ntraj1000.png
+
+Saving data files...
+✓ Saved data to: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/data
+
+================================================================================
+FINAL VALUES (t = 10)
+================================================================================
+
+Observable | DM+Exact  | DM+Trotter| MCWF+Exact|MCWF+Trotter
+--------------------------------------------------------------------------------
+  ⟨X⟩      |   -0.0257 |   -0.0259 |   -0.0182 |   -0.0283
+  ⟨Y⟩      |   -0.0165 |   -0.0163 |   -0.0124 |   -0.0133
+  ⟨Z⟩      |   -0.0219 |   -0.0215 |   -0.0256 |   -0.0242
+  ⟨XX⟩     |    0.0042 |    0.0045 |   -0.0056 |    0.0111
+  ⟨YY⟩     |     0.029 |    0.0288 |     0.027 |    0.0279
+  ⟨ZZ⟩     |     0.037 |    0.0367 |    0.0329 |    0.0361
+--------------------------------------------------------------------------------
+
+DEVIATIONS FROM DM+Exact (gold standard):
+------------------------------------------------------------
+Observable | DM+Trotter | MCWF+Exact |MCWF+Trotter
+------------------------------------------------------------
+  ⟨X⟩      |   -0.00011 |    0.00749 |   -0.00259
+  ⟨Y⟩      |    0.00022 |    0.00412 |    0.00327
+  ⟨Z⟩      |    0.00035 |   -0.00368 |   -0.00233
+  ⟨XX⟩     |    0.00026 |   -0.00978 |    0.00689
+  ⟨YY⟩     |    -0.0001 |   -0.00199 |   -0.00107
+  ⟨ZZ⟩     |   -0.00033 |   -0.00413 |    -0.0009
+================================================================================
+
+================================================================================
+TIMING SUMMARY (includes evolution + observables)
+================================================================================
+
+Method       | Time (s) | Time/step (ms)
+------------------------------------------------
+  DM+Exact     |      0.0 |          0.006
+  DM+Trotter   |      0.0 |          0.014
+  MCWF+Exact   |     0.11 |          0.552
+  MCWF+Trotter |     0.07 |          0.342
+================================================================================
+
+================================================================================
+  N = 6 (dim = 64)
+================================================================================
+
+Building Hamiltonian...
+  ✓ Exact propagator U = exp(-iH*dt)
+  ✓ Trotter gates (11 gates)
+
+--------------------------------------------------
+1. DM + Exact propagator (gold standard)...
+   Done in 0.03s
+2. DM + Trotter gates...
+   Done in 0.08s
+3. MCWF + Exact propagator (1000 trajectories)...
+   1000/1000   Done in 0.58s
+4. MCWF + Trotter gates (1000 trajectories)...
+   1000/1000   Done in 0.17s
+
+--------------------------------------------------
+Generating 2×3 grid plot with error bands...
+✓ Saved figure: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/figures/fig_lindbladian_allzero_N06_Ntraj1000.png
+
+Saving data files...
+✓ Saved data to: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/data
+
+================================================================================
+FINAL VALUES (t = 10)
+================================================================================
+
+Observable | DM+Exact  | DM+Trotter| MCWF+Exact|MCWF+Trotter
+--------------------------------------------------------------------------------
+  ⟨X⟩      |   -0.0048 |   -0.0047 |   -0.0049 |   -0.0036
+  ⟨Y⟩      |    0.0026 |    0.0022 |    0.0022 |    0.0029
+  ⟨Z⟩      |    -0.006 |    -0.006 |   -0.0046 |   -0.0042
+  ⟨XX⟩     |    0.0059 |     0.006 |    0.0035 |    0.0049
+  ⟨YY⟩     |    0.0099 |      0.01 |    0.0094 |    0.0123
+  ⟨ZZ⟩     |    0.0069 |    0.0071 |    0.0063 |    0.0072
+--------------------------------------------------------------------------------
+
+DEVIATIONS FROM DM+Exact (gold standard):
+------------------------------------------------------------
+Observable | DM+Trotter | MCWF+Exact |MCWF+Trotter
+------------------------------------------------------------
+  ⟨X⟩      |    0.00011 |   -0.00012 |    0.00122
+  ⟨Y⟩      |   -0.00039 |   -0.00039 |    0.00028
+  ⟨Z⟩      |     1.0e-5 |    0.00139 |    0.00176
+  ⟨XX⟩     |     0.0001 |   -0.00246 |   -0.00108
+  ⟨YY⟩     |    0.00011 |   -0.00046 |    0.00245
+  ⟨ZZ⟩     |    0.00019 |   -0.00059 |    0.00032
+================================================================================
+
+================================================================================
+TIMING SUMMARY (includes evolution + observables)
+================================================================================
+
+Method       | Time (s) | Time/step (ms)
+------------------------------------------------
+  DM+Exact     |     0.03 |          0.125
+  DM+Trotter   |     0.08 |          0.379
+  MCWF+Exact   |     0.58 |          2.903
+  MCWF+Trotter |     0.17 |          0.868
+================================================================================
+
+================================================================================
+  N = 8 (dim = 256)
+================================================================================
+
+Building Hamiltonian...
+  ✓ Exact propagator U = exp(-iH*dt)
+  ✓ Trotter gates (15 gates)
+
+--------------------------------------------------
+1. DM + Exact propagator (gold standard)...
+   Done in 0.56s
+2. DM + Trotter gates...
+   Done in 1.85s
+3. MCWF + Exact propagator (1000 trajectories)...
+   1000/1000   Done in 2.29s
+4. MCWF + Trotter gates (1000 trajectories)...
+   1000/1000   Done in 0.58s
+
+--------------------------------------------------
+Generating 2×3 grid plot with error bands...
+✓ Saved figure: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/figures/fig_lindbladian_allzero_N08_Ntraj1000.png
+
+Saving data files...
+✓ Saved data to: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/data
+
+================================================================================
+FINAL VALUES (t = 10)
+================================================================================
+
+Observable | DM+Exact  | DM+Trotter| MCWF+Exact|MCWF+Trotter
+--------------------------------------------------------------------------------
+  ⟨X⟩      |    0.0002 |    0.0004 |    0.0004 |   -0.0004
+  ⟨Y⟩      |   -0.0093 |   -0.0096 |   -0.0094 |   -0.0096
+  ⟨Z⟩      |   -0.0027 |   -0.0027 |   -0.0032 |   -0.0025
+  ⟨XX⟩     |    0.0057 |    0.0058 |    0.0045 |    0.0038
+  ⟨YY⟩     |    0.0065 |    0.0067 |    0.0063 |    0.0067
+  ⟨ZZ⟩     |    0.0054 |    0.0055 |    0.0055 |    0.0054
+--------------------------------------------------------------------------------
+
+DEVIATIONS FROM DM+Exact (gold standard):
+------------------------------------------------------------
+Observable | DM+Trotter | MCWF+Exact |MCWF+Trotter
+------------------------------------------------------------
+  ⟨X⟩      |     0.0002 |    0.00021 |   -0.00056
+  ⟨Y⟩      |   -0.00023 |    -8.0e-5 |   -0.00025
+  ⟨Z⟩      |     3.0e-5 |   -0.00054 |    0.00017
+  ⟨XX⟩     |     8.0e-5 |   -0.00122 |   -0.00193
+  ⟨YY⟩     |    0.00013 |   -0.00026 |    0.00016
+  ⟨ZZ⟩     |     0.0001 |    0.00014 |     8.0e-5
+================================================================================
+
+================================================================================
+TIMING SUMMARY (includes evolution + observables)
+================================================================================
+
+Method       | Time (s) | Time/step (ms)
+------------------------------------------------
+  DM+Exact     |     0.56 |          2.781
+  DM+Trotter   |     1.85 |          9.226
+  MCWF+Exact   |     2.29 |         11.472
+  MCWF+Trotter |     0.58 |          2.903
+================================================================================
+
+================================================================================
+  N = 10 (dim = 1024)
+================================================================================
+
+Building Hamiltonian...
+  ✓ Exact propagator U = exp(-iH*dt)
+  ✓ Trotter gates (19 gates)
+
+[SKIPPED] DM methods (N >= 10 too large)
+[SKIPPED] MCWF+Exact (N >= 10, exact propagator too slow)
+4. MCWF + Trotter gates (1000 trajectories)...
+   1000/1000   Done in 2.39s
+
+--------------------------------------------------
+Generating 2×3 grid plot with error bands...
+✓ Saved figure: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/figures/fig_lindbladian_allzero_N10_Ntraj1000.png
+
+Saving data files...
+✓ Saved data to: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/data
+
+================================================================================
+FINAL VALUES (t = 10)
+================================================================================
+
+Observable | DM+Exact  | DM+Trotter| MCWF+Exact|MCWF+Trotter
+--------------------------------------------------------------------------------
+  ⟨X⟩      |       0.0 |       0.0 |       0.0 |    0.0013
+  ⟨Y⟩      |       0.0 |       0.0 |       0.0 |   -0.0108
+  ⟨Z⟩      |       0.0 |       0.0 |       0.0 |   -0.0038
+  ⟨XX⟩     |       0.0 |       0.0 |       0.0 |    0.0046
+  ⟨YY⟩     |       0.0 |       0.0 |       0.0 |     0.006
+  ⟨ZZ⟩     |       0.0 |       0.0 |       0.0 |    0.0044
+--------------------------------------------------------------------------------
+
+DEVIATIONS FROM DM+Exact (gold standard):
+------------------------------------------------------------
+Observable | DM+Trotter | MCWF+Exact |MCWF+Trotter
+------------------------------------------------------------
+  ⟨X⟩      |        0.0 |        0.0 |    0.00133
+  ⟨Y⟩      |        0.0 |        0.0 |   -0.01077
+  ⟨Z⟩      |        0.0 |        0.0 |   -0.00378
+  ⟨XX⟩     |        0.0 |        0.0 |    0.00456
+  ⟨YY⟩     |        0.0 |        0.0 |    0.00598
+  ⟨ZZ⟩     |        0.0 |        0.0 |    0.00443
+================================================================================
+
+================================================================================
+TIMING SUMMARY (includes evolution + observables)
+================================================================================
+
+Method       | Time (s) | Time/step (ms)
+------------------------------------------------
+  DM+Exact     |      -- |           --
+  DM+Trotter   |      -- |           --
+  MCWF+Exact   |      -- |           --
+  MCWF+Trotter |     2.39 |         11.968
+================================================================================
+
+================================================================================
+  N = 12 (dim = 4096)
+================================================================================
+
+Building Hamiltonian...
+  [SKIPPED] Sparse H & exact propagator (N >= 11)
+  ✓ Trotter gates (23 gates)
+
+[SKIPPED] DM methods (N >= 10 too large)
+[SKIPPED] MCWF+Exact (N >= 10, exact propagator too slow)
+4. MCWF + Trotter gates (1000 trajectories)...
+   1000/1000   Done in 11.99s
+
+--------------------------------------------------
+Generating 2×3 grid plot with error bands...
+✓ Saved figure: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/figures/fig_lindbladian_allzero_N12_Ntraj1000.png
+
+Saving data files...
+✓ Saved data to: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/data
+
+================================================================================
+FINAL VALUES (t = 10)
+================================================================================
+
+Observable | DM+Exact  | DM+Trotter| MCWF+Exact|MCWF+Trotter
+--------------------------------------------------------------------------------
+  ⟨X⟩      |       0.0 |       0.0 |       0.0 |    0.0024
+  ⟨Y⟩      |       0.0 |       0.0 |       0.0 |   -0.0119
+  ⟨Z⟩      |       0.0 |       0.0 |       0.0 |   -0.0026
+  ⟨XX⟩     |       0.0 |       0.0 |       0.0 |    0.0051
+  ⟨YY⟩     |       0.0 |       0.0 |       0.0 |    0.0059
+  ⟨ZZ⟩     |       0.0 |       0.0 |       0.0 |    0.0039
+--------------------------------------------------------------------------------
+
+DEVIATIONS FROM DM+Exact (gold standard):
+------------------------------------------------------------
+Observable | DM+Trotter | MCWF+Exact |MCWF+Trotter
+------------------------------------------------------------
+  ⟨X⟩      |        0.0 |        0.0 |    0.00242
+  ⟨Y⟩      |        0.0 |        0.0 |   -0.01192
+  ⟨Z⟩      |        0.0 |        0.0 |   -0.00256
+  ⟨XX⟩     |        0.0 |        0.0 |    0.00511
+  ⟨YY⟩     |        0.0 |        0.0 |     0.0059
+  ⟨ZZ⟩     |        0.0 |        0.0 |    0.00391
+================================================================================
+
+================================================================================
+TIMING SUMMARY (includes evolution + observables)
+================================================================================
+
+Method       | Time (s) | Time/step (ms)
+------------------------------------------------
+  DM+Exact     |      -- |           --
+  DM+Trotter   |      -- |           --
+  MCWF+Exact   |      -- |           --
+  MCWF+Trotter |    11.99 |         59.931
+================================================================================
+
+================================================================================
+  N = 14 (dim = 16384)
+================================================================================
+
+Building Hamiltonian...
+  [SKIPPED] Sparse H & exact propagator (N >= 11)
+  ✓ Trotter gates (27 gates)
+
+[SKIPPED] DM methods (N >= 10 too large)
+[SKIPPED] MCWF+Exact (N >= 10, exact propagator too slow)
+4. MCWF + Trotter gates (1000 trajectories)...
+   1000/1000   Done in 91.08s
+
+--------------------------------------------------
+Generating 2×3 grid plot with error bands...
+✓ Saved figure: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/figures/fig_lindbladian_allzero_N14_Ntraj1000.png
+
+Saving data files...
+✓ Saved data to: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/data
+
+================================================================================
+FINAL VALUES (t = 10)
+================================================================================
+
+Observable | DM+Exact  | DM+Trotter| MCWF+Exact|MCWF+Trotter
+--------------------------------------------------------------------------------
+  ⟨X⟩      |       0.0 |       0.0 |       0.0 |    0.0029
+  ⟨Y⟩      |       0.0 |       0.0 |       0.0 |   -0.0126
+  ⟨Z⟩      |       0.0 |       0.0 |       0.0 |    -0.002
+  ⟨XX⟩     |       0.0 |       0.0 |       0.0 |    0.0055
+  ⟨YY⟩     |       0.0 |       0.0 |       0.0 |    0.0059
+  ⟨ZZ⟩     |       0.0 |       0.0 |       0.0 |    0.0041
+--------------------------------------------------------------------------------
+
+DEVIATIONS FROM DM+Exact (gold standard):
+------------------------------------------------------------
+Observable | DM+Trotter | MCWF+Exact |MCWF+Trotter
+------------------------------------------------------------
+  ⟨X⟩      |        0.0 |        0.0 |    0.00293
+  ⟨Y⟩      |        0.0 |        0.0 |   -0.01261
+  ⟨Z⟩      |        0.0 |        0.0 |   -0.00201
+  ⟨XX⟩     |        0.0 |        0.0 |     0.0055
+  ⟨YY⟩     |        0.0 |        0.0 |    0.00595
+  ⟨ZZ⟩     |        0.0 |        0.0 |    0.00407
+================================================================================
+
+================================================================================
+TIMING SUMMARY (includes evolution + observables)
+================================================================================
+
+Method       | Time (s) | Time/step (ms)
+------------------------------------------------
+  DM+Exact     |      -- |           --
+  DM+Trotter   |      -- |           --
+  MCWF+Exact   |      -- |           --
+  MCWF+Trotter |    91.08 |        455.379
+================================================================================
+
+================================================================================
+  N = 16 (dim = 65536)
+================================================================================
+
+Building Hamiltonian...
+  [SKIPPED] Sparse H & exact propagator (N >= 11)
+  ✓ Trotter gates (31 gates)
+
+[SKIPPED] DM methods (N >= 10 too large)
+[SKIPPED] MCWF+Exact (N >= 10, exact propagator too slow)
+4. MCWF + Trotter gates (1000 trajectories)...
+   1000/1000   Done in 397.29s
+
+--------------------------------------------------
+Generating 2×3 grid plot with error bands...
+✓ Saved figure: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/figures/fig_lindbladian_allzero_N16_Ntraj1000.png
+
+Saving data files...
+✓ Saved data to: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/data
+
+================================================================================
+FINAL VALUES (t = 10)
+================================================================================
+
+Observable | DM+Exact  | DM+Trotter| MCWF+Exact|MCWF+Trotter
+--------------------------------------------------------------------------------
+  ⟨X⟩      |       0.0 |       0.0 |       0.0 |    0.0029
+  ⟨Y⟩      |       0.0 |       0.0 |       0.0 |   -0.0131
+  ⟨Z⟩      |       0.0 |       0.0 |       0.0 |   -0.0019
+  ⟨XX⟩     |       0.0 |       0.0 |       0.0 |    0.0054
+  ⟨YY⟩     |       0.0 |       0.0 |       0.0 |     0.006
+  ⟨ZZ⟩     |       0.0 |       0.0 |       0.0 |     0.004
+--------------------------------------------------------------------------------
+
+DEVIATIONS FROM DM+Exact (gold standard):
+------------------------------------------------------------
+Observable | DM+Trotter | MCWF+Exact |MCWF+Trotter
+------------------------------------------------------------
+  ⟨X⟩      |        0.0 |        0.0 |    0.00286
+  ⟨Y⟩      |        0.0 |        0.0 |   -0.01307
+  ⟨Z⟩      |        0.0 |        0.0 |   -0.00186
+  ⟨XX⟩     |        0.0 |        0.0 |    0.00542
+  ⟨YY⟩     |        0.0 |        0.0 |    0.00602
+  ⟨ZZ⟩     |        0.0 |        0.0 |    0.00405
+================================================================================
+
+================================================================================
+TIMING SUMMARY (includes evolution + observables)
+================================================================================
+
+Method       | Time (s) | Time/step (ms)
+------------------------------------------------
+  DM+Exact     |      -- |           --
+  DM+Trotter   |      -- |           --
+  MCWF+Exact   |      -- |           --
+  MCWF+Trotter |   397.29 |        1986.44
+================================================================================
+
+================================================================================
+  N = 18 (dim = 262144)
+================================================================================
+
+Building Hamiltonian...
+  [SKIPPED] Sparse H & exact propagator (N >= 11)
+  ✓ Trotter gates (35 gates)
+
+[SKIPPED] DM methods (N >= 10 too large)
+[SKIPPED] MCWF+Exact (N >= 10, exact propagator too slow)
+4. MCWF + Trotter gates (1000 trajectories)...
+   1000/1000   Done in 2473.01s
+
+--------------------------------------------------
+Generating 2×3 grid plot with error bands...
+✓ Saved figure: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/figures/fig_lindbladian_allzero_N18_Ntraj1000.png
+
+Saving data files...
+✓ Saved data to: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/data
+
+================================================================================
+FINAL VALUES (t = 10)
+================================================================================
+
+Observable | DM+Exact  | DM+Trotter| MCWF+Exact|MCWF+Trotter
+--------------------------------------------------------------------------------
+  ⟨X⟩      |       0.0 |       0.0 |       0.0 |    0.0028
+  ⟨Y⟩      |       0.0 |       0.0 |       0.0 |   -0.0134
+  ⟨Z⟩      |       0.0 |       0.0 |       0.0 |   -0.0017
+  ⟨XX⟩     |       0.0 |       0.0 |       0.0 |    0.0052
+  ⟨YY⟩     |       0.0 |       0.0 |       0.0 |    0.0056
+  ⟨ZZ⟩     |       0.0 |       0.0 |       0.0 |    0.0038
+--------------------------------------------------------------------------------
+
+DEVIATIONS FROM DM+Exact (gold standard):
+------------------------------------------------------------
+Observable | DM+Trotter | MCWF+Exact |MCWF+Trotter
+------------------------------------------------------------
+  ⟨X⟩      |        0.0 |        0.0 |    0.00284
+  ⟨Y⟩      |        0.0 |        0.0 |   -0.01345
+  ⟨Z⟩      |        0.0 |        0.0 |    -0.0017
+  ⟨XX⟩     |        0.0 |        0.0 |    0.00518
+  ⟨YY⟩     |        0.0 |        0.0 |    0.00564
+  ⟨ZZ⟩     |        0.0 |        0.0 |    0.00378
+================================================================================
+
+================================================================================
+TIMING SUMMARY (includes evolution + observables)
+================================================================================
+
+Method       | Time (s) | Time/step (ms)
+------------------------------------------------
+  DM+Exact     |      -- |           --
+  DM+Trotter   |      -- |           --
+  MCWF+Exact   |      -- |           --
+  MCWF+Trotter |  2473.01 |       12365.05
+================================================================================
+
+================================================================================
+  N = 20 (dim = 1048576)
+================================================================================
+
+Building Hamiltonian...
+  [SKIPPED] Sparse H & exact propagator (N >= 11)
+  ✓ Trotter gates (39 gates)
+
+[SKIPPED] DM methods (N >= 10 too large)
+[SKIPPED] MCWF+Exact (N >= 10, exact propagator too slow)
+4. MCWF + Trotter gates (1000 trajectories)...
+   1000/1000   Done in 17578.74s
+
+--------------------------------------------------
+Generating 2×3 grid plot with error bands...
+✓ Saved figure: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/figures/fig_lindbladian_allzero_N20_Ntraj1000.png
+
+Saving data files...
+✓ Saved data to: /home/marcin/Dropbox/workspace/2026.02.01_QRC_grid_geometry_julia_matrix_free_CPU_optimized/workshop/scripts/demo_lidbladian_dm_vs_mcwf_exact_vs_trotter/data
+
+================================================================================
+FINAL VALUES (t = 10)
+================================================================================
+
+Observable | DM+Exact  | DM+Trotter| MCWF+Exact|MCWF+Trotter
+--------------------------------------------------------------------------------
+  ⟨X⟩      |       0.0 |       0.0 |       0.0 |    0.0033
+  ⟨Y⟩      |       0.0 |       0.0 |       0.0 |   -0.0141
+  ⟨Z⟩      |       0.0 |       0.0 |       0.0 |   -0.0016
+  ⟨XX⟩     |       0.0 |       0.0 |       0.0 |    0.0054
+  ⟨YY⟩     |       0.0 |       0.0 |       0.0 |     0.006
+  ⟨ZZ⟩     |       0.0 |       0.0 |       0.0 |     0.004
+--------------------------------------------------------------------------------
+
+DEVIATIONS FROM DM+Exact (gold standard):
+------------------------------------------------------------
+Observable | DM+Trotter | MCWF+Exact |MCWF+Trotter
+------------------------------------------------------------
+  ⟨X⟩      |        0.0 |        0.0 |    0.00328
+  ⟨Y⟩      |        0.0 |        0.0 |    -0.0141
+  ⟨Z⟩      |        0.0 |        0.0 |    -0.0016
+  ⟨XX⟩     |        0.0 |        0.0 |    0.00544
+  ⟨YY⟩     |        0.0 |        0.0 |    0.00596
+  ⟨ZZ⟩     |        0.0 |        0.0 |    0.00396
+================================================================================
+
+================================================================================
+TIMING SUMMARY (includes evolution + observables)
+================================================================================
+
+Method       | Time (s) | Time/step (ms)
+------------------------------------------------
+  DM+Exact     |      -- |           --
+  DM+Trotter   |      -- |           --
+  MCWF+Exact   |      -- |           --
+  MCWF+Trotter | 17578.74 |      87893.697
+================================================================================
+
+================================================================================
+  N = 22 (dim = 4194304)
+================================================================================
+
+Building Hamiltonian...
+  [SKIPPED] Sparse H & exact propagator (N >= 11)
+  ✓ Trotter gates (43 gates)
+
+[SKIPPED] DM methods (N >= 10 too large)
+[SKIPPED] MCWF+Exact (N >= 10, exact propagator too slow)
+4. MCWF + Trotter gates (1000 trajectories)...
