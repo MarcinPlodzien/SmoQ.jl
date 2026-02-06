@@ -1,6 +1,6 @@
 name = "SmoQ"
 uuid = "88a165fe-3db0-4a84-bc99-224d2334a599"
-authors = ["Marcin Plodzien <95550675+MarcinPlodzien@users.noreply.github.com> and contributors"]
+authors = ["Marcin Płodzień <95550675+MarcinPlodzien@users.noreply.github.com> and contributors"]
 version = "0.1.0-DEV"
 
 [deps]
