@@ -314,6 +314,10 @@ This directory contains benchmark scripts comparing SmoQ.jl against established 
 
 ![Benchmark: SmoQ.jl speedup ratio](fig_benchmark_speedup.png)
 
+### Expectation Values: Timing Comparison
+
+![Benchmark: expectation value timing comparison](fig_timing_comparison.png)
+
 ---
 
 ## Related Projects
