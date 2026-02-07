@@ -166,7 +166,7 @@ The key insight is that the Pauli operators $\{I, X, Y, Z\}$ — the building bl
 
 $$\langle Z_k \rangle = \sum_{i=0}^{2^N-1} (-1)^{b_k(i)} \,|\psi_i|^2$$
 
-where $b_k(i) = (i \gg k) \;\&\; 1$ extracts bit $k$ from index $i$ using a right-shift by $k$ positions followed by a bitwise AND with 1.
+where $b_k(i)$ extracts bit $k$ from index $i$ via the bitwise operation `(i >> k) & 1` (right-shift by $k$ positions, then AND with 1).
 
 **In plain language:** loop over all $2^N$ amplitudes, compute $|\psi_i|^2$, and add it with a $+$ sign if qubit $k$ is in $|0\rangle$ (bit $k$ of $i$ is 0) or a $-$ sign if qubit $k$ is in $|1\rangle$ (bit $k$ of $i$ is 1). The result is just a weighted sum of probabilities — cost $O(2^N)$, no matrix needed.
 
@@ -278,8 +278,8 @@ for i_A = 0 to 2^n_A - 1:        # row of ρ_A
 
 | Method | Memory | Operations |
 |--------|--------|------------|
-| Build full $\rho = |\psi\rangle\langle\psi|$, then trace | $O(4^N)$ | $O(4^N)$ |
-| **Bitwise partial trace (SmoQ.jl)** | $O(4^{n_A})$ for result only | $O(4^{n_A} \cdot 2^{n_B}) = O(2^{N + n_A})$ |
+| Build full ρ = ψψ†, then trace | O(4ᴺ) | O(4ᴺ) |
+| **Bitwise partial trace (SmoQ.jl)** | O(4ⁿᴬ) for result only | O(4ⁿᴬ · 2ⁿᴮ) = O(2ᴺ⁺ⁿᴬ) |
 
 For a typical bipartition ($n_A = N/2$), the SmoQ.jl approach uses $O(2^N)$ memory (for $\rho_A$) instead of $O(4^N)$ (for the full $\rho$) — an exponential reduction of $2^N$.
 
