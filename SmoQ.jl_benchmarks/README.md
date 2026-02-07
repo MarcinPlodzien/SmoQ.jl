@@ -65,10 +65,10 @@ The condition "bit $k$ is 0" ensures each pair is processed exactly once. It is 
 
 | Gate | Matrix $(u_{00}, u_{01}, u_{10}, u_{11})$ | Description |
 |------|------------------------------------------|-------------|
-| $R_x(\theta)$ | $(\cos\frac{\theta}{2},\; -i\sin\frac{\theta}{2},\; -i\sin\frac{\theta}{2},\; \cos\frac{\theta}{2})$ | Rotation about $X$-axis. Mixes $|0\rangle \leftrightarrow |1\rangle$ with imaginary coupling. |
+| $R_x(\theta)$ | $(\cos\frac{\theta}{2},\; -i\sin\frac{\theta}{2},\; -i\sin\frac{\theta}{2},\; \cos\frac{\theta}{2})$ | Rotation about $X$-axis. Mixes ∣0⟩ ↔ ∣1⟩ with imaginary coupling. |
 | $R_y(\theta)$ | $(\cos\frac{\theta}{2},\; -\sin\frac{\theta}{2},\; \sin\frac{\theta}{2},\; \cos\frac{\theta}{2})$ | Rotation about $Y$-axis. Real-valued — no complex phases involved. |
 | $R_z(\theta)$ | $(e^{-i\theta/2},\; 0,\; 0,\; e^{i\theta/2})$ | Rotation about $Z$-axis. Diagonal — no mixing between $\psi_i$ and $\psi_j$; only phases change. |
-| $H$ | $\frac{1}{\sqrt{2}}(1,\; 1,\; 1,\; -1)$ | Hadamard gate. Maps $|0\rangle \to (|0\rangle + |1\rangle)/\sqrt{2}$, $|1\rangle \to (|0\rangle - |1\rangle)/\sqrt{2}$. |
+| $H$ | $\frac{1}{\sqrt{2}}(1,\; 1,\; 1,\; -1)$ | Hadamard gate. Maps ∣0⟩ → (∣0⟩ + ∣1⟩)/√2, ∣1⟩ → (∣0⟩ − ∣1⟩)/√2. |
 | $X$ | $(0,\; 1,\; 1,\; 0)$ | Pauli-$X$ (NOT gate). Swaps $\psi_i \leftrightarrow \psi_j$, i.e., flips qubit $k$. |
 
 Note that diagonal gates like $R_z$ are particularly efficient: since $u_{01} = u_{10} = 0$, each amplitude is simply multiplied by a phase factor without accessing its partner. SmoQ.jl can optimize this case to avoid unnecessary memory reads.
@@ -164,15 +164,15 @@ The key insight is that the Pauli operators $\{I, X, Y, Z\}$ — the building bl
 
 **Single-qubit $\langle Z_k \rangle$:** Since $Z|0\rangle = +|0\rangle$ and $Z|1\rangle = -|1\rangle$, the operator $Z_k$ acting on qubit $k$ is diagonal with eigenvalue $(-1)^{b_k}$:
 
-$$\langle Z_k \rangle = \sum_{i=0}^{2^N-1} (-1)^{b_k(i)} \,|\psi_i|^2$$
+$$\langle Z_k \rangle = \sum_{i=0}^{2^N-1} (-1)^{b_k(i)} \,\lvert\psi_i\rvert^2$$
 
 where $b_k(i)$ extracts bit $k$ from index $i$ via the bitwise operation `(i >> k) & 1` (right-shift by $k$ positions, then AND with 1).
 
-**In plain language:** loop over all $2^N$ amplitudes, compute $|\psi_i|^2$, and add it with a $+$ sign if qubit $k$ is in $|0\rangle$ (bit $k$ of $i$ is 0) or a $-$ sign if qubit $k$ is in $|1\rangle$ (bit $k$ of $i$ is 1). The result is just a weighted sum of probabilities — cost $O(2^N)$, no matrix needed.
+**In plain language:** loop over all $2^N$ amplitudes, compute $\lvert\psi_i\rvert^2$, and add it with a $+$ sign if qubit $k$ is in $\vert 0\rangle$ (bit $k$ of $i$ is 0) or a $-$ sign if qubit $k$ is in $\vert 1\rangle$ (bit $k$ of $i$ is 1). The result is just a weighted sum of probabilities — cost $O(2^N)$, no matrix needed.
 
 **Two-qubit $\langle Z_k Z_l \rangle$:** The tensor product $Z_k \otimes Z_l$ is also diagonal. Its eigenvalue is $(-1)^{b_k \oplus b_l}$, where $\oplus$ denotes XOR. The sign is $+1$ when both qubits have the same value (both $|0\rangle$ or both $|1\rangle$) and $-1$ when they differ:
 
-$$\langle Z_k Z_l \rangle = \sum_{i=0}^{2^N-1} (-1)^{b_k(i) \oplus b_l(i)} \,|\psi_i|^2$$
+$$\langle Z_k Z_l \rangle = \sum_{i=0}^{2^N-1} (-1)^{b_k(i) \oplus b_l(i)} \,\lvert\psi_i\rvert^2$$
 
 This generalizes naturally: for any product of $Z$ operators on qubits $\{k_1, k_2, \ldots, k_m\}$, the sign is determined by the parity (XOR) of the corresponding bits.
 
@@ -180,13 +180,13 @@ This generalizes naturally: for any product of $Z$ operators on qubits $\{k_1, k
 
 **Single-qubit $\langle X_k \rangle$:** The Pauli-$X$ operator flips bit $k$, mapping $|b_k\rangle \to |1 - b_k\rangle$. This means $\langle i | X_k | j \rangle$ is nonzero only when $j = i \oplus 2^k$ (indices differing in exactly bit $k$). The expectation value involves products of amplitudes at paired indices:
 
-$$\langle X_k \rangle = \sum_{i:\, b_k(i)=0} 2\,\text{Re}\!\left(\psi_i^*\, \psi_{i \oplus 2^k}\right)$$
+$$\langle X_k \rangle = \sum_{i: b_k(i)=0} 2 \cdot \text{Re}\!\left(\psi_i^* \psi_{i \oplus 2^k}\right)$$
 
 We restrict the sum to indices with bit $k = 0$ to count each pair once (since the pair $(i, j)$ with $j = i \oplus 2^k$ would otherwise be counted twice). The factor of 2 and $\text{Re}(\cdot)$ come from combining the two conjugate contributions: $\psi_i^* \psi_j + \psi_j^* \psi_i = 2\,\text{Re}(\psi_i^* \psi_j)$.
 
 **Single-qubit $\langle Y_k \rangle$:** The Pauli-$Y$ operator also flips bit $k$ but introduces an imaginary phase: $Y = -iXZ$, so $Y|0\rangle = i|1\rangle$ and $Y|1\rangle = -i|0\rangle$. This changes the real part to an imaginary part:
 
-$$\langle Y_k \rangle = \sum_{i:\, b_k(i)=0} 2\,\text{Im}\!\left(\psi_i^*\, \psi_{i \oplus 2^k}\right)$$
+$$\langle Y_k \rangle = \sum_{i: b_k(i)=0} 2 \cdot \text{Im}\!\left(\psi_i^* \psi_{i \oplus 2^k}\right)$$
 
 The structure is identical to $\langle X_k \rangle$ — same pairs of indices, same loop — just taking the imaginary part instead of the real part.
 
@@ -211,7 +211,7 @@ This mask determines which amplitude pairs are coupled: each index $i$ is paired
 
 **Case 1: Z-only strings** ($S_X = S_Y = \emptyset$, flip mask $m = 0$). The observable is purely diagonal:
 
-$$\langle P \rangle = \sum_{i=0}^{2^N-1} (-1)^{\bigoplus_{k \in S_Z} b_k(i)}\, |\psi_i|^2$$
+$$\langle P \rangle = \sum_{i=0}^{2^N-1} (-1)^{\bigoplus_{k \in S_Z} b_k(i)} \lvert\psi_i\rvert^2$$
 
 This is just a parity-weighted sum of probabilities over the state vector. The parity $\bigoplus_{k \in S_Z} b_k(i)$ is computed by XOR-ing the relevant bits of $i$ — a single bitwise operation. Cost: one pass over the state vector, $O(2^N)$.
 
