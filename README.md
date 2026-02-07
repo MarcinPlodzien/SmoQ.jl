@@ -90,7 +90,7 @@ Simulator for digital and analog quantum computing written in Julia with matrix-
 |----------|------------|
 | **Single-qubit gates** | Rx, Ry, Rz, H, X, Y, Z, S, T, S†, T† |
 | **Two-qubit gates** | CZ, CNOT, SWAP, Rxx, Ryy, Rzz |
-| **Observables** | Any Pauli string on given subset of qubits [i_1, i_2, ...], in particular ⟨X⟩, ⟨Y⟩, ⟨Z⟩, ⟨XX⟩, ⟨YY⟩, ⟨ZZ⟩ |
+| **Observables** | Pauli strings, in particular ⟨X⟩, ⟨Y⟩, ⟨Z⟩, ⟨XX⟩, ⟨YY⟩, ⟨ZZ⟩ |
 | **Noise channels** | Depolarizing, dephasing, amplitude damping, bit/phase flip |
 | **Measurements** | Projective (X, Y, Z basis), reset, state collapse |
 
