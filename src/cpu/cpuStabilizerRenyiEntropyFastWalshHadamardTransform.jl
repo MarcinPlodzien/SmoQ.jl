@@ -310,6 +310,7 @@ module CPUStabilizerRenyiEntropyFastWalshHadamardTransform
 
 using LinearAlgebra
 using Printf
+using Base.Threads
 
 # Note: This module is standalone and does NOT depend on cpuQuantumChannelGates.jl
 # The FWHT algorithm uses classical butterfly operations, not quantum gates.

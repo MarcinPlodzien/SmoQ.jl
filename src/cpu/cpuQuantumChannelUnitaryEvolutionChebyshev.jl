@@ -26,7 +26,6 @@ ALGORITHM
 module CPUQuantumChannelUnitaryEvolutionChebyshev
 
 using LinearAlgebra
-using SpecialFunctions: besselj
 using Base.Threads
 
 # Import HamiltonianParams from sibling module

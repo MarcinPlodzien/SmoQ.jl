@@ -96,8 +96,7 @@ module CPUQuantumStatePreparation
 
 using LinearAlgebra
 
-# Import partial trace for reset operations
-using ..CPUQuantumStatePartialTrace: partial_trace
+# Note: partial_trace will be called with qualified name to avoid circular dependencies
 
 export make_ket, make_rho
 export normalize_state!, get_norm, get_trace
@@ -1284,7 +1283,7 @@ function reset_qubit_psi(ψ::Vector{ComplexF64}, k::Int, state::Symbol, N::Int)
     
     # Trace out qubit k to get reduced density matrix of remaining qubits
     trace_qubits = [k]
-    ρ_rest = partial_trace(ψ, trace_qubits, N)
+    ρ_rest = CPUQuantumStatePartialTrace.partial_trace(ψ, trace_qubits, N)
     
     # Get eigenstate with largest eigenvalue (for mixed state) or just proceed with projection
     # For pure state after trace, we collapse to most probable outcome
@@ -1367,7 +1366,7 @@ function reset_qubit_rho(ρ::Matrix{ComplexF64}, k::Int, state::Symbol, N::Int)
     
     # Trace out qubit k
     trace_qubits = [k]
-    ρ_rest = partial_trace(ρ, trace_qubits, N)
+    ρ_rest = CPUQuantumStatePartialTrace.partial_trace(ρ, trace_qubits, N)
     
     # Fresh qubit DM
     ρ_fresh = make_rho(state)
@@ -1403,7 +1402,7 @@ function reset_qubits_psi(ψ::Vector{ComplexF64}, qubits::Vector{Int}, states::V
     if sort(qubits) == collect(1:L)
         # Trace out qubits 1:L, keep L+1:N
         trace_qubits = collect(1:L)
-        ρ_rest = partial_trace(ψ, trace_qubits, N)
+        ρ_rest = CPUQuantumStatePartialTrace.partial_trace(ψ, trace_qubits, N)
         
         # Collapse to outcome
         probs = real.(diag(ρ_rest))
@@ -1430,7 +1429,7 @@ function reset_qubits_psi(ψ::Vector{ComplexF64}, qubits::Vector{Int}, states::V
     elseif sort(qubits) == collect((N-L+1):N)
         # Trace out qubits at end
         trace_qubits = collect((N-L+1):N)
-        ρ_rest = partial_trace(ψ, trace_qubits, N)
+        ρ_rest = CPUQuantumStatePartialTrace.partial_trace(ψ, trace_qubits, N)
         
         probs = real.(diag(ρ_rest))
         probs ./= sum(probs)
@@ -1467,13 +1466,13 @@ function reset_qubits_rho(ρ::Matrix{ComplexF64}, qubits::Vector{Int}, states::V
     
     if sort(qubits) == collect(1:L)
         # Trace out qubits 1:L
-        ρ_rest = partial_trace(ρ, collect(1:L), N)
+        ρ_rest = CPUQuantumStatePartialTrace.partial_trace(ρ, collect(1:L), N)
         ρ_fresh = make_product_rho(states)
         return tensor_product_rho(ρ_fresh, ρ_rest)
         
     elseif sort(qubits) == collect((N-L+1):N)
         # Trace out qubits at end
-        ρ_rest = partial_trace(ρ, collect((N-L+1):N), N)
+        ρ_rest = CPUQuantumStatePartialTrace.partial_trace(ρ, collect((N-L+1):N), N)
         ρ_fresh = make_product_rho(states)
         return tensor_product_rho(ρ_rest, ρ_fresh)
     else

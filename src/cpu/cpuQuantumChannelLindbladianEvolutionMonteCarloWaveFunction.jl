@@ -141,6 +141,7 @@ The ensemble average of trajectories EXACTLY converges to Lindblad ρ(t).
 module CPUQuantumChannelLindbladianEvolutionMonteCarloWaveFunction
 
 using LinearAlgebra
+using Base.Threads
 
 export lindblad_mcwf_step!
 export apply_sigma_z!

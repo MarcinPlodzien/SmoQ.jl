@@ -159,6 +159,8 @@ This implementation uses:
 
 module CPUStabilizerRenyiEntropyBruteForce
 
+using Base.Threads
+
 # Primary verb-based API (recommended)
 export get_stabilizer_renyi_entropy
 

@@ -22,12 +22,12 @@ using LinearAlgebra
 using Random
 using SparseArrays
 
-# IMPORT existing coherent evolution modules (via Main since flat structure)
-using Main.CPUHamiltonianBuilder: HamiltonianParameters, construct_sparse_hamiltonian
-using Main.CPUQuantumChannelUnitaryEvolutionTrotter: FastTrotterGate, apply_fast_trotter_step_cpu!, 
+# Import from sibling modules
+using ..CPUHamiltonianBuilder: HamiltonianParams, construct_sparse_hamiltonian
+using ..CPUQuantumChannelUnitaryEvolutionTrotter: FastTrotterGate, apply_fast_trotter_step_cpu!, 
     precompute_trotter_gates_bitwise_cpu
-using Main.CPUQuantumChannelUnitaryEvolutionChebyshev: chebyshev_evolve_psi!, estimate_spectral_range_lanczos
-using Main.CPUQuantumChannelUnitaryEvolutionExact: precompute_exact_propagator_cpu, 
+using ..CPUQuantumChannelUnitaryEvolutionChebyshev: chebyshev_evolve_psi!, estimate_spectral_range_lanczos
+using ..CPUQuantumChannelUnitaryEvolutionExact: precompute_exact_propagator_cpu, evolve_exact_psi_cpu!, evolve_exact_rho_cpu! 
     evolve_exact_psi_cpu!, evolve_exact_rho_cpu!
 
 export JumpOperator, create_jump_operator
@@ -123,7 +123,7 @@ struct LindbladianEvolver
     integrator::Symbol      # :exact, :trotter, :chebyshev
     trotter_gates::Union{Vector{FastTrotterGate}, Nothing}
     exact_U::Union{Matrix{ComplexF64}, Nothing}
-    H_params::Union{HamiltonianParameters, Nothing}
+    H_params::Union{HamiltonianParams, Nothing}
     spectral_bounds::Union{Tuple{Float64, Float64}, Nothing}
     
     # Precomputed for DM evolution
@@ -142,7 +142,7 @@ Create Lindbladian evolver with jump operators.
 - `jump_ops` - Vector of JumpOperator
 - `integrator` - :exact, :trotter, or :chebyshev
 """
-function create_lindbladian_evolver(H_params::HamiltonianParameters,
+function create_lindbladian_evolver(H_params::HamiltonianParams,
                                      dt::Float64,
                                      jump_ops::Vector{JumpOperator};
                                      integrator::Symbol=:trotter)

@@ -87,15 +87,9 @@ using OrdinaryDiffEq
 using Statistics
 
 # Use modules from parent context (included by master script)
-using ..CPUHamiltonianBuilder: CouplingTerm, FieldTerm, HamiltonianParams, construct_sparse_hamiltonian
-using ..CPUQuantumStateObservables: measure_all_observables_density_matrix_cpu
-using ..CPUQRCstep: qrc_reset_rho
-using ..CPUQuantumStateCharacteristic: inverse_participation_ratio, purity, von_neumann_entropy,
-    entanglement_entropy_horizontal, entanglement_entropy_vertical,
-    negativity_horizontal, negativity_vertical
-using ..CPUQuantumChannelUnitaryEvolutionExact: precompute_exact_propagator_cpu, evolve_exact_rho_cpu!, evolve_exact_psi_cpu!
-using ..CPUQuantumChannelUnitaryEvolutionTrotter: FastTrotterGate, precompute_trotter_gates_bitwise_cpu, evolve_trotter_rho_cpu!, evolve_trotter_psi_cpu!, apply_fast_trotter_step_cpu!, apply_fast_trotter_gates_to_matrix_rows_cpu!
-using ..CPUQRCstep: encode_input_ry_psi, encode_input_ry_rho
+# Note: These will be called with qualified names to avoid circular dependencies
+import SmoQ
+# All external module functions will be called with qualified names to avoid import order issues
 
 export run_dm_simulation
 
@@ -171,7 +165,7 @@ function run_dm_simulation(rho0::Matrix{ComplexF64}, H_sparse, H_params,
         U_adj = U_exact'
     elseif integrator == :trotter_cpu
         dt = T_evol / n_substeps
-        trotter_gates = precompute_trotter_gates_bitwise_cpu(H_params, dt)
+        trotter_gates = CPUQuantumChannelUnitaryEvolutionTrotter.precompute_trotter_gates_bitwise_cpu(H_params, dt)
     end
     
     println("[DM Bitwise] Starting evolution (T=$T steps, integrator=$integrator)...")
@@ -205,13 +199,13 @@ function run_dm_simulation(rho0::Matrix{ComplexF64}, H_sparse, H_params,
 
         
         # --- B. RESET: Encode input state and tensor with traced-out reservoir ---
-        psi_in = encode_input_ry_psi(u_win)
+        psi_in = CPUQRCstep.encode_input_ry_psi(u_win)
         rho_in = psi_in * psi_in'  # |psi_in><psi_in|
         
         # Apply reset based on protocol
         if reset_type == :traceout_rail_1 || reset_type == :traceout_rail_2
             # Partial trace over input rail, tensor with fresh input
-            next_rho = qrc_reset_rho(current_rho, rho_in, L, n_rails, reset_type)
+            next_rho = CPUQRCstep.qrc_reset_rho(current_rho, rho_in, L, n_rails, reset_type)
         else
             next_rho = current_rho
         end
@@ -229,10 +223,10 @@ function run_dm_simulation(rho0::Matrix{ComplexF64}, H_sparse, H_params,
                 # Apply U to each column
                 for j in 1:dim
                     col = view(next_rho, :, j)
-                    apply_fast_trotter_step_cpu!(col, trotter_gates, N)
+                    CPUQuantumChannelUnitaryEvolutionTrotter.apply_fast_trotter_step_cpu!(col, trotter_gates, N)
                 end
                 # Apply U† to each row
-                apply_fast_trotter_gates_to_matrix_rows_cpu!(next_rho, conj_gates, N)
+                CPUQuantumChannelUnitaryEvolutionTrotter.apply_fast_trotter_gates_to_matrix_rows_cpu!(next_rho, conj_gates, N)
             end
         else
             error("Unsupported integrator: $integrator. Supported: :exact_cpu, :trotter_cpu")
@@ -241,16 +235,16 @@ function run_dm_simulation(rho0::Matrix{ComplexF64}, H_sparse, H_params,
         current_rho = next_rho
         
         # --- D. MEASUREMENT (Bitwise) ---
-        features[k, :] = measure_all_observables_density_matrix_cpu(current_rho, L, n_rails)
+        features[k, :] = CPUQuantumStateObservables.measure_all_observables_density_matrix_cpu(current_rho, L, n_rails)
         
         # --- E. DIAGNOSTICS ---
         if any_diagnostics
             # IPR and Purity are cheap - compute every step if enabled
             if calculate_IPR
-                IPR_vals[k] = inverse_participation_ratio(current_rho)
+                IPR_vals[k] = CPUQuantumStateCharacteristic.inverse_participation_ratio(current_rho)
             end
             if calculate_purity
-                purity_vals[k] = purity(current_rho)
+                purity_vals[k] = CPUQuantumStateCharacteristic.purity(current_rho)
             end
             
             # Expensive diagnostics - sample periodically
@@ -259,16 +253,16 @@ function run_dm_simulation(rho0::Matrix{ComplexF64}, H_sparse, H_params,
                 push!(diagnostic_steps, k)
                 
                 if calculate_SvN_horizontal
-                    SvN_horizontal[diag_idx] = entanglement_entropy_horizontal(current_rho, L, n_rails)
+                    SvN_horizontal[diag_idx] = CPUQuantumStateCharacteristic.entanglement_entropy_horizontal(current_rho, L, n_rails)
                 end
                 if calculate_SvN_vertical
-                    SvN_vertical[diag_idx] = entanglement_entropy_vertical(current_rho, L, n_rails)
+                    SvN_vertical[diag_idx] = CPUQuantumStateCharacteristic.entanglement_entropy_vertical(current_rho, L, n_rails)
                 end
                 if calculate_negativity_horizontal
-                    neg_horizontal[diag_idx] = negativity_horizontal(current_rho, L, n_rails)
+                    neg_horizontal[diag_idx] = CPUQuantumStateCharacteristic.negativity_horizontal(current_rho, L, n_rails)
                 end
                 if calculate_negativity_vertical
-                    neg_vertical[diag_idx] = negativity_vertical(current_rho, L, n_rails)
+                    neg_vertical[diag_idx] = CPUQuantumStateCharacteristic.negativity_vertical(current_rho, L, n_rails)
                 end
             end
         end

@@ -25,12 +25,7 @@ using ProgressMeter
 using Random
 using Base.Threads
  
-using ..CPUHamiltonianBuilder: HamiltonianParams, CouplingTerm, FieldTerm
-using ..CPUQuantumChannelUnitaryEvolutionTrotter: FastTrotterGate, apply_fast_trotter_step_cpu!, precompute_trotter_gates_bitwise_cpu
-using ..CPUQRCstep: encode_input_ry_psi, encode_input_ry_psi!
-using ..CPUQRCstep: qrc_reset_psi, qrc_reset_psi!
-using ..CPUQuantumStateObservables: _expect_X, _expect_Y, _expect_Z, _expect_XX, _expect_YY, _expect_ZZ, 
-    measure_all_observables_state_vector_cpu, measure_all_observables_state_vector_cpu!
+# All external module functions will be called with qualified names to avoid import order issues
 
 export run_mcwf_simulation, check_integrator_type
 
@@ -343,7 +338,7 @@ function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_re
             N_qubits = length(curr_psi.basis.bases)
             n_trotter_steps = max(1, floor(Int, T_evol / dt))
             for _ in 1:n_trotter_steps
-                apply_fast_trotter_step_cpu!(curr_psi.data, U_layers, N_qubits)
+                CPUQuantumChannelUnitaryEvolutionTrotter.apply_fast_trotter_step_cpu!(curr_psi.data, U_layers, N_qubits)
             end
         else
             error("Unsupported integrator: $integrator_type. Supported: :exact_cpu, :trotter_cpu")
@@ -366,9 +361,9 @@ function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_re
             
             # Local observables (X, Y, Z for each qubit)
             for q in 1:N_total
-                traj_acc[k, obs_idx] += _expect_X(ψ, q, N_total)
-                traj_acc[k, obs_idx+1] += _expect_Y(ψ, q, N_total)
-                traj_acc[k, obs_idx+2] += _expect_Z(ψ, q, N_total)
+                traj_acc[k, obs_idx] += CPUQuantumStateObservables._expect_X(ψ, q, N_total)
+                traj_acc[k, obs_idx+1] += CPUQuantumStateObservables._expect_Y(ψ, q, N_total)
+                traj_acc[k, obs_idx+2] += CPUQuantumStateObservables._expect_Z(ψ, q, N_total)
                 obs_idx += 3
             end
             
@@ -380,9 +375,9 @@ function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_re
                     for site in 1:(L_chain-1)
                         i = offset + site
                         j = offset + site + 1
-                        traj_acc[k, obs_idx] += _expect_XX(ψ, i, j, N_total)
-                        traj_acc[k, obs_idx+1] += _expect_YY(ψ, i, j, N_total)
-                        traj_acc[k, obs_idx+2] += _expect_ZZ(ψ, i, j, N_total)
+                        traj_acc[k, obs_idx] += CPUQuantumStateObservables._expect_XX(ψ, i, j, N_total)
+                        traj_acc[k, obs_idx+1] += CPUQuantumStateObservables._expect_YY(ψ, i, j, N_total)
+                        traj_acc[k, obs_idx+2] += CPUQuantumStateObservables._expect_ZZ(ψ, i, j, N_total)
                         obs_idx += 3
                     end
                 end
@@ -391,9 +386,9 @@ function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_re
                     for site in 1:L_chain
                         i = (rail - 1) * L_chain + site
                         j = rail * L_chain + site
-                        traj_acc[k, obs_idx] += _expect_XX(ψ, i, j, N_total)
-                        traj_acc[k, obs_idx+1] += _expect_YY(ψ, i, j, N_total)
-                        traj_acc[k, obs_idx+2] += _expect_ZZ(ψ, i, j, N_total)
+                        traj_acc[k, obs_idx] += CPUQuantumStateObservables._expect_XX(ψ, i, j, N_total)
+                        traj_acc[k, obs_idx+1] += CPUQuantumStateObservables._expect_YY(ψ, i, j, N_total)
+                        traj_acc[k, obs_idx+2] += CPUQuantumStateObservables._expect_ZZ(ψ, i, j, N_total)
                         obs_idx += 3
                     end
                 end
@@ -483,12 +478,12 @@ function _run_traj_loop_bitwise!(traj_acc::Matrix{Float64}, curr_psi::Vector{Com
         end
 
         # Encode in-place into psi_in buffer
-        encode_input_ry_psi!(psi_in, u_win, L)
+        CPUQRCstep.encode_input_ry_psi!(psi_in, u_win, L)
         
         # =====================================================================
         # STEP B: RESET (Projective Measurement) - IN-PLACE
         # =====================================================================
-        qrc_reset_psi!(next_psi, curr_psi, psi_in, phi_res_buf, L, L, reset_type)
+        CPUQRCstep.qrc_reset_psi!(next_psi, curr_psi, psi_in, phi_res_buf, L, L, reset_type)
         
         # =====================================================================
         # STEP C: TIME EVOLUTION
@@ -496,7 +491,7 @@ function _run_traj_loop_bitwise!(traj_acc::Matrix{Float64}, curr_psi::Vector{Com
         if integrator_type == :trotter_cpu
             # Trotter decomposition - already in-place
             for _ in 1:n_substeps
-                apply_fast_trotter_step_cpu!(next_psi, gates, N)
+                CPUQuantumChannelUnitaryEvolutionTrotter.apply_fast_trotter_step_cpu!(next_psi, gates, N)
             end
             
         elseif integrator_type == :exact_cpu || integrator_type == :exact_precomp_cpu
@@ -513,7 +508,7 @@ function _run_traj_loop_bitwise!(traj_acc::Matrix{Float64}, curr_psi::Vector{Com
         # =====================================================================
         # STEP D: OBSERVABLE MEASUREMENT (IN-PLACE)
         # =====================================================================
-        measure_all_observables_state_vector_cpu!(obs_buf, curr_psi, L, n_rails)
+        CPUQuantumStateObservables.measure_all_observables_state_vector_cpu!(obs_buf, curr_psi, L, n_rails)
         @inbounds traj_acc[k, :] .= obs_buf
     end
 end

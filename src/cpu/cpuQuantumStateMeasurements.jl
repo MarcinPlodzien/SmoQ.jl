@@ -180,7 +180,7 @@ module CPUQuantumStateMeasurements
 
 using LinearAlgebra
 
-# Import gates from the gates module (avoid duplication)
+# Import gates from the gates module (avoid duplication)  
 using ..CPUQuantumChannelGates: apply_hadamard_psi!, apply_s_psi!, apply_sdagger_psi!
 
 # Main unified interface
