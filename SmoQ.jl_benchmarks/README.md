@@ -164,7 +164,7 @@ The key insight is that the Pauli operators $\{I, X, Y, Z\}$ — the building bl
 
 **Single-qubit $\langle Z_k \rangle$:** Since $Z|0\rangle = +|0\rangle$ and $Z|1\rangle = -|1\rangle$, the operator $Z_k$ acting on qubit $k$ is diagonal with eigenvalue $(-1)^{b_k}$:
 
-$$\langle Z_k \rangle = \sum_{i=0}^{2^N-1} (-1)^{b_k(i)} \,\lvert\psi_i\rvert^2$$
+$$\langle Z_k \rangle = \sum_{i=0}^{2^N-1} (-1)^{b_k(i)} \lvert\psi_i\rvert^2$$
 
 where $b_k(i)$ extracts bit $k$ from index $i$ via the bitwise operation `(i >> k) & 1` (right-shift by $k$ positions, then AND with 1).
 
@@ -172,7 +172,7 @@ where $b_k(i)$ extracts bit $k$ from index $i$ via the bitwise operation `(i >> 
 
 **Two-qubit $\langle Z_k Z_l \rangle$:** The tensor product $Z_k \otimes Z_l$ is also diagonal. Its eigenvalue is $(-1)^{b_k \oplus b_l}$, where $\oplus$ denotes XOR. The sign is $+1$ when both qubits have the same value (both $|0\rangle$ or both $|1\rangle$) and $-1$ when they differ:
 
-$$\langle Z_k Z_l \rangle = \sum_{i=0}^{2^N-1} (-1)^{b_k(i) \oplus b_l(i)} \,\lvert\psi_i\rvert^2$$
+$$\langle Z_k Z_l \rangle = \sum_{i=0}^{2^N-1} (-1)^{b_k(i) \oplus b_l(i)} \lvert\psi_i\rvert^2$$
 
 This generalizes naturally: for any product of $Z$ operators on qubits $\{k_1, k_2, \ldots, k_m\}$, the sign is determined by the parity (XOR) of the corresponding bits.
 
@@ -180,13 +180,13 @@ This generalizes naturally: for any product of $Z$ operators on qubits $\{k_1, k
 
 **Single-qubit $\langle X_k \rangle$:** The Pauli-$X$ operator flips bit $k$, mapping $|b_k\rangle \to |1 - b_k\rangle$. This means $\langle i | X_k | j \rangle$ is nonzero only when $j = i \oplus 2^k$ (indices differing in exactly bit $k$). The expectation value involves products of amplitudes at paired indices:
 
-$$\langle X_k \rangle = \sum_{i: b_k(i)=0} 2 \cdot \text{Re}\!\left(\psi_i^* \psi_{i \oplus 2^k}\right)$$
+$$\langle X_k \rangle = \sum_{i: b_k(i)=0} 2 \cdot \text{Re}\left(\psi_i^* \psi_{i \oplus 2^k}\right)$$
 
 We restrict the sum to indices with bit $k = 0$ to count each pair once (since the pair $(i, j)$ with $j = i \oplus 2^k$ would otherwise be counted twice). The factor of 2 and $\text{Re}(\cdot)$ come from combining the two conjugate contributions: $\psi_i^* \psi_j + \psi_j^* \psi_i = 2\,\text{Re}(\psi_i^* \psi_j)$.
 
 **Single-qubit $\langle Y_k \rangle$:** The Pauli-$Y$ operator also flips bit $k$ but introduces an imaginary phase: $Y = -iXZ$, so $Y|0\rangle = i|1\rangle$ and $Y|1\rangle = -i|0\rangle$. This changes the real part to an imaginary part:
 
-$$\langle Y_k \rangle = \sum_{i: b_k(i)=0} 2 \cdot \text{Im}\!\left(\psi_i^* \psi_{i \oplus 2^k}\right)$$
+$$\langle Y_k \rangle = \sum_{i: b_k(i)=0} 2 \cdot \text{Im}\left(\psi_i^* \psi_{i \oplus 2^k}\right)$$
 
 The structure is identical to $\langle X_k \rangle$ — same pairs of indices, same loop — just taking the imaginary part instead of the real part.
 
