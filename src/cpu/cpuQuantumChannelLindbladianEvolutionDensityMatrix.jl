@@ -3,15 +3,15 @@
 #=
 ================================================================================
     cpuQuantumChannelLindbladianEvolutionExact.jl
-    
+
     EXACT Lindbladian evolution using DENSITY MATRIX formalism.
-    
+
     dρ/dt = -i[H,ρ] + γ Σᵢ D[σ_zᵢ]ρ
-    
+
     where D[L]ρ = L ρ L† - ½{L†L, ρ} is the Lindblad dissipator.
-    
+
     JUMP OPERATOR: Lₖ = σ_zₖ (pure dephasing)
-    
+
     This module implements:
     1. Density matrix evolution with exact unitary propagator U = exp(-iHdt)
     2. Bitwise σ_z dissipator for pure dephasing on each qubit
@@ -54,11 +54,11 @@ function apply_sigma_z_dissipator!(ρ::Matrix{ComplexF64}, k::Int, γdt::Float64
     dim = 1 << N
     mask = 1 << (k - 1)
     decay_factor = 1 - 2γdt  # Dephasing decay
-    
+
     @inbounds for j in 0:(dim-1), i in 0:(dim-1)
         bi = (i >> (k-1)) & 1  # Extract bit k from row index
         bj = (j >> (k-1)) & 1  # Extract bit k from column index
-        
+
         if bi != bj
             # Off-diagonal coherence: pure dephasing
             ρ[i+1, j+1] *= decay_factor
@@ -105,12 +105,12 @@ This is a first-order Euler step:
 function lindblad_dm_step!(ρ::Matrix{ComplexF64}, U::Matrix{ComplexF64}, N::Int, γ::Float64, dt::Float64)
     # Step 1: Coherent evolution ρ → U ρ U†
     ρ .= U * ρ * U'
-    
+
     # Step 2: Apply σ_z dissipator on each qubit (pure dephasing)
     @inbounds for k in 1:N
         apply_sigma_z_dissipator!(ρ, k, γ * dt, N)
     end
-    
+
     return ρ
 end
 
@@ -123,27 +123,25 @@ ALGORITHM:
 ----------
 1. Coherent evolution: ρ → U_trotter ρ U_trotter† (via column/row gate application)
 2. Dissipator for each qubit: ρ → ρ + γ×dt × D[σ⁻ₖ]ρ
-
-Requires: evolve_trotter_rho_cpu! from CPUQuantumChannelUnitaryEvolutionTrotter
 """
 function lindblad_dm_step_trotter!(ρ::Matrix{ComplexF64}, gates, N::Int, γ::Float64, dt::Float64)
     # Step 1: Apply Trotter gates to density matrix
     # ρ → U_trotter ρ U_trotter†
     # This requires applying gates to columns (left multiply) and rows (right multiply by U†)
     dim = size(ρ, 1)
-    
+
     # Apply U to each column: ρ → U ρ
     for gate in gates
         U = gate.U
         indices = gate.indices
         nq = length(indices)
-        
+
         if nq == 1
             qubit = indices[1]
             step = 1 << (qubit - 1)
             u00, u01 = U[1,1], U[1,2]
             u10, u11 = U[2,1], U[2,2]
-            
+
             for col in 1:dim
                 for base_idx in 0:(dim-1)
                     if (base_idx & step) == 0
@@ -162,7 +160,7 @@ function lindblad_dm_step_trotter!(ρ::Matrix{ComplexF64}, gates, N::Int, γ::Fl
             end
             step1 = 1 << (q1 - 1)
             step2 = 1 << (q2 - 1)
-            
+
             for col in 1:dim
                 for base_idx in 0:(dim-1)
                     if (base_idx & step1) == 0 && (base_idx & step2) == 0
@@ -170,9 +168,9 @@ function lindblad_dm_step_trotter!(ρ::Matrix{ComplexF64}, gates, N::Int, γ::Fl
                         idx01 = base_idx + step1 + 1
                         idx10 = base_idx + step2 + 1
                         idx11 = base_idx + step1 + step2 + 1
-                        
+
                         a00, a01, a10, a11 = ρ[idx00, col], ρ[idx01, col], ρ[idx10, col], ρ[idx11, col]
-                        
+
                         ρ[idx00, col] = U[1,1]*a00 + U[1,2]*a01 + U[1,3]*a10 + U[1,4]*a11
                         ρ[idx01, col] = U[2,1]*a00 + U[2,2]*a01 + U[2,3]*a10 + U[2,4]*a11
                         ρ[idx10, col] = U[3,1]*a00 + U[3,2]*a01 + U[3,3]*a10 + U[3,4]*a11
@@ -182,19 +180,19 @@ function lindblad_dm_step_trotter!(ρ::Matrix{ComplexF64}, gates, N::Int, γ::Fl
             end
         end
     end
-    
+
     # Apply U† to each row: ρ → ρ U†
     for gate in gates
         U = conj.(gate.U)  # U† has conjugated elements
         indices = gate.indices
         nq = length(indices)
-        
+
         if nq == 1
             qubit = indices[1]
             step = 1 << (qubit - 1)
             u00, u01 = U[1,1], U[1,2]
             u10, u11 = U[2,1], U[2,2]
-            
+
             for row in 1:dim
                 for base_idx in 0:(dim-1)
                     if (base_idx & step) == 0
@@ -213,7 +211,7 @@ function lindblad_dm_step_trotter!(ρ::Matrix{ComplexF64}, gates, N::Int, γ::Fl
             end
             step1 = 1 << (q1 - 1)
             step2 = 1 << (q2 - 1)
-            
+
             for row in 1:dim
                 for base_idx in 0:(dim-1)
                     if (base_idx & step1) == 0 && (base_idx & step2) == 0
@@ -221,9 +219,9 @@ function lindblad_dm_step_trotter!(ρ::Matrix{ComplexF64}, gates, N::Int, γ::Fl
                         idx01 = base_idx + step1 + 1
                         idx10 = base_idx + step2 + 1
                         idx11 = base_idx + step1 + step2 + 1
-                        
+
                         a00, a01, a10, a11 = ρ[row, idx00], ρ[row, idx01], ρ[row, idx10], ρ[row, idx11]
-                        
+
                         ρ[row, idx00] = U[1,1]*a00 + U[1,2]*a01 + U[1,3]*a10 + U[1,4]*a11
                         ρ[row, idx01] = U[2,1]*a00 + U[2,2]*a01 + U[2,3]*a10 + U[2,4]*a11
                         ρ[row, idx10] = U[3,1]*a00 + U[3,2]*a01 + U[3,3]*a10 + U[3,4]*a11
@@ -233,12 +231,12 @@ function lindblad_dm_step_trotter!(ρ::Matrix{ComplexF64}, gates, N::Int, γ::Fl
             end
         end
     end
-    
+
     # Step 2: Apply σ_z dissipator on each qubit (pure dephasing)
     @inbounds for k in 1:N
         apply_sigma_z_dissipator!(ρ, k, γ * dt, N)
     end
-    
+
     return ρ
 end
 

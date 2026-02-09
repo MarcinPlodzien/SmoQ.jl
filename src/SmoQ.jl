@@ -39,7 +39,6 @@ include("cpu/cpuQuantumChannelLindbladianEvolution.jl")
 # ├── CPUQuantumChannelUnitaryEvolutionChebyshev
 # └── CPUQuantumChannelUnitaryEvolutionExact
 include("cpu/cpuQuantumChannelLindbladianEvolutionDensityMatrix.jl")
-# └── CPUQuantumChannelUnitaryEvolutionTrotter
 
 ## Quantum states
 
