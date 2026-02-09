@@ -21,48 +21,96 @@ using Statistics
 using Zygote
 
 # Include all CPU submodules
-include("cpu/cpuClassicalShadows.jl")
-include("cpu/cpuQuantumStatePreparation.jl")
-include("cpu/cpuQuantumStatePartialTrace.jl")
-include("cpu/cpuQuantumChannelGates.jl")
+
+## Quantum channels
+
 include("cpu/cpuHamiltonianBuilder.jl")
-include("cpu/cpuQuantumChannelUnitaryEvolutionTrotter.jl")
-include("cpu/cpuQuantumChannelUnitaryEvolutionChebyshev.jl")
-include("cpu/cpuQuantumChannelUnitaryEvolutionExact.jl")
-include("cpu/cpuQRCSimulationDensityMatrix.jl")
-include("cpu/cpuQRCSimulationMonteCarloWaveFunction.jl")
-include("cpu/cpuQRCstep.jl")
+include("cpu/cpuQuantumChannelGates.jl")
 include("cpu/cpuQuantumChannelKrausOperators.jl")
-include("cpu/cpuQuantumChannelLindbladianEvolution.jl")
-include("cpu/cpuQuantumChannelLindbladianEvolutionDensityMatrix.jl")
 include("cpu/cpuQuantumChannelLindbladianEvolutionMonteCarloWaveFunction.jl")
 include("cpu/cpuQuantumChannelRandomUnitaries.jl")
-include("cpu/cpuQuantumFisherInformation.jl")
-include("cpu/cpuQuantumStateCharacteristic.jl")
-include("cpu/cpuQuantumStateLanczos.jl")
-include("cpu/cpuQuantumStateManyBodyBellCorrelator.jl")
+include("cpu/cpuQuantumChannelUnitaryEvolutionExact.jl")
+include("cpu/cpuQuantumChannelUnitaryEvolutionTrotter.jl")
+include("cpu/cpuQuantumChannelUnitaryEvolutionChebyshev.jl")
+# └── CPUHamiltonianBuilder
+include("cpu/cpuQuantumChannelLindbladianEvolution.jl")
+# ├── CPUHamiltonianBuilder
+# ├── CPUQuantumChannelUnitaryEvolutionTrotter
+# ├── CPUQuantumChannelUnitaryEvolutionChebyshev
+# └── CPUQuantumChannelUnitaryEvolutionExact
+include("cpu/cpuQuantumChannelLindbladianEvolutionDensityMatrix.jl")
+# └── CPUQuantumChannelUnitaryEvolutionTrotter
+
+## Quantum states
+
 include("cpu/cpuQuantumStateMeasurements.jl")
-include("cpu/cpuQuantumStateObservables.jl")
 include("cpu/cpuQuantumStatePrintingHelpers.jl")
+include("cpu/cpuQuantumStateCharacteristic.jl")
 include("cpu/cpuQuantumStateTomography.jl")
+# └── CPUQuantumStateCharacteristic
+include("cpu/cpuQuantumStateLanczos.jl")
+include("cpu/cpuQuantumStatePartialTrace.jl")
+include("cpu/cpuQuantumStatePreparation.jl")
+# └── CPUQuantumStatePartialTrace
+include("cpu/cpuQuantumStateObservables.jl")
+# ├── CPUQuantumStatePreparation
+# └── CPUQuantumStatePartialTrace
+include("cpu/cpuQuantumFisherInformation.jl")
+# ├── CPUQuantumChannelGates
+# └── CPUQuantumStatePartialTrace
+include("cpu/cpuQuantumStateManyBodyBellCorrelator.jl")
+# └── CPUQuantumChannelGates
+include("cpu/cpuClassicalShadows.jl")
+# ├── CPUQuantumStateMeasurements
+# └── CPUQuantumChannelGates
+
+## Stabilizer Rényi entropy
+
 include("cpu/cpuStabilizerRenyiEntropyBruteForce.jl")
 include("cpu/cpuStabilizerRenyiEntropyFastWalshHadamardTransform.jl")
-include("cpu/cpuVQCEnzymeWrapper.jl")
-include("cpu/cpuVariationalQuantumCircuitBuilder.jl")
-include("cpu/cpuVariationalQuantumCircuitCostFunctions.jl")
-include("cpu/cpuVariationalQuantumCircuitExecutor.jl")
-include("cpu/cpuVariationalQuantumCircuitGradients.jl")
+
+## QRC Simulation
+
+include("cpu/cpuQRCstep.jl")
+# ├── CPUQuantumStatePreparation
+# ├── CPUQuantumChannelGates
+# └── CPUQuantumStatePartialTrace
+include("cpu/cpuQRCSimulationMonteCarloWaveFunction.jl")
+# ├── CPUQuantumChannelUnitaryEvolutionTrotter
+# ├── CPUQuantumStateObservables
+# └── CPUQRCstep
+include("cpu/cpuQRCSimulationDensityMatrix.jl")
+# ├── CPUQuantumStateObservables
+# ├── CPUQuantumStateCharacteristic
+# ├── CPUQuantumChannelUnitaryEvolutionTrotter
+# └── CPUQRCstep
+
+## Variational quantum circuits
+
 include("cpu/cpuVariationalQuantumCircuitOptimizers.jl")
+include("cpu/cpuVariationalQuantumCircuitGradients.jl")
+include("cpu/cpuVariationalQuantumCircuitCostFunctions.jl")
+include("cpu/cpuVariationalQuantumCircuitBuilder.jl")
+# └── CPUQuantumChannelGates
+include("cpu/cpuVQCEnzymeWrapper.jl")
+# └── CPUQuantumChannelGates
+include("cpu/cpuVariationalQuantumCircuitExecutor.jl")
+# ├── CPUVariationalQuantumCircuitBuilder
+# ├── CPUQuantumChannelGates
+# ├── CPUQuantumStateMeasurements
+# ├── CPUQuantumStatePartialTrace
+# └── CPUQuantumChannelKraus
 
 # Re-export commonly used functions for external access
 using .CPUQuantumStatePreparation
-using .CPUQuantumStatePartialTrace  
+using .CPUQuantumStatePartialTrace
 using .CPUQuantumChannelGates
 using .CPUHamiltonianBuilder
 
 # Helper utilities
+include("helpers/TaskEvaluationHelper.jl")
 include("helpers/DataManagementHelper.jl")
 include("helpers/PlottingHelper.jl")
-include("helpers/TaskEvaluationHelper.jl")
+# └── DataManagementHelper
 
 end
