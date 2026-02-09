@@ -38,17 +38,17 @@ Tensor Products:
 Qubit Reset:
   Traces out specified qubit(s), then tensors fresh state back in.
   Result: Tr_{qubits}(state) (x) |fresh><fresh|
-  
+
   UNIFIED API:
   reset(psi, qubits, states, N)     Works for Vector (pure) or Matrix (rho)
   reset(rho, qubits, states, N)     qubits: Int or Vector, states: Symbol or Vector
-  
+
   EXAMPLES:
   reset(psi, 2, :zero, 4)           Reset qubit 2 of 4-qubit psi to |0>
   reset(rho, 3, :plus, 4)           Reset qubit 3 of 4-qubit rho to |+><+|
   reset(psi, [1,2], [:zero,:one], 4)  Reset qubits 1,2 to |0>,|1>
   reset(psi, 1:L, input_states, N)    QRC: reset input rail each timestep
-  
+
   LEGACY (still available):
   reset_qubit_psi, reset_qubit_rho, reset_qubits_psi, reset_qubits_rho
 
@@ -56,25 +56,25 @@ Entangled States (with local basis support):
   All entangled states support local basis specification:
   - Single char ("z", "x", "y"): uniform basis for all qubits
   - Per-qubit string ("xyzzx"): different basis per qubit
-  
+
   Basis meanings:
     'z' - computational: |0_z>=|0>, |1_z>=|1>
     'x' - X eigenbasis:  |0_x>=|+>, |1_x>=|->
     'y' - Y eigenbasis:  |0_y>=|+i>, |1_y>=|-i>  where |+i>=(|0>+i|1>)/sqrt(2)
-  
+
   make_ghz(N, basis="z")
       GHZ = (|0_B...0_B> + |1_B...1_B>) / sqrt(2)
       Examples:
         make_ghz(4)          # (|0000> + |1111>) / sqrt(2)
         make_ghz(4, "x")     # (|++++> + |---->) / sqrt(2)
         make_ghz(5, "xyzzx") # Per-qubit basis GHZ
-        
+
   make_w(N, basis="z")
       W = sum_k |0_B...1_B...0_B> / sqrt(N)  (one excitation)
       Examples:
         make_w(3)        # (|100> + |010> + |001>) / sqrt(3)
         make_w(3, "x")   # (|--+> + |-+-> + |+-->) / sqrt(3)
-        
+
   make_bell(type, basis="z")
       type: :phi_plus, :phi_minus, :psi_plus, :psi_minus
       Examples:
@@ -96,6 +96,7 @@ module CPUQuantumStatePreparation
 
 using LinearAlgebra
 
+using ..CPUQuantumStatePartialTrace
 # Note: partial_trace will be called with qualified name to avoid circular dependencies
 
 export make_ket, make_rho
@@ -207,7 +208,7 @@ normalize_state!(psi_bell)
 function make_ket(state_str::String, N::Union{Int, Nothing}=nothing)
     # Clean up the state string - remove Dirac notation brackets
     state_clean = replace(strip(state_str), "|" => "", ">" => "", "⟩" => "")
-    
+
     # Check if this is a uniform state (single character) or per-qubit specification
     if length(state_clean) == 1
         # Uniform state: all qubits in same state
@@ -216,21 +217,21 @@ function make_ket(state_str::String, N::Union{Int, Nothing}=nothing)
             error("For single-character states like \"|0>\", N must be provided. Use make_ket(\"|0>\", N)")
         end
         @assert N >= 1 "Need at least 1 qubit"
-        
+
         state_sym = _char_to_state_symbol(state_clean[1])
         return make_product_ket(fill(state_sym, N))
     else
         # Per-qubit specification: each character is a qubit state
         n_qubits = length(state_clean)
-        
+
         # If N provided, validate it matches string length
         if N !== nothing && N != n_qubits
             error("State string \"$state_str\" has $(n_qubits) qubits but N=$N was specified")
         end
-        
+
         # Parse each character to a state symbol
         state_syms = [_char_to_state_symbol(c) for c in state_clean]
-        
+
         return make_product_ket(state_syms)
     end
 end
@@ -273,7 +274,7 @@ Supports both uniform states and per-qubit specification (same as make_ket).
 make_rho("|0>", 3)        # |000⟩⟨000|
 make_rho("|+>", 2)        # |++⟩⟨++|
 
-# Per-qubit specification  
+# Per-qubit specification
 make_rho("|0+0-1+>")      # 6-qubit product state density matrix
 make_rho("|01>")          # |01⟩⟨01|
 ```
@@ -528,7 +529,7 @@ Uses direct bitwise matrix-free construction: O(2^N) single pass.
 """
 function make_ghz(N::Int, basis::String="z")
     @assert N >= 2 "GHZ state requires at least 2 qubits"
-    
+
     # Parse basis specification
     if length(basis) == 1
         # Uniform basis for all qubits
@@ -539,14 +540,14 @@ function make_ghz(N::Int, basis::String="z")
     else
         error("Basis string must be length 1 (uniform) or length N=$N (per-qubit)")
     end
-    
+
     # Precompute single-qubit states for each axis
     # For qubit k: |0_Bk> = [a0_k, a1_k], |1_Bk> = [b0_k, b1_k]
     a0 = Vector{ComplexF64}(undef, N)  # |0_Bk>[0] - amplitude when local bit=0
     a1 = Vector{ComplexF64}(undef, N)  # |0_Bk>[1] - amplitude when local bit=1
     b0 = Vector{ComplexF64}(undef, N)  # |1_Bk>[0]
     b1 = Vector{ComplexF64}(undef, N)  # |1_Bk>[1]
-    
+
     for k in 1:N
         zero_k, one_k = _basis_eigenstates(axes[k])
         a0[k] = zero_k[1]
@@ -554,7 +555,7 @@ function make_ghz(N::Int, basis::String="z")
         b0[k] = one_k[1]
         b1[k] = one_k[2]
     end
-    
+
     # GHZ = (|0_B1 0_B2 ... 0_BN> + |1_B1 1_B2 ... 1_BN>) / sqrt(2)
     #
     # For each computational basis index i, the amplitude is:
@@ -563,16 +564,16 @@ function make_ghz(N::Int, basis::String="z")
     # where bit_k is the k-th bit of i (0 or 1), and:
     #   a_{0}[k] = a0[k], a_{1}[k] = a1[k]  (from |0_Bk>)
     #   b_{0}[k] = b0[k], b_{1}[k] = b1[k]  (from |1_Bk>)
-    
+
     dim = 1 << N
     ghz = Vector{ComplexF64}(undef, dim)
     inv_sqrt2 = 1 / sqrt(2)
-    
+
     @inbounds for i in 0:(dim-1)
         # Compute product for |all_zeros> term
         prod_zero = one(ComplexF64)
         prod_one = one(ComplexF64)
-        
+
         for k in 0:(N-1)
             bit_k = (i >> k) & 1
             if bit_k == 0
@@ -583,10 +584,10 @@ function make_ghz(N::Int, basis::String="z")
                 prod_one *= b1[k+1]
             end
         end
-        
+
         ghz[i+1] = inv_sqrt2 * (prod_zero + prod_one)
     end
-    
+
     return ghz
 end
 
@@ -628,7 +629,7 @@ Uses direct bitwise matrix-free construction: O(N * 2^N) single pass.
 """
 function make_w(N::Int, basis::String="z")
     @assert N >= 2 "W state requires at least 2 qubits"
-    
+
     # Parse basis specification
     if length(basis) == 1
         axes = fill(basis[1], N)
@@ -637,13 +638,13 @@ function make_w(N::Int, basis::String="z")
     else
         error("Basis string must be length 1 (uniform) or length N=$N (per-qubit)")
     end
-    
+
     # Precompute single-qubit states
     a0 = Vector{ComplexF64}(undef, N)  # |0_Bk>[0]
     a1 = Vector{ComplexF64}(undef, N)  # |0_Bk>[1]
     b0 = Vector{ComplexF64}(undef, N)  # |1_Bk>[0]
     b1 = Vector{ComplexF64}(undef, N)  # |1_Bk>[1]
-    
+
     for k in 1:N
         zero_k, one_k = _basis_eigenstates(axes[k])
         a0[k] = zero_k[1]
@@ -651,14 +652,14 @@ function make_w(N::Int, basis::String="z")
         b0[k] = one_k[1]
         b1[k] = one_k[2]
     end
-    
+
     # W = sum_k |0_B1 ... 1_Bk ... 0_BN> / sqrt(N)
     # For each computational index i, sum contributions from all N terms
-    
+
     dim = 1 << N
     w = zeros(ComplexF64, dim)
     inv_sqrtN = 1 / sqrt(N)
-    
+
     # For each term k (where qubit k has the excitation)
     @inbounds for excite_qubit in 0:(N-1)
         # For each computational basis index i
@@ -666,7 +667,7 @@ function make_w(N::Int, basis::String="z")
             # Compute amplitude: product of appropriate local states
             # Qubit excite_qubit uses |1_B>, all others use |0_B>
             amp = one(ComplexF64)
-            
+
             for k in 0:(N-1)
                 bit_k = (i >> k) & 1
                 if k == excite_qubit
@@ -677,11 +678,11 @@ function make_w(N::Int, basis::String="z")
                     amp *= (bit_k == 0) ? a0[k+1] : a1[k+1]
                 end
             end
-            
+
             w[i+1] += inv_sqrtN * amp
         end
     end
-    
+
     return w
 end
 
@@ -727,13 +728,13 @@ function make_bell(type::Symbol, basis::String="z")
     else
         error("Basis string must be length 1 (uniform) or length 2 (per-qubit)")
     end
-    
+
     # Get local basis states
     a0 = Vector{ComplexF64}(undef, 2)
     a1 = Vector{ComplexF64}(undef, 2)
     b0 = Vector{ComplexF64}(undef, 2)
     b1 = Vector{ComplexF64}(undef, 2)
-    
+
     for k in 1:2
         zero_k, one_k = _basis_eigenstates(axes[k])
         a0[k] = zero_k[1]
@@ -741,11 +742,11 @@ function make_bell(type::Symbol, basis::String="z")
         b0[k] = one_k[1]
         b1[k] = one_k[2]
     end
-    
+
     # Determine which pairs to combine and with what sign
     # Phi states: (|0_B0_B> +/- |1_B1_B>)
     # Psi states: (|0_B1_B> +/- |1_B0_B>)
-    
+
     if type == :phi_plus
         first_pair = (:zero, :zero)   # Both in |0_B>
         second_pair = (:one, :one)    # Both in |1_B>
@@ -765,36 +766,36 @@ function make_bell(type::Symbol, basis::String="z")
     else
         error("Unknown Bell state type: $type. Use :phi_plus, :phi_minus, :psi_plus, or :psi_minus")
     end
-    
+
     # Build state using bitwise indexing
     bell = zeros(ComplexF64, 4)
     inv_sqrt2 = 1 / sqrt(2)
-    
+
     @inbounds for i in 0:3
         bit_0 = i & 1
         bit_1 = (i >> 1) & 1
-        
+
         # First term amplitude
         amp1 = one(ComplexF64)
-        amp1 *= (first_pair[1] == :zero) ? 
-                ((bit_0 == 0) ? a0[1] : a1[1]) : 
+        amp1 *= (first_pair[1] == :zero) ?
+                ((bit_0 == 0) ? a0[1] : a1[1]) :
                 ((bit_0 == 0) ? b0[1] : b1[1])
-        amp1 *= (first_pair[2] == :zero) ? 
-                ((bit_1 == 0) ? a0[2] : a1[2]) : 
+        amp1 *= (first_pair[2] == :zero) ?
+                ((bit_1 == 0) ? a0[2] : a1[2]) :
                 ((bit_1 == 0) ? b0[2] : b1[2])
-        
+
         # Second term amplitude
         amp2 = one(ComplexF64)
-        amp2 *= (second_pair[1] == :zero) ? 
-                ((bit_0 == 0) ? a0[1] : a1[1]) : 
+        amp2 *= (second_pair[1] == :zero) ?
+                ((bit_0 == 0) ? a0[1] : a1[1]) :
                 ((bit_0 == 0) ? b0[1] : b1[1])
-        amp2 *= (second_pair[2] == :zero) ? 
-                ((bit_1 == 0) ? a0[2] : a1[2]) : 
+        amp2 *= (second_pair[2] == :zero) ?
+                ((bit_1 == 0) ? a0[2] : a1[2]) :
                 ((bit_1 == 0) ? b0[2] : b1[2])
-        
+
         bell[i+1] = inv_sqrt2 * (amp1 + sign * amp2)
     end
-    
+
     return bell
 end
 
@@ -857,15 +858,15 @@ See also: [`tensor_product_ket`](@ref), [`tensor_product_rho`](@ref)
 function tensor(psi_A::Vector{ComplexF64}, psi_B::Vector{ComplexF64})
     dim_A = length(psi_A)
     dim_B = length(psi_B)
-    
+
     # Infer qubit counts from dimensions (dim = 2^N)
     N_A = Int(log2(dim_A))
     N_B = Int(log2(dim_B))
-    
+
     # Validate dimensions are powers of 2
     @assert (1 << N_A) == dim_A "psi_A dimension must be power of 2"
     @assert (1 << N_B) == dim_B "psi_B dimension must be power of 2"
-    
+
     return tensor_product_ket(psi_A, psi_B, N_A, N_B)
 end
 
@@ -965,10 +966,10 @@ See also: [`tensor`](@ref), [`tensor_product_ket`](@ref), [`tensor_product_rho`]
 """
 function tensor_product(states::Vector)
     @assert length(states) >= 1 "Need at least one state"
-    
+
     # Check if any state is a density matrix
     has_density_matrix = any(s -> s isa Matrix, states)
-    
+
     if has_density_matrix
         # Convert all pure states to density matrices, then tensor
         return _tensor_product_as_rho(states)
@@ -985,11 +986,11 @@ Internal: Tensor product of pure states only. Uses left-fold reduction.
 """
 function _tensor_product_as_psi(states::Vector)
     result = states[1]::Vector{ComplexF64}
-    
+
     for i in 2:length(states)
         result = tensor(result, states[i]::Vector{ComplexF64})
     end
-    
+
     return result
 end
 
@@ -1002,12 +1003,12 @@ Pure states are converted to |psi><psi| before tensoring.
 function _tensor_product_as_rho(states::Vector)
     # Convert first state to density matrix if needed
     result = _to_rho(states[1])
-    
+
     for i in 2:length(states)
         rho_i = _to_rho(states[i])
         result = tensor(result, rho_i)
     end
-    
+
     return result
 end
 
@@ -1088,9 +1089,9 @@ rho_full = Matrix(rho_mixed)
 """
 function make_maximally_mixed(N::Int)
     @assert N >= 1 "Need at least 1 qubit"
-    
+
     dim = 1 << N  # 2^N
-    
+
     # Return Diagonal matrix for O(2^N) memory efficiency
     # Each diagonal element is 1/dim for Tr(rho) = 1
     return Diagonal(fill(ComplexF64(1.0 / dim), dim))
@@ -1108,16 +1109,16 @@ function tensor_product_ket(ψ_A::Vector{ComplexF64}, ψ_B::Vector{ComplexF64}, 
     dim_A = 1 << N_A
     dim_B = 1 << N_B
     dim_total = dim_A * dim_B
-    
+
     ψ_total = zeros(ComplexF64, dim_total)
-    
+
     @inbounds for i_A in 0:(dim_A-1)
         for i_B in 0:(dim_B-1)
             i_total = i_A + (i_B << N_A)
             ψ_total[i_total+1] = ψ_A[i_A+1] * ψ_B[i_B+1]
         end
     end
-    
+
     return ψ_total
 end
 
@@ -1132,12 +1133,12 @@ Avoids allocation - use in hot loops.
 - `ψ_A`, `ψ_B`: Input state vectors
 - `N_A`, `N_B`: Number of qubits in each subsystem
 """
-function tensor_product_ket!(ψ_out::Vector{ComplexF64}, 
-                             ψ_A::Vector{ComplexF64}, ψ_B::Vector{ComplexF64}, 
+function tensor_product_ket!(ψ_out::Vector{ComplexF64},
+                             ψ_A::Vector{ComplexF64}, ψ_B::Vector{ComplexF64},
                              N_A::Int, N_B::Int)
     dim_A = 1 << N_A
     dim_B = 1 << N_B
-    
+
     @inbounds for i_A in 0:(dim_A-1)
         for i_B in 0:(dim_B-1)
             i_total = i_A + (i_B << N_A)
@@ -1181,7 +1182,7 @@ make_product_ket([:zero, :plus, :one])  # |0⟩ ⊗ |+⟩ ⊗ |1⟩
 function make_product_ket(states::Vector{Symbol})
     N = length(states)
     @assert N >= 1 "Need at least one qubit"
-    
+
     ψ = make_ket(states[1])
     for k in 2:N
         ψ_k = make_ket(states[k])
@@ -1210,7 +1211,7 @@ Little-endian: qubit 1 = LSB.
 function make_initial_psi(N::Int, init_bits::Vector{Int}=Int[])
     dim = 1 << N
     ψ = zeros(ComplexF64, dim)
-    
+
     if isempty(init_bits)
         # Default: all qubits in |0⟩ state
         ψ[1] = 1.0
@@ -1224,7 +1225,7 @@ function make_initial_psi(N::Int, init_bits::Vector{Int}=Int[])
         end
         ψ[idx + 1] = 1.0
     end
-    
+
     return ψ
 end
 
@@ -1246,17 +1247,17 @@ angles[k] = angle θ for qubit k (in radians).
 """
 function make_product_state(N::Int, angles::Vector{Float64})
     @assert length(angles) == N "angles must have length N"
-    
+
     # Build product state via tensor products
     θ1 = angles[1]
     psi_current = ComplexF64[cos(θ1), sin(θ1)]
-    
+
     for i in 2:N
         θ = angles[i]
         psi_qubit = ComplexF64[cos(θ), sin(θ)]
         psi_current = tensor_product_ket(psi_current, psi_qubit, i-1, 1)
     end
-    
+
     return psi_current
 end
 
@@ -1280,16 +1281,16 @@ New state vector with qubit k reset to |state⟩.
 """
 function reset_qubit_psi(ψ::Vector{ComplexF64}, k::Int, state::Symbol, N::Int)
     @assert 1 <= k <= N "Qubit index k must be in 1..N"
-    
+
     # Trace out qubit k to get reduced density matrix of remaining qubits
     trace_qubits = [k]
     ρ_rest = CPUQuantumStatePartialTrace.partial_trace(ψ, trace_qubits, N)
-    
+
     # Get eigenstate with largest eigenvalue (for mixed state) or just proceed with projection
     # For pure state after trace, we collapse to most probable outcome
     probs = real.(diag(ρ_rest))
     probs ./= sum(probs)
-    
+
     # Sample outcome
     r = rand()
     cumsum_p = 0.0
@@ -1301,15 +1302,15 @@ function reset_qubit_psi(ψ::Vector{ComplexF64}, k::Int, state::Symbol, N::Int)
             break
         end
     end
-    
+
     # Create pure state for remaining qubits (collapsed to outcome)
     dim_rest = 1 << (N-1)
     ψ_rest = zeros(ComplexF64, dim_rest)
     ψ_rest[outcome] = 1.0
-    
+
     # Create fresh qubit state
     ψ_fresh = make_ket(state)
-    
+
     # Tensor in correct position
     if k == 1
         # Fresh qubit goes in lower bits
@@ -1326,32 +1327,32 @@ function reset_qubit_psi(ψ::Vector{ComplexF64}, k::Int, state::Symbol, N::Int)
         n_upper = N - k
         dim_lower = 1 << n_lower
         dim_upper = 1 << n_upper
-        
+
         ψ_new = zeros(ComplexF64, dim_new)
         fresh_0 = ψ_fresh[1]  # Amplitude for |0⟩
         fresh_1 = ψ_fresh[2]  # Amplitude for |1⟩
-        
+
         @inbounds for i_rest in 0:(length(ψ_rest)-1)
             amp = ψ_rest[i_rest + 1]
             if amp == 0.0 + 0.0im
                 continue
             end
-            
+
             # Split i_rest into lower and upper parts
             # Lower k-1 qubits come from bits 0:k-2 of i_rest
             # Upper N-k qubits come from bits k-1:N-2 of i_rest
             lower_bits = i_rest & ((1 << n_lower) - 1)
             upper_bits = i_rest >> n_lower
-            
+
             # New index with fresh qubit = 0 at position k
             idx_0 = lower_bits | (0 << n_lower) | (upper_bits << k)
             # New index with fresh qubit = 1 at position k
             idx_1 = lower_bits | (1 << n_lower) | (upper_bits << k)
-            
+
             ψ_new[idx_0 + 1] += amp * fresh_0
             ψ_new[idx_1 + 1] += amp * fresh_1
         end
-        
+
         return ψ_new
     end
 end
@@ -1363,14 +1364,14 @@ Reset qubit k in density matrix to |state⟩⟨state|.
 """
 function reset_qubit_rho(ρ::Matrix{ComplexF64}, k::Int, state::Symbol, N::Int)
     @assert 1 <= k <= N "Qubit index k must be in 1..N"
-    
+
     # Trace out qubit k
     trace_qubits = [k]
     ρ_rest = CPUQuantumStatePartialTrace.partial_trace(ρ, trace_qubits, N)
-    
+
     # Fresh qubit DM
     ρ_fresh = make_rho(state)
-    
+
     # Tensor in correct position
     if k == 1
         return tensor_product_rho(ρ_fresh, ρ_rest)
@@ -1397,13 +1398,13 @@ For QRC: Typically reset qubits 1:L (input rail) to encoded states.
 function reset_qubits_psi(ψ::Vector{ComplexF64}, qubits::Vector{Int}, states::Vector{Symbol}, N::Int)
     @assert length(qubits) == length(states) "qubits and states must have same length"
     L = length(qubits)
-    
+
     # Check if qubits are contiguous from start
     if sort(qubits) == collect(1:L)
         # Trace out qubits 1:L, keep L+1:N
         trace_qubits = collect(1:L)
         ρ_rest = CPUQuantumStatePartialTrace.partial_trace(ψ, trace_qubits, N)
-        
+
         # Collapse to outcome
         probs = real.(diag(ρ_rest))
         probs ./= sum(probs)
@@ -1417,20 +1418,20 @@ function reset_qubits_psi(ψ::Vector{ComplexF64}, qubits::Vector{Int}, states::V
                 break
             end
         end
-        
+
         ψ_rest = zeros(ComplexF64, 1 << (N-L))
         ψ_rest[outcome] = 1.0
-        
+
         # Create fresh qubits product state
         ψ_fresh = make_product_ket(states)
-        
+
         return tensor_product_ket(ψ_fresh, ψ_rest, L, N-L)
-        
+
     elseif sort(qubits) == collect((N-L+1):N)
         # Trace out qubits at end
         trace_qubits = collect((N-L+1):N)
         ρ_rest = CPUQuantumStatePartialTrace.partial_trace(ψ, trace_qubits, N)
-        
+
         probs = real.(diag(ρ_rest))
         probs ./= sum(probs)
         r = rand()
@@ -1443,12 +1444,12 @@ function reset_qubits_psi(ψ::Vector{ComplexF64}, qubits::Vector{Int}, states::V
                 break
             end
         end
-        
+
         ψ_rest = zeros(ComplexF64, 1 << (N-L))
         ψ_rest[outcome] = 1.0
-        
+
         ψ_fresh = make_product_ket(states)
-        
+
         return tensor_product_ket(ψ_rest, ψ_fresh, N-L, L)
     else
         error("reset_qubits_psi only supports contiguous qubit ranges from start or end")
@@ -1463,13 +1464,13 @@ Reset multiple qubits in density matrix to specified states.
 function reset_qubits_rho(ρ::Matrix{ComplexF64}, qubits::Vector{Int}, states::Vector{Symbol}, N::Int)
     @assert length(qubits) == length(states) "qubits and states must have same length"
     L = length(qubits)
-    
+
     if sort(qubits) == collect(1:L)
         # Trace out qubits 1:L
         ρ_rest = CPUQuantumStatePartialTrace.partial_trace(ρ, collect(1:L), N)
         ρ_fresh = make_product_rho(states)
         return tensor_product_rho(ρ_fresh, ρ_rest)
-        
+
     elseif sort(qubits) == collect((N-L+1):N)
         # Trace out qubits at end
         ρ_rest = CPUQuantumStatePartialTrace.partial_trace(ρ, collect((N-L+1):N), N)
@@ -1557,4 +1558,3 @@ function reset(rho::Matrix{ComplexF64}, qubits::UnitRange{Int}, states::Vector{S
 end
 
 end # module
-

@@ -46,7 +46,6 @@ include("cpu/cpuQuantumStateMeasurements.jl")
 include("cpu/cpuQuantumStatePrintingHelpers.jl")
 include("cpu/cpuQuantumStateCharacteristic.jl")
 include("cpu/cpuQuantumStateTomography.jl")
-# └── CPUQuantumStateCharacteristic
 include("cpu/cpuQuantumStateLanczos.jl")
 include("cpu/cpuQuantumStatePartialTrace.jl")
 include("cpu/cpuQuantumStatePreparation.jl")

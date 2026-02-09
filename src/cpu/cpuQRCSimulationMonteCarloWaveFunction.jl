@@ -24,8 +24,11 @@ using Printf
 using ProgressMeter
 using Random
 using Base.Threads
- 
+
 # All external module functions will be called with qualified names to avoid import order issues
+using ..CPUQRCstep
+using ..CPUQuantumChannelUnitaryEvolutionTrotter
+using ..CPUQuantumStateObservables
 
 export run_mcwf_simulation, check_integrator_type
 
@@ -62,7 +65,7 @@ ARGS:
     - n_traj: Number of independent trajectories to enable ensemble averaging.
     - T_evol: Clock cycle duration (time between inputs).
     - dt: Integration step size (for RK4/Trotter).
-    
+
 KWARGS:
     - integrator_type: :exact_cpu (exp), :rk4 (Runge-Kutta), or :trotter_cpu.
 
@@ -70,22 +73,22 @@ KWARGS:
 RETURNS:
     - X: Matrix (Time x Features). The ensemble-averaged expectation values.
 """
-function run_mcwf_simulation(psi_init, input_seq, H, ops, n_traj, T_evol, dt, L_chain; 
-                             integrator_type=:exact_precomp_cpu, 
-                             encoding=:batch, 
-                             n_rails=2, 
+function run_mcwf_simulation(psi_init, input_seq, H, ops, n_traj, T_evol, dt, L_chain;
+                             integrator_type=:exact_precomp_cpu,
+                             encoding=:batch,
+                             n_rails=2,
                              reset_type::Symbol=:traceout_rail_1,
                              reset_qubit_to::Symbol=:ket_0, # :ket_0 (Z) or :ket_plus (X)
                              obs_method::Symbol=:standard   # :standard, :fast_local, :fast_full
-                            ) 
+                            )
     T = length(input_seq)
     N_total = L_chain * n_rails
-    
+
     # Determine number of observables based on method
     # New naming: explicit/bitwise × local/local_and_corr
     is_explicit = obs_method in (:explicit_local, :explicit_local_and_corr)
     is_local_only = obs_method in (:explicit_local, :bitwise_local)
-    
+
     if is_explicit
         n_ops = length(ops)
         feat_str = is_local_only ? "local" : "local+corr"
@@ -97,17 +100,17 @@ function run_mcwf_simulation(psi_init, input_seq, H, ops, n_traj, T_evol, dt, L_
         n_ops = 3*N_total + 3*(L_chain-1)*n_rails + 3*L_chain*(n_rails-1)
         println("[MCWF] Using BITWISE LOCAL+CORR observables ($(n_ops) features)")
     end
-    
+
     padded_u = vcat(zeros(L_chain), input_seq) # Pre-pad for sliding window
-    
+
     # --- 1. PRE-COMPUTATION PHASE ---
     # To maximize performance, we pre-calculate unitary operators where possible.
     # --------------------------------------------------------------------------
-    
+
     H_mat = nothing
     U_op = nothing
-    U_layers = [] 
-    
+    U_layers = []
+
     if integrator_type == :exact_cpu || integrator_type == :exact_precomp_cpu
         # MATRIX EXPONENTIATION (Optimal for N < 12)
         # U = exp(-i * H * T_evol)
@@ -120,7 +123,7 @@ function run_mcwf_simulation(psi_init, input_seq, H, ops, n_traj, T_evol, dt, L_
         end
         println("[MCWF] Pre-computing Exact Unitary (size $(size(H_mat)))...")
         U_op = exp(-1im * H_mat * T_evol)
-        
+
     elseif integrator_type == :trotter_cpu
         # MATRIX-FREE BITWISE TROTTER - local gate application without full matrices
         println("[MCWF] Pre-computing Fast Trotter Gates (bitwise local application)...")
@@ -144,52 +147,52 @@ function run_mcwf_simulation(psi_init, input_seq, H, ops, n_traj, T_evol, dt, L_
     # --- 2. TRAJECTORY LOOP (PARALLEL) ---
     # We utilize Julia's multi-threading to run independent trajectories on separate cores.
     # --------------------------------------------------------------------------
-    
+
     # Shared Accumulator (Thread-Safe via Lock)
     X_sum = zeros(Float64, T, n_ops)
     acc_lock = ReentrantLock()
-    
+
     # Pre-calculate basis dimensions for Reset operations
     dim_in = 2^L_chain
     dim_total = length(psi_init.data)
     dim_res = div(dim_total, dim_in)
     basis_res = (dim_res > 1) ? tensor(psi_init.basis.bases[L_chain+1:end]...) : nothing
-    
+
     println("[MCWF] Launching $n_traj Trajectories on $(Threads.nthreads()) threads...")
     p = Progress(n_traj, 1, "MCWF Progress: ")
-    
+
     Threads.@threads for traj_i in 1:n_traj
         try
             # Deepcopy initial state for this trajectory
             curr_psi = copy(psi_init)
-            
+
             # Local buffer for this trajectory (Time x Features)
             # Avoids race conditions accumulating into shared X_sum directly
             local_X = zeros(Float64, T, n_ops)
-            
+
             # Run the sequential evolution for this single quantum system
             _run_traj_loop!(
-                local_X, curr_psi, padded_u, 
-                dim_in, dim_res, basis_res, L_chain, T, n_ops, ops, 
-                U_op, U_layers, H_mat, dt, 
-                integrator_type, T_evol, 
-                encoding, 
+                local_X, curr_psi, padded_u,
+                dim_in, dim_res, basis_res, L_chain, T, n_ops, ops,
+                U_op, U_layers, H_mat, dt,
+                integrator_type, T_evol,
+                encoding,
                 reset_type, reset_qubit_to,
                 obs_method, n_rails  # Pass obs_method for fast observables
             )
-            
+
             # Atomic Accumulation
             lock(acc_lock) do
                 X_sum .+= local_X
             end
             next!(p)
-            
+
         catch e
             println("Error in Trajectory $traj_i: $e")
             rethrow(e)
         end
     end
-    
+
     # Average the results
     return X_sum ./ n_traj
 end
@@ -200,13 +203,13 @@ end
 # This function handles the time-stepping for a SINGLE trajectory.
 # It is critical this function be allocation-free in the inner loops.
 
-function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_res, L_chain, T, n_ops, ops, U_op, U_layers, H_mat, dt, 
+function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_res, L_chain, T, n_ops, ops, U_op, U_layers, H_mat, dt,
                         integrator_type, T_evol, encoding, reset_type, reset_qubit_to,
                         obs_method, n_rails)
 
      # Pre-allocate RK4 buffers if needed to prevent GC pressure
-     k1, k2, k3, k4, temp = (integrator_type == :rk4 || integrator_type == :rk4_sparse) ? 
-        (zeros(ComplexF64, length(curr_psi.data)) for _ in 1:5) : 
+     k1, k2, k3, k4, temp = (integrator_type == :rk4 || integrator_type == :rk4_sparse) ?
+        (zeros(ComplexF64, length(curr_psi.data)) for _ in 1:5) :
         (nothing, nothing, nothing, nothing, nothing)
 
      N_total = length(curr_psi.basis.bases)
@@ -227,12 +230,12 @@ function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_re
 
         # METHOD: Projective Measurement & Reset
         # ... comments ...
-        
+
         M = reshape(curr_psi.data, (dim_in, dim_res))
-        
+
         # Encode new input |\psi_in>
         psi_in = spin_encode(u_win)
-            
+
 
             if reset_type == :traceout_rail_1
                 # PROTOCOL 1: Reset Rail 1 (Top/Input). Keep Rail 2 (Reservoir, indices L+1..N).
@@ -244,7 +247,7 @@ function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_re
                          # 1. Calculate Probabilities for Input basis states (Rows of M)
                          # P(Input=i) = norm(Row i)^2
                          probs = [norm(view(M, i, :))^2 for i in 1:dim_in]
-                         
+
                          # 2. Sample Outcome
                          r_val = rand()
                          cum_p = 0.0
@@ -256,12 +259,12 @@ function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_re
                                  break
                              end
                          end
-                         
+
                          # 3. Project Reservoir State (Normalized Row)
                          phi_res_vec = M[chosen_i, :]
                          normalize_state!(phi_res_vec)
                          phi_res_ket = Ket(basis_res, Vector{ComplexF64}(phi_res_vec))
-                         
+
                         next_psi = tensor(psi_in, phi_res_ket)
                      end
                 else
@@ -273,17 +276,17 @@ function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_re
                 # New Input -> Rail 1.
                 # Physics: Old Input becomes the New Reservoir.
                 # Measure Reservoir (Cols) - Keep Input (Col Vector)
-                
+
                 # Note: Rotation logic removed for now as reset_qubit_to is :ket_0
                 if reset_qubit_to == :ket_plus
                     # Rotate Reservoir (Rows) to align X basis with Z measurement
                     # Ry(pi/2) maps |+> -> |0>.
                     # We apply Ry(pi/2) (x) I to the state (Res (x) Input).
                     # M_new = U_rot * M
-                    
+
                     c, s = 0.70710678118, 0.70710678118
                     u_rot_2x2 = [c -s; s c]
-                    
+
                     n_res_qubits = Int(log2(dim_res))
                     if n_res_qubits > 0
                          # Build Kronecker Product of u_rot_2x2
@@ -294,12 +297,12 @@ function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_re
                          # Apply Left Multiplication (Rows are Res)
                          M = U_rot_res * M
                     end
-                end 
+                end
 
                 if dim_res > 1
                     # P(Res=j) = norm(Col j)^2
                     probs = [norm(view(M, :, j))^2 for j in 1:dim_res]
-                    
+
                     r_val = rand()
                     cum_p = 0.0
                     chosen_j = dim_res
@@ -310,14 +313,14 @@ function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_re
                             break
                         end
                     end
-                    
+
                     # Keep Input State (Normalized Col)
                     normalized_col = M[:, chosen_j]
                     normalize_state!(normalized_col)
                     # This Column is in Input Basis.
                     # We transfer it to Reservoir Rail. we assume homogeneous basis.
                     phi_res_ket = Ket(basis_res, Vector{ComplexF64}(normalized_col))
-                    
+
                     next_psi = tensor(psi_in, phi_res_ket)
                 end
             end
@@ -327,12 +330,12 @@ function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_re
         if next_psi !== nothing
             curr_psi = next_psi
         end
-        
+
         # --- EVOLUTION STEP ---
         if integrator_type == :exact_cpu || integrator_type == :exact_precomp_cpu
             # Exact Unitary (Precomputed)
             curr_psi.data .= U_op * curr_psi.data
-            
+
         elseif integrator_type == :trotter_cpu
             # Matrix-free Bitwise Trotter Evolution (local gate application)
             N_qubits = length(curr_psi.basis.bases)
@@ -343,12 +346,12 @@ function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_re
         else
             error("Unsupported integrator: $integrator_type. Supported: :exact_cpu, :trotter_cpu")
         end
-        
+
         # Calculate Expectation Values <O> = <psi|O|psi>
         # Determine method type from obs_method symbol
         is_explicit = obs_method in (:explicit_local, :explicit_local_and_corr)
         is_local_only = obs_method in (:explicit_local, :bitwise_local)
-        
+
         if is_explicit
             # Explicit: use bitwise operations expect() with pre-built operators
             for f in 1:n_ops
@@ -358,7 +361,7 @@ function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_re
             # Bitwise: compute directly from state vector amplitudes
             ψ = curr_psi.data
             obs_idx = 1
-            
+
             # Local observables (X, Y, Z for each qubit)
             for q in 1:N_total
                 traj_acc[k, obs_idx] += CPUQuantumStateObservables._expect_X(ψ, q, N_total)
@@ -366,7 +369,7 @@ function _run_traj_loop!(traj_acc, curr_psi, padded_u, dim_in, dim_res, basis_re
                 traj_acc[k, obs_idx+2] += CPUQuantumStateObservables._expect_Z(ψ, q, N_total)
                 obs_idx += 3
             end
-            
+
             # Correlators (only for :bitwise_local_and_corr)
             if !is_local_only
                 # Intra-rail correlators
@@ -400,7 +403,7 @@ end
 
 
 # ==============================================================================
-# BITWISE TRAJECTORY LOOP  
+# BITWISE TRAJECTORY LOOP
 # ==============================================================================
 
 """
@@ -443,7 +446,7 @@ This ensures MCWF matches DM in the limit of many trajectories!
 The averaging over n_traj trajectories happens in run_mcwf_simulation(),
 which calls this function and accumulates results.
 """
-function _run_traj_loop_bitwise!(traj_acc::Matrix{Float64}, curr_psi::Vector{ComplexF64}, 
+function _run_traj_loop_bitwise!(traj_acc::Matrix{Float64}, curr_psi::Vector{ComplexF64},
                                  padded_u::Vector{Float64}, L::Int, T::Int, n_ops::Int,
                                  H_action!, gates, integrator_type::Symbol, T_evol::Float64,
                                  encoding::Symbol, reset_type::Symbol, n_rails::Int, n_substeps::Int,
@@ -453,7 +456,7 @@ function _run_traj_loop_bitwise!(traj_acc::Matrix{Float64}, curr_psi::Vector{Com
     dim_psi = 1 << N
     dim_in = 1 << L
     dim_res = 1 << L
-    
+
     # =========================================================================
     # PRE-ALLOCATE BUFFERS (avoid allocation inside hot loop)
     # =========================================================================
@@ -462,7 +465,7 @@ function _run_traj_loop_bitwise!(traj_acc::Matrix{Float64}, curr_psi::Vector{Com
     phi_res_buf = zeros(ComplexF64, dim_res)  # Reservoir state buffer
     next_psi = zeros(ComplexF64, dim_psi)  # Next state buffer
     obs_buf = zeros(Float64, n_ops)        # Observable results buffer
-    
+
     for k in 1:T
         # =====================================================================
         # STEP A: INPUT ENCODING (using pre-allocated u_win)
@@ -479,12 +482,12 @@ function _run_traj_loop_bitwise!(traj_acc::Matrix{Float64}, curr_psi::Vector{Com
 
         # Encode in-place into psi_in buffer
         CPUQRCstep.encode_input_ry_psi!(psi_in, u_win, L)
-        
+
         # =====================================================================
         # STEP B: RESET (Projective Measurement) - IN-PLACE
         # =====================================================================
         CPUQRCstep.qrc_reset_psi!(next_psi, curr_psi, psi_in, phi_res_buf, L, L, reset_type)
-        
+
         # =====================================================================
         # STEP C: TIME EVOLUTION
         # =====================================================================
@@ -493,7 +496,7 @@ function _run_traj_loop_bitwise!(traj_acc::Matrix{Float64}, curr_psi::Vector{Com
             for _ in 1:n_substeps
                 CPUQuantumChannelUnitaryEvolutionTrotter.apply_fast_trotter_step_cpu!(next_psi, gates, N)
             end
-            
+
         elseif integrator_type == :exact_cpu || integrator_type == :exact_precomp_cpu
             # Exact evolution - mul! for in-place (need temp buffer)
             mul!(curr_psi, U_exact, next_psi)
@@ -501,10 +504,10 @@ function _run_traj_loop_bitwise!(traj_acc::Matrix{Float64}, curr_psi::Vector{Com
         else
             error("Unsupported integrator: $integrator_type. Supported: :exact_cpu, :trotter_cpu")
         end
-        
+
         # Update state for next iteration
         curr_psi .= next_psi
-        
+
         # =====================================================================
         # STEP D: OBSERVABLE MEASUREMENT (IN-PLACE)
         # =====================================================================
@@ -524,48 +527,48 @@ Fully bitwise MCWF simulation.
 Supports only :exact_cpu and :trotter_cpu integrators.
 """
 function run_mcwf_simulation(psi0::Vector{ComplexF64}, H_params, gates,
-                                      padded_u::Vector{Float64}, L::Int, n_rails::Int, 
+                                      padded_u::Vector{Float64}, L::Int, n_rails::Int,
                                       T::Int, n_traj::Int, integrator_type::Symbol,
                                       T_evol::Float64, encoding::Symbol, reset_type::Symbol,
                                       n_substeps::Int=5, H_sparse=nothing;
                                       batch_size::Int=min(n_traj, Threads.nthreads() * 4))
     N = L * n_rails
     n_ops = 3*N + 3*(L-1)*n_rails + 3*L*(n_rails-1)  # Local + intra + inter
-    
+
     X_sum = zeros(Float64, T, n_ops)
     p = Progress(n_traj; desc="MCWF Bitwise Progress: ", showspeed=true)
-    
+
     # Precompute exact unitary if needed
     U_exact = nothing
     if (integrator_type == :exact_cpu || integrator_type == :exact_precomp_cpu) && H_sparse !== nothing
         println("[MCWF] Precomputing exact unitary exp(-iHt)...")
         U_exact = exp(-1im * Matrix(H_sparse) * T_evol)
     end
-    
+
     println("[MCWF] Launching $n_traj Trajectories (BITWISE mode, $N qubits, batch=$batch_size)...")
-    
+
     # Process trajectories in batches
     n_batches = cld(n_traj, batch_size)
-    
+
     for batch_idx in 1:n_batches
         batch_start = (batch_idx - 1) * batch_size + 1
         batch_end = min(batch_idx * batch_size, n_traj)
         batch_n = batch_end - batch_start + 1
-        
+
         batch_sum = zeros(Float64, T, n_ops)
         acc_lock = ReentrantLock()
-        
+
         Threads.@threads for traj_offset in 1:batch_n
             traj_i = batch_start + traj_offset - 1
             try
                 curr_psi = copy(psi0)
                 local_X = zeros(Float64, T, n_ops)
-                
+
                 _run_traj_loop_bitwise!(local_X, curr_psi, padded_u, L, T, n_ops,
                                         nothing, gates, integrator_type, T_evol,
                                         encoding, reset_type, n_rails, n_substeps,
                                         H_sparse, U_exact, H_params, nothing)
-                
+
                 lock(acc_lock) do
                     batch_sum .+= local_X
                 end
@@ -575,11 +578,11 @@ function run_mcwf_simulation(psi0::Vector{ComplexF64}, H_params, gates,
                 rethrow(e)
             end
         end
-        
+
         X_sum .+= batch_sum
         GC.gc(false)
     end
-    
+
     return X_sum ./ n_traj
 end
 

@@ -294,6 +294,8 @@ using Base.Threads
 
 # Note: Functions from other modules will be called with qualified names
 # where necessary to avoid circular import issues
+using ..CPUQuantumChannelGates
+using ..CPUQuantumStateMeasurements
 
 # Configuration
 export ShadowConfig
