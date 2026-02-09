@@ -9,7 +9,7 @@ using Plots
 using Printf
 
 SCRIPT_DIR = @__DIR__
-OUTPUT_FILE = joinpath(SCRIPT_DIR, "benchmark_speedup.png")
+OUTPUT_FILE = joinpath(SCRIPT_DIR, "fig_random_circuit_sampling_speedup.png")
 
 SMOQ_FILE = "timings_smoq.txt"
 

@@ -308,15 +308,19 @@ This directory contains benchmark scripts comparing SmoQ.jl against established 
 
 ### Random Circuit Sampling: Time vs Number of Qubits
 
-![Benchmark: simulation time vs number of qubits](fig_benchmark_time_vs_N.png)
+![Benchmark: simulation time vs number of qubits](fig_random_circuit_sampling_evaluation_vs_time.png)
 
 ### Random Circuit Sampling: Speedup over External Frameworks
 
-![Benchmark: SmoQ.jl speedup ratio](fig_benchmark_speedup.png)
+![Benchmark: SmoQ.jl speedup ratio](fig_random_circuit_sampling_speedup.png)
 
-### Expectation Values: Timing Comparison
+### Expectation Values: Time vs Number of Qubits
 
-![Benchmark: expectation value timing comparison](fig_timing_comparison.png)
+![Benchmark: expectation value timing comparison](fig_observables_calculation_evaluation_vs_time.png)
+
+### Expectation Values: Speedup over External Frameworks
+
+![Benchmark: expectation value speedup ratio](fig_observables_calculation_speedup.png)
 
 ---
 

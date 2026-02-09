@@ -13,7 +13,7 @@ using Printf
 # ==============================================================================
 
 SCRIPT_DIR = @__DIR__
-OUTPUT_FILE = joinpath(SCRIPT_DIR, "benchmark_time_vs_N.png")
+OUTPUT_FILE = joinpath(SCRIPT_DIR, "fig_random_circuit_sampling_evaluation_vs_time.png")
 
 # Define frameworks to plot with colors and markers
 FRAMEWORKS = [

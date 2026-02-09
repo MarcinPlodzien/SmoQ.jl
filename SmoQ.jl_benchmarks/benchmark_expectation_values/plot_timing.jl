@@ -115,6 +115,6 @@ for (key, label, _, _) in FRAMEWORKS
 end
 
 axislegend(ax, position = :lt, framevisible = true, labelsize = 11)
-fig_path = joinpath(SCRIPT_DIR, "timing_comparison.png")
+fig_path = joinpath(SCRIPT_DIR, "fig_observables_calculation_evaluation_vs_time.png")
 save(fig_path, fig, px_per_unit = 2)
 println("  Saved figure: ", basename(fig_path))

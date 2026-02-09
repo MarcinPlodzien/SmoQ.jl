@@ -82,4 +82,5 @@ julia plot_timing.jl
 
 - `timing_<framework>.txt` — per-framework timing data
 - `timing_all.csv` — combined CSV for all frameworks
-- `timing_comparison.png` — log-scale plot of execution time vs N
+- `fig_observables_calculation_evaluation_vs_time.png` — log-scale plot of execution time vs N
+- `fig_observables_calculation_speedup.png` — speedup ratio bar chart (SmoQ.jl vs others)
