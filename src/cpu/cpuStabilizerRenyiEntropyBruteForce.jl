@@ -12,7 +12,7 @@
 [1] Leone, Oliviero, Hamma (2022): "Stabilizer Rényi Entropy"
     Physical Review Letters 128, 050402
     https://doi.org/10.1103/PhysRevLett.128.050402
-    
+
 [2] Haug, Piroli (2023): "Stabilizer entropies and nonstabilizerness monotones"
     Quantum 7, 1092
     https://doi.org/10.22331/q-2023-08-28-1092
@@ -25,7 +25,7 @@
 # BACKGROUND: THE PAULI GROUP
 ═══════════════════════════════════════════════════════════════════════════════
 
-The **Pauli group** 𝒫_N on N qubits consists of all N-fold tensor products of 
+The **Pauli group** 𝒫_N on N qubits consists of all N-fold tensor products of
 Pauli matrices {I, X, Y, Z} with phases {±1, ±i}:
 
     𝒫_N = { ±1, ±i } × { I, X, Y, Z }^⊗N
@@ -54,7 +54,7 @@ Clifford gates map Pauli operators to Pauli operators under conjugation.
 • Phase gate:   S = diag(1, i)      maps X→Y, Y→-X
 • CNOT:         CNOT_{ij}           maps X_i→X_i⊗X_j, Z_j→Z_i⊗Z_j
 
-Key property: Clifford circuits can be efficiently simulated classically 
+Key property: Clifford circuits can be efficiently simulated classically
 (Gottesman-Knill theorem) because Pauli operators remain Pauli under evolution.
 
 
@@ -73,21 +73,21 @@ The subgroup S is called the **stabilizer group** and has |S| = 2^N elements.
 • GHZ state: (|0...0⟩+|1...1⟩)/√2 stabilized by {X₁X₂...X_N, Z₁Z₂, Z₂Z₃, ...}
 • Bell state: (|00⟩+|11⟩)/√2 stabilized by {X₁X₂, Z₁Z₂}
 
-**Key property:** Stabilizer states are exactly those reachable from |0...0⟩ 
+**Key property:** Stabilizer states are exactly those reachable from |0...0⟩
 by Clifford gates alone. They can be described efficiently with O(N²) bits.
 
 
 # NONSTABILIZERNESS AND "MAGIC"
 ═══════════════════════════════════════════════════════════════════════════════
 
-**Nonstabilizerness** (or "magic") quantifies how far a state is from being 
+**Nonstabilizerness** (or "magic") quantifies how far a state is from being
 a stabilizer state. It is a quantum resource required for:
 
 • Universal quantum computation (beyond Clifford)
 • Quantum advantage over classical simulation
 • Fault-tolerant quantum computing via magic state distillation
 
-The **T gate** (π/8 rotation): T = diag(1, e^{iπ/4}) is the canonical source 
+The **T gate** (π/8 rotation): T = diag(1, e^{iπ/4}) is the canonical source
 of magic. T|+⟩ is a "magic state" used in fault-tolerant protocols.
 
 
@@ -118,7 +118,7 @@ The most commonly used variant is **M₂** (n=2).
 
 * **Non-negativity:** Mn(psi) >= 0 for all states.
 
-* **Invariance under Clifford gates:** 
+* **Invariance under Clifford gates:**
   Mₙ(C|ψ⟩) = Mₙ(|ψ⟩) for any Clifford unitary C.
   Clifford gates permute Pauli operators, preserving the sum.
 
@@ -164,7 +164,7 @@ using Base.Threads
 # Primary verb-based API (recommended)
 export get_stabilizer_renyi_entropy
 
-# Internal/legacy exports  
+# Internal/legacy exports
 export pauli_moment_sum
 export is_stabilizer_state
 export sre_summary
@@ -188,7 +188,7 @@ Decode Pauli string index to bitwise masks for O(2^N) evaluation.
     flip_mask = 0
     y_mask = 0
     y_count = 0
-    
+
     temp = idx
     @inbounds for k in 0:(N-1)
         op = temp & 3  # 0=I, 1=X, 2=Y, 3=Z
@@ -203,7 +203,7 @@ Decode Pauli string index to bitwise masks for O(2^N) evaluation.
         end
         temp >>= 2
     end
-    
+
     return z_mask, flip_mask, y_mask, y_count
 end
 
@@ -220,45 +220,45 @@ Complexity: O(2^N) - single pass over state vector.
 """
 function expect_pauli_squared(ψ::Vector{ComplexF64}, pauli_idx::Int, N::Int)
     pauli_idx == 0 && return 1.0  # Identity
-    
+
     z_mask, flip_mask, y_mask, y_count = decode_pauli_masks(pauli_idx, N)
     dim = 1 << N
-    
+
     # Precompute i^y_count phase
     y_mod = y_count & 3
     # i^0=1, i^1=i, i^2=-1, i^3=-i
     base_re = (y_mod == 0) ? 1.0 : (y_mod == 2) ? -1.0 : 0.0
     base_im = (y_mod == 1) ? 1.0 : (y_mod == 3) ? -1.0 : 0.0
-    
+
     result_re = 0.0
     result_im = 0.0
-    
+
     @inbounds for bra in 0:(dim-1)
         ket = xor(bra, flip_mask)
-        
+
         # Sign from Z operators: (-1)^popcount(bra & z_mask)
         z_sign = 1 - 2 * (count_ones(bra & z_mask) & 1)
-        
-        # Sign from Y operators: (-1)^popcount(bra & y_mask)  
+
+        # Sign from Y operators: (-1)^popcount(bra & y_mask)
         y_sign = 1 - 2 * (count_ones(bra & y_mask) & 1)
         total_sign = z_sign * y_sign
-        
+
         # Compute conj(ψ[bra]) * ψ[ket]
         ψ_bra = ψ[bra + 1]
         ψ_ket = ψ[ket + 1]
-        
+
         re_bra, im_bra = reim(ψ_bra)
         re_ket, im_ket = reim(ψ_ket)
-        
+
         # conj(a+bi)(c+di) = (ac+bd) + (ad-bc)i
         prod_re = (re_bra * re_ket + im_bra * im_ket) * total_sign
         prod_im = (re_bra * im_ket - im_bra * re_ket) * total_sign
-        
+
         # Multiply by base Y phase
         result_re += prod_re * base_re - prod_im * base_im
         result_im += prod_re * base_im + prod_im * base_re
     end
-    
+
     return result_re * result_re + result_im * result_im
 end
 
@@ -269,34 +269,34 @@ Compute |Tr(ρP)|² for density matrix.
 """
 function expect_pauli_squared_dm(ρ::Matrix{ComplexF64}, pauli_idx::Int, N::Int)
     pauli_idx == 0 && return 1.0  # Tr(ρI) = 1
-    
+
     z_mask, flip_mask, y_mask, y_count = decode_pauli_masks(pauli_idx, N)
     dim = 1 << N
-    
+
     y_mod = y_count & 3
     base_re = (y_mod == 0) ? 1.0 : (y_mod == 2) ? -1.0 : 0.0
     base_im = (y_mod == 1) ? 1.0 : (y_mod == 3) ? -1.0 : 0.0
-    
+
     result_re = 0.0
     result_im = 0.0
-    
+
     # Tr(ρP) = Σᵢ ρ[i, xor(i, flip)] × phase(i)
     @inbounds for i in 0:(dim-1)
         j = xor(i, flip_mask)
-        
+
         z_sign = 1 - 2 * (count_ones(i & z_mask) & 1)
         y_sign = 1 - 2 * (count_ones(i & y_mask) & 1)
         total_sign = z_sign * y_sign
-        
+
         ρ_ij = ρ[i + 1, j + 1]
         re_ρ, im_ρ = reim(ρ_ij)
         re_ρ *= total_sign
         im_ρ *= total_sign
-        
+
         result_re += re_ρ * base_re - im_ρ * base_im
         result_im += re_ρ * base_im + im_ρ * base_re
     end
-    
+
     return result_re * result_re + result_im * result_im
 end
 
@@ -312,7 +312,7 @@ end
 #
 # PROBLEM 1: threadid() returns UNSTABLE values with default scheduler
 # ─────────────────────────────────────────────────────────────────────
-# The default `@threads` scheduler is task-based and can migrate tasks 
+# The default `@threads` scheduler is task-based and can migrate tasks
 # between threads during execution. This means `Threads.threadid()` may
 # return different values at different points in the same loop iteration!
 #
@@ -328,7 +328,7 @@ end
 # In Julia <1.12: threadid() returns 1:nthreads()
 # In Julia 1.12+: threadid() returns 2:(nthreads()+1) for worker threads!
 #
-# If you size your accumulator array using nthreads(), accessing 
+# If you size your accumulator array using nthreads(), accessing
 # partial_sums[threadid()] will cause BoundsError for the highest thread.
 #
 # SOLUTION: Use maxthreadid() for array sizing
@@ -338,12 +338,12 @@ end
 #
 # PROBLEM 3: False sharing / cache contention
 # ─────────────────────────────────────────────────────────────────────
-# When multiple threads write to adjacent memory locations (e.g., 
+# When multiple threads write to adjacent memory locations (e.g.,
 # partial_sums[1], partial_sums[2], ...), they may thrash each other's
 # CPU cache lines, causing severe slowdowns (up to 10-100x!).
 #
 # SOLUTION: Use thread-local accumulators with proper spacing
-# For even better performance, pad with zeros or use a struct with 
+# For even better performance, pad with zeros or use a struct with
 # cache-line alignment (64 bytes typically).
 #
 #
@@ -384,7 +384,7 @@ For Mₙ, use power = 2n (e.g., power=4 for M₂).
 function pauli_moment_sum(ψ::Vector{ComplexF64}, N::Int; power::Int=4)
     num_paulis = 4^N
     half_power = power ÷ 2  # |⟨P⟩|^{2n} = (|⟨P⟩|²)^n
-    
+
     # ──────────────────────────────────────────────────────────────────────
     # CRITICAL: Use maxthreadid(), NOT nthreads()!
     # In Julia 1.12+, threadid() returns values 2:(nthreads+1), not 1:nthreads
@@ -392,7 +392,7 @@ function pauli_moment_sum(ψ::Vector{ComplexF64}, N::Int; power::Int=4)
     # ──────────────────────────────────────────────────────────────────────
     max_tid = Threads.maxthreadid()
     partial_sums = zeros(Float64, max_tid)
-    
+
     # ──────────────────────────────────────────────────────────────────────
     # CRITICAL: Use :static scheduler!
     # Without :static, the default task-based scheduler can migrate tasks
@@ -404,7 +404,7 @@ function pauli_moment_sum(ψ::Vector{ComplexF64}, N::Int; power::Int=4)
         abs_sq = expect_pauli_squared(ψ, pauli_idx, N)
         @inbounds partial_sums[tid] += abs_sq ^ half_power
     end
-    
+
     return sum(partial_sums)
 end
 
@@ -416,18 +416,18 @@ Compute Σ_P |Tr(ρP)|^power for density matrix.
 function pauli_moment_sum(ρ::Matrix{ComplexF64}, N::Int; power::Int=4)
     num_paulis = 4^N
     half_power = power ÷ 2
-    
+
     # Thread-local accumulators - size by maxthreadid() for Julia 1.12+ compatibility
     max_tid = Threads.maxthreadid()
     partial_sums = zeros(Float64, max_tid)
-    
+
     # Use :static scheduler for stable threadid()
     Threads.@threads :static for pauli_idx in 0:(num_paulis - 1)
         tid = Threads.threadid()
         abs_sq = expect_pauli_squared_dm(ρ, pauli_idx, N)
         @inbounds partial_sums[tid] += abs_sq ^ half_power
     end
-    
+
     return sum(partial_sums)
 end
 
@@ -445,7 +445,7 @@ Compute the n-th Stabilizer Rényi Entropy Mₙ for pure state |ψ⟩.
 
 # Arguments
 - `ψ`: Normalized state vector of length 2^N
-- `N`: Number of qubits  
+- `N`: Number of qubits
 - `n`: Rényi index (default 2, must be ≥ 2)
 
 # Returns
@@ -462,10 +462,10 @@ M2 = stabilizer_renyi_entropy(ψ_magic, 1)       # > 0 (has magic)
 """
 function stabilizer_renyi_entropy(ψ::Vector{ComplexF64}, N::Int; n::Int=2)
     n < 2 && error("Rényi index n must be ≥ 2 (n=1 limit requires log-sum)")
-    
+
     d = 2^N
     moment_sum = pauli_moment_sum(ψ, N; power=2*n)
-    
+
     # Mₙ = log₂(moment_sum/d) / (1-n)
     argument = moment_sum / d
     return argument > 0 ? log2(argument) / (1 - n) : Inf
@@ -478,10 +478,10 @@ Compute Mₙ for density matrix ρ.
 """
 function stabilizer_renyi_entropy(ρ::Matrix{ComplexF64}, N::Int; n::Int=2)
     n < 2 && error("Rényi index n must be ≥ 2")
-    
+
     d = 2^N
     moment_sum = pauli_moment_sum(ρ, N; power=2*n)
-    
+
     argument = moment_sum / d
     return argument > 0 ? log2(argument) / (1 - n) : Inf
 end
@@ -516,11 +516,11 @@ M2 = get_stabilizer_renyi_entropy(ψ_zero)        # ≈ 0 (stabilizer)
 """
 function get_stabilizer_renyi_entropy(ψ::Vector{ComplexF64}; n::Int=2)
     n < 2 && error("Rényi index n must be ≥ 2 (n=1 limit requires log-sum)")
-    
+
     N = Int(log2(length(ψ)))
     d = 2^N
     moment_sum = pauli_moment_sum(ψ, N; power=2*n)
-    
+
     # Mₙ = log₂(moment_sum/d) / (1-n)
     argument = moment_sum / d
     return argument > 0 ? log2(argument) / (1 - n) : Inf
@@ -533,11 +533,11 @@ Compute Mₙ for density matrix ρ.
 """
 function get_stabilizer_renyi_entropy(ρ::Matrix{ComplexF64}; n::Int=2)
     n < 2 && error("Rényi index n must be ≥ 2")
-    
+
     N = Int(log2(size(ρ, 1)))
     d = 2^N
     moment_sum = pauli_moment_sum(ρ, N; power=2*n)
-    
+
     argument = moment_sum / d
     return argument > 0 ? log2(argument) / (1 - n) : Inf
 end
@@ -547,8 +547,8 @@ end
 # ============================================================================
 
 # Original functions with explicit N parameter
-stabilizer_renyi_entropy(ψ::Vector{ComplexF64}, N::Int; n::Int=2) = get_stabilizer_renyi_entropy(ψ; n=n)
-stabilizer_renyi_entropy(ρ::Matrix{ComplexF64}, N::Int; n::Int=2) = get_stabilizer_renyi_entropy(ρ; n=n)
+# stabilizer_renyi_entropy(ψ::Vector{ComplexF64}, N::Int; n::Int=2) = get_stabilizer_renyi_entropy(ψ; n=n)
+# stabilizer_renyi_entropy(ρ::Matrix{ComplexF64}, N::Int; n::Int=2) = get_stabilizer_renyi_entropy(ρ; n=n)
 
 """
     magic(ψ_or_ρ, N::Int) -> Float64
