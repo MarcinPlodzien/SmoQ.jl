@@ -136,18 +136,18 @@ Creates:
 """
 function create_output_dirs(results_root, config_name, task)
     base = joinpath(results_root, config_name, string(task))
-    
+
     # Data directories
     mkpath(joinpath(base, "data", "capacity"))
     mkpath(joinpath(base, "data", "evaluation"))
     mkpath(joinpath(base, "data", "observables"))
     mkpath(joinpath(base, "data", "pearson_correlation"))
-    
+
     # Figure directories
     mkpath(joinpath(base, "figures", "capacity"))
     mkpath(joinpath(base, "figures", "evaluation"))
     mkpath(joinpath(base, "figures", "pearson_correlation"))
-    
+
     return base
 end
 
@@ -331,7 +331,7 @@ function save_pearson_correlation(config_params, preds, data_dir)
         push!(tau_r_pairs, (tau, r))
     end
     sort!(tau_r_pairs, by=x->x[1])
-    
+
     fname = build_filename("pearson_correlation", config_params, ".txt")
     open(joinpath(data_dir, fname), "w") do io
         println(io, "# Pearson correlation r = cov(y_true, y_pred) / (σ_y_true * σ_y_pred)")

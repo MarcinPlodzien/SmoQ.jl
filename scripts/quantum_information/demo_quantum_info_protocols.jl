@@ -113,31 +113,31 @@ println()
 
 let N = 2
     dim = 1 << N
-    
+
     # STEP 0: Initial state
     ψ = zeros(ComplexF64, dim); ψ[1] = 1.0
-    
+
     println("  STEP 0: Initial state |00⟩")
     println("  " * "─"^50)
     print_state_2q(ψ, "|ψ₀⟩ = |00⟩ (product state)")
     println("  Properties: ⟨Z₁⟩ = +1, ⟨Z₂⟩ = +1, ⟨Z₁Z₂⟩ = +1")
     println("  Entanglement: NONE (separable)")
     println()
-    
+
     # STEP 1: Apply H(1)
     println("  STEP 1: Apply Hadamard to qubit 1")
     println("  " * "─"^50)
     println("  Gate: H(1) = (1/√2)[[1,1],[1,-1]]")
     println("  Effect: |0⟩ → (|0⟩+|1⟩)/√2, |1⟩ → (|0⟩-|1⟩)/√2")
     println()
-    
+
     apply_hadamard_psi!(ψ, 1, N)
     print_state_2q(ψ, "|ψ₁⟩ = H(1)|00⟩ = |+⟩₁ ⊗ |0⟩₂")
     println("  In standard notation: = (|00⟩ + |10⟩)/√2")
     println("  Properties: ⟨Z₁⟩ = 0, ⟨Z₂⟩ = +1, ⟨Z₁Z₂⟩ = 0")
     println("  Entanglement: STILL NONE (still separable)")
     println()
-    
+
     # STEP 2: Apply CNOT(1,2)
     println("  STEP 2: Apply CNOT(1→2)")
     println("  " * "─"^50)
@@ -145,20 +145,20 @@ let N = 2
     println("  Implementation: CNOT = H(2)·CZ(1,2)·H(2)")
     println("  Effect: |00⟩ → |00⟩, |10⟩ → |11⟩")
     println()
-    
+
     apply_hadamard_psi!(ψ, 2, N)
     apply_cz_psi!(ψ, 1, 2, N)
     apply_hadamard_psi!(ψ, 2, N)
-    
+
     print_state_2q(ψ, "|Φ⁺⟩ = CNOT(1,2)|ψ₁⟩ = (|00⟩ + |11⟩)/√2")
     println()
-    
+
     # Verification
     println("  ┌─────────────────────────────────────────────────────────────┐")
     println("  │  VERIFICATION                                              │")
     println("  └─────────────────────────────────────────────────────────────┘")
     println()
-    
+
     # Observables
     z1 = real(expect_local(ψ, 1, N, :z))
     z2 = real(expect_local(ψ, 2, N, :z))
@@ -166,7 +166,7 @@ let N = 2
     x2 = real(expect_local(ψ, 2, N, :x))
     zz = real(expect_corr(ψ, 1, 2, N, :zz))
     xx = real(expect_corr(ψ, 1, 2, N, :xx))
-    
+
     println("  Local observables:")
     println("    ┌────────┬───────────┬──────────────────────────────────┐")
     println("    │ Obs.   │  Value    │  Interpretation                  │")
@@ -177,7 +177,7 @@ let N = 2
     @printf("    │ ⟨X₂⟩   │  %+.4f   │  No X preference                 │\n", x2)
     println("    └────────┴───────────┴──────────────────────────────────┘")
     println()
-    
+
     println("  Correlations:")
     println("    ┌────────────┬───────────┬────────────────────────────────┐")
     println("    │ Correlation│  Value    │  Interpretation                │")
@@ -186,13 +186,13 @@ let N = 2
     @printf("    │ ⟨X₁X₂⟩     │  %+.4f   │  PERFECT correlation in X      │\n", xx)
     println("    └────────────┴───────────┴────────────────────────────────┘")
     println()
-    
+
     # Density matrix
     ρ = ψ * ψ'
     println("  Full density matrix |Φ⁺⟩⟨Φ⁺|:")
     print_density_matrix(ρ, "ρ = |Φ⁺⟩⟨Φ⁺|")
     println()
-    
+
     # Partial trace
     ρ_1 = partial_trace(ψ, [2], N)
     println("  Reduced density matrix (tracing out qubit 2):")
@@ -202,13 +202,13 @@ let N = 2
     println()
     println("  KEY INSIGHT: Despite total state being pure, each subsystem is")
     println("  maximally mixed! This is the signature of maximal entanglement.")
-    
-    passed = abs(z1) < 0.01 && abs(z2) < 0.01 && abs(zz - 1.0) < 0.01 && 
+
+    passed = abs(z1) < 0.01 && abs(z2) < 0.01 && abs(zz - 1.0) < 0.01 &&
              abs(ρ_1[1,1] - 0.5) < 0.01
     status = passed ? "--" : "✗"
     println()
     @printf("  %s Bell state verified!\n", status)
-    
+
     global all_passed &= passed
 end
 
@@ -272,7 +272,7 @@ let N = 3
     dim = 1 << N
     ψ = zeros(ComplexF64, dim)
     ψ[1] = 1.0
-    
+
     # STEP 0: Initial state
     println("  STEP 0: Initial state |000⟩")
     println("  " * "─"^55)
@@ -280,27 +280,27 @@ let N = 3
     println("  Correlations: ⟨Z₁Z₂⟩ = ⟨Z₁Z₃⟩ = ⟨Z₂Z₃⟩ = +1 (trivial)")
     println("  Entanglement: NONE (separable state)")
     println()
-    
+
     # STEP 1: Apply H(1)
     println("  STEP 1: Apply Hadamard to qubit 1")
     println("  " * "─"^55)
     println("  Gate: H(1)")
     println("  Effect: Creates superposition on qubit 1")
     println()
-    
+
     apply_hadamard_psi!(ψ, 1, N)
     print_state_3q(ψ, "|ψ₁⟩ = H(1)|000⟩ = |+⟩₁ ⊗ |00⟩₂₃")
     println("  = (|000⟩ + |100⟩)/√2")
     println("  Entanglement: STILL NONE (separable: |+⟩ ⊗ |00⟩)")
     println()
-    
+
     # STEP 2: Apply CNOT(1,2)
     println("  STEP 2: Apply CNOT(1→2)")
     println("  " * "─"^55)
     println("  Gate: CNOT(1,2) = H(2)·CZ(1,2)·H(2)")
     println("  Effect: If q1=1, flip q2")
     println()
-    
+
     apply_hadamard_psi!(ψ, 2, N)
     apply_cz_psi!(ψ, 1, 2, N)
     apply_hadamard_psi!(ψ, 2, N)
@@ -309,30 +309,30 @@ let N = 3
     println("  Correlations: ⟨Z₁Z₂⟩ = +1 (perfect), ⟨Z₂Z₃⟩ = ⟨Z₁Z₃⟩ = 0")
     println("  Entanglement: BIPARTITE (qubits 1,2 entangled, 3 separate)")
     println()
-    
+
     # STEP 3: Apply CNOT(2,3)
     println("  STEP 3: Apply CNOT(2→3)")
     println("  " * "─"^55)
     println("  Gate: CNOT(2,3) = H(3)·CZ(2,3)·H(3)")
     println("  Effect: If q2=1, flip q3 → creates GHZ!")
     println()
-    
+
     apply_hadamard_psi!(ψ, 3, N)
     apply_cz_psi!(ψ, 2, 3, N)
     apply_hadamard_psi!(ψ, 3, N)
     print_state_3q(ψ, "|GHZ₃⟩ = CNOT(2,3)|ψ₂⟩ = (|000⟩ + |111⟩)/√2")
     println()
-    
+
     # Verification
     println("  ┌─────────────────────────────────────────────────────────────┐")
     println("  │  VERIFICATION                                              │")
     println("  └─────────────────────────────────────────────────────────────┘")
     println()
-    
+
     z1z2 = real(expect_corr(ψ, 1, 2, N, :zz))
     z1z3 = real(expect_corr(ψ, 1, 3, N, :zz))
     z2z3 = real(expect_corr(ψ, 2, 3, N, :zz))
-    
+
     println("  Pairwise correlations:")
     println("    ┌────────────┬───────────┬─────────────────────────────────┐")
     println("    │ Correlation│  Value    │  Interpretation                 │")
@@ -342,12 +342,12 @@ let N = 3
     @printf("    │ ⟨Z₂Z₃⟩     │  %+.4f   │  Qubits 2,3 perfectly correlated│\n", z2z3)
     println("    └────────────┴───────────┴─────────────────────────────────┘")
     println()
-    
+
     # Reduced density matrices
     ρ = ψ * ψ'
     ρ_12 = partial_trace(ψ, [3], N)
     ρ_1 = partial_trace(ψ, [2, 3], N)
-    
+
     println("  Subsystem states:")
     @printf("    Tr(ρ²)   = %.4f (pure state)\n", real(tr(ρ * ρ)))
     @printf("    Tr(ρ₁²)  = %.4f (maximally mixed single qubit)\n", real(tr(ρ_1 * ρ_1)))
@@ -385,41 +385,41 @@ end
 
 let N = 4, M = 500, p = 0.02
     dim = 1 << N
-    
+
     println("  Configuration:")
     @printf("    N = %d qubits\n", N)
     @printf("    p = %.2f depolarizing noise\n", p)
     @printf("    M = %d MCWF trajectories\n", M)
     println()
-    
+
     # === DM APPROACH ===
     println("  DM Approach (exact Kraus operators):")
     ρ = zeros(ComplexF64, dim, dim)
     create_ghz_rho!(ρ, N)
-    
+
     println("    Created |GHZ><GHZ|")
     @printf("    Tr(rho^2) = %.4f (pure state)\n", real(tr(ρ * ρ)))
-    
+
     apply_channel_depolarizing!(ρ, p, collect(1:N), N)
     @printf("    After noise: Tr(rho^2) = %.4f (mixed)\n", real(tr(ρ * ρ)))
-    
+
     probs_dm = real.(diag(ρ))
     p_all_0_dm = probs_dm[1]
     p_all_1_dm = probs_dm[dim]
-    
+
     println()
     println("    Exact probabilities:")
     @printf("      P(|0000>) = %.4f\n", p_all_0_dm)
     @printf("      P(|1111>) = %.4f\n", p_all_1_dm)
     @printf("      P(other)  = %.4f\n", 1 - p_all_0_dm - p_all_1_dm)
-    
+
     # === MCWF CONVERGENCE WITH M ===
     println()
     println("  MCWF CONVERGENCE WITH NUMBER OF TRAJECTORIES:")
     println("  ┌────────────────────────────────────────────────────────────┐")
     println("  │  Traj M   P(|0000>)   P(|1111>)   Error |0000>  Error |1111>│")
     println("  ├────────────────────────────────────────────────────────────┤")
-    
+
     for M_test in [10, 20, 50, 100, 200, 500, 1000]
         counts = zeros(Int, dim)
         for traj in 1:M_test
@@ -427,7 +427,7 @@ let N = 4, M = 500, p = 0.02
             ψ = zeros(ComplexF64, dim)
             create_ghz_psi!(ψ, N)
             apply_channel_depolarizing!(ψ, p, collect(1:N), N)
-            
+
             probs = abs2.(ψ)
             r = rand()
             cumsum_prob = 0.0
@@ -439,24 +439,24 @@ let N = 4, M = 500, p = 0.02
                 end
             end
         end
-        
+
         probs_mcwf = counts ./ M_test
         p_all_0_mcwf = probs_mcwf[1]
         p_all_1_mcwf = probs_mcwf[dim]
         err_0 = abs(p_all_0_mcwf - p_all_0_dm)
         err_1 = abs(p_all_1_mcwf - p_all_1_dm)
-        
+
         @printf("  │  %-6d    %.4f     %.4f      %.4f        %.4f     │\n",
                 M_test, p_all_0_mcwf, p_all_1_mcwf, err_0, err_1)
     end
-    
+
     println("  └────────────────────────────────────────────────────────────┘")
     println()
     println("  Observation: Error decreases as 1/sqrt(M) (Central Limit Theorem)")
     println("  DM exact:    P(|0000>) = $(round(p_all_0_dm, digits=4)), P(|1111>) = $(round(p_all_1_dm, digits=4))")
     println()
     println("  -- GHZ noisy sampling convergence demonstrated!")
-    
+
     global all_passed &= true
 end
 
@@ -482,10 +482,10 @@ println()
 
 let N = 2
     dim = 1 << N
-    
+
     println("  p       ⟨Z₁Z₂⟩_DM   ⟨Z₁Z₂⟩_MCWF   |Decay|   Interpretation")
     println("  ─────   ──────────  ───────────   ───────   ─────────────────")
-    
+
     for p in [0.0, 0.05, 0.1, 0.2, 0.5]
         # DM approach
         ρ = zeros(ComplexF64, dim, dim); ρ[1,1] = 1.0
@@ -493,12 +493,12 @@ let N = 2
         apply_hadamard_rho!(ρ, 2, N)
         apply_cz_rho!(ρ, 1, 2, N)
         apply_hadamard_rho!(ρ, 2, N)
-        
+
         if p > 0
             apply_channel_depolarizing!(ρ, p, collect(1:N), N)
         end
         zz_dm = real(expect_corr(ρ, 1, 2, N, :zz))
-        
+
         # MCWF approach
         M = 200
         sum_zz = 0.0
@@ -509,24 +509,24 @@ let N = 2
             apply_hadamard_psi!(ψ, 2, N)
             apply_cz_psi!(ψ, 1, 2, N)
             apply_hadamard_psi!(ψ, 2, N)
-            
+
             if p > 0
                 apply_channel_depolarizing!(ψ, p, collect(1:N), N)
             end
             sum_zz += real(expect_corr(ψ, 1, 2, N, :zz))
         end
         zz_mcwf = sum_zz / M
-        
+
         decay = 1.0 - zz_dm
         interp = decay < 0.01 ? "Perfect correlation" :
                  decay < 0.2 ? "Slight decay" :
                  decay < 0.5 ? "Significant decay" :
                  decay < 0.9 ? "Mostly decohered" : "Nearly classical"
-        
-        @printf("  %.2f    %+.4f      %+.4f        %.4f    %s\n", 
+
+        @printf("  %.2f    %+.4f      %+.4f        %.4f    %s\n",
                 p, zz_dm, zz_mcwf, decay, interp)
     end
-    
+
     println()
     println("  -- Decoherence successfully demonstrated!")
     println("    As noise increases: quantum correlations → classical (uncorrelated)")
@@ -566,7 +566,7 @@ println()
 
 let N = 3
     dim = 1 << N
-    
+
     # Test with multiple input states
     test_cases = [
         (0.0,   "|0⟩"),
@@ -575,45 +575,45 @@ let N = 3
         (π/4,   "Ry(π/4)|0⟩"),
         (3π/4,  "Ry(3π/4)|0⟩"),
     ]
-    
+
     println("  Testing teleportation fidelity for different input states:")
     println("  ─────────────────────────────────────────────────────────")
     println()
     println("  Input state              ⟨Z⟩_expected   ⟨Z⟩_teleported   Fidelity")
     println("  ──────────────────────   ────────────   ──────────────   ────────")
-    
+
     all_fidelities_good = true
-    
+
     for (θ, name) in test_cases
         expected_z = cos(θ)
-        
+
         n_trials = 100
         sum_z = 0.0
         sum_fidelity = 0.0
-        
+
         for trial in 1:n_trials
             Random.seed!(trial)
             ψ = zeros(ComplexF64, dim)
-            
+
             # Step 1: Create Bell pair on qubits 2,3
             ψ[1] = 1.0
             apply_hadamard_psi!(ψ, 2, N)
             apply_hadamard_psi!(ψ, 3, N)
             apply_cz_psi!(ψ, 2, 3, N)
             apply_hadamard_psi!(ψ, 3, N)
-            
+
             # Step 2: Prepare input state on qubit 1
             apply_ry_psi!(ψ, 1, Float64(θ), N)
-            
+
             # Step 3: Alice's Bell measurement
             apply_hadamard_psi!(ψ, 2, N)
             apply_cz_psi!(ψ, 1, 2, N)
             apply_hadamard_psi!(ψ, 2, N)
             apply_hadamard_psi!(ψ, 1, N)
-            
+
             outcomes, _ = projective_measurement!(ψ, [1, 2], :z, N)
             m1, m2 = outcomes[1], outcomes[2]
-            
+
             # Step 4: Bob's corrections
             if m2 == 1
                 apply_pauli_x_psi!(ψ, 3, N)
@@ -621,64 +621,64 @@ let N = 3
             if m1 == 1
                 apply_pauli_z_psi!(ψ, 3, N)
             end
-            
+
             # Step 5: Measure fidelity
             z3 = real(expect_local(ψ, 3, N, :z))
             sum_z += z3
-            
+
             ρ_3 = partial_trace(ψ, [1, 2], N)
             ψ_target = ComplexF64[cos(θ/2), sin(θ/2)]
             ρ_target = ψ_target * ψ_target'
             fidelity = real(tr(ρ_target * ρ_3))
             sum_fidelity += fidelity
         end
-        
+
         avg_z = sum_z / n_trials
         avg_fidelity = sum_fidelity / n_trials
-        
-        @printf("  %-22s   %+.4f         %+.4f           %.4f\n", 
+
+        @printf("  %-22s   %+.4f         %+.4f           %.4f\n",
                 name, expected_z, avg_z, avg_fidelity)
-        
+
         all_fidelities_good &= (avg_fidelity > 0.95)
     end
-    
+
     # Show detailed example
     println()
     println("  ─────────────────────────────────────────────────────────")
     println()
     println("  DETAILED EXAMPLE: Teleporting |+⟩")
     println()
-    
+
     Random.seed!(42)
     ψ = zeros(ComplexF64, dim)
     θ = π/2
-    
+
     println("    1. Initialize |000⟩")
     ψ[1] = 1.0
-    
+
     println("    2. Create Bell pair: H(2)·CNOT(2,3)")
     apply_hadamard_psi!(ψ, 2, N)
     apply_hadamard_psi!(ψ, 3, N)
     apply_cz_psi!(ψ, 2, 3, N)
     apply_hadamard_psi!(ψ, 3, N)
     @printf("       ⟨Z₂Z₃⟩ = %+.4f (entangled)\n", real(expect_corr(ψ, 2, 3, N, :zz)))
-    
+
     println("    3. Prepare |+⟩ on qubit 1: Ry(π/2)")
     apply_ry_psi!(ψ, 1, Float64(θ), N)
-    @printf("       ⟨X₁⟩ = %+.4f, ⟨Z₁⟩ = %+.4f\n", 
+    @printf("       ⟨X₁⟩ = %+.4f, ⟨Z₁⟩ = %+.4f\n",
             real(expect_local(ψ, 1, N, :x)), real(expect_local(ψ, 1, N, :z)))
-    
+
     println("    4. Alice's Bell measurement: CNOT(1,2)·H(1)")
     apply_hadamard_psi!(ψ, 2, N)
     apply_cz_psi!(ψ, 1, 2, N)
     apply_hadamard_psi!(ψ, 2, N)
     apply_hadamard_psi!(ψ, 1, N)
-    
+
     println("    5. Measure qubits 1,2")
     outcomes, _ = projective_measurement!(ψ, [1, 2], :z, N)
     m1, m2 = outcomes[1], outcomes[2]
     @printf("       Outcomes: m₁=%d, m₂=%d\n", m1, m2)
-    
+
     println("    6. Bob's corrections")
     if m2 == 1
         println("       m₂=1 → Apply X₃")
@@ -692,22 +692,22 @@ let N = 3
     else
         println("       m₁=0 → No Z needed")
     end
-    
+
     println("    7. Verify Bob's qubit")
     ρ_3 = partial_trace(ψ, [1, 2], N)
     @printf("       ⟨X₃⟩ = %+.4f (expect +1 for |+⟩)\n", real(expect_local(ρ_3, 1, 1, :x)))
     @printf("       ⟨Z₃⟩ = %+.4f (expect  0 for |+⟩)\n", real(expect_local(ρ_3, 1, 1, :z)))
-    
+
     ψ_target = ComplexF64[1/√2, 1/√2]
     ρ_target = ψ_target * ψ_target'
     fidelity = real(tr(ρ_target * ρ_3))
     @printf("       Fidelity = %.4f\n", fidelity)
-    
+
     println()
     status = all_fidelities_good ? "--" : "✗"
     @printf("  %s Quantum teleportation successful!\n", status)
     println("    State transferred via entanglement + classical communication")
-    
+
     global all_passed &= all_fidelities_good
 end
 
@@ -732,7 +732,7 @@ function print_teleport_state(ψ::Vector{ComplexF64}, label::String)
         q1 = (i-1) & 1
         q2 = ((i-1) >> 1) & 1
         q3 = ((i-1) >> 2) & 1
-        
+
         if abs(ψ[i]) > 1e-10
             amp = @sprintf("%+.4f", real(ψ[i]))
             if abs(imag(ψ[i])) > 1e-10
@@ -750,57 +750,57 @@ let N = 3
     dim = 1 << N
     ψ = zeros(ComplexF64, dim)
     ψ[1] = 1.0
-    
+
     # STEP 0: Initial state
     println("  STEP 0: Initial state |000⟩")
     println("  " * "─"^55)
     print_teleport_state(ψ, "|ψ₀⟩ = |000⟩")
     println()
-    
+
     # STEP 1: Create Bell pair (qubits 2,3)
     println("  STEP 1: Create Bell pair on qubits 2,3")
     println("  " * "─"^55)
     println("  Gates: H(2) → CNOT(2,3)")
     println()
-    
+
     apply_hadamard_psi!(ψ, 2, N)
     println("  After H(2):")
     print_teleport_state(ψ, "|ψ⟩ = (1/√2)(|000⟩ + |010⟩)")
     println()
-    
+
     apply_hadamard_psi!(ψ, 3, N)
     apply_cz_psi!(ψ, 2, 3, N)
     apply_hadamard_psi!(ψ, 3, N)  # CNOT = H·CZ·H
     println("  After CNOT(2,3):")
     print_teleport_state(ψ, "|ψ⟩ = |0⟩₁ ⊗ |Φ⁺⟩₂₃ = (1/√2)(|000⟩ + |011⟩)")
     println()
-    
+
     # STEP 2: Prepare input state |+⟩ on qubit 1
     println("  STEP 2: Prepare input |+⟩ on qubit 1")
     println("  " * "─"^55)
     println("  Gate: Ry(π/2) on qubit 1")
     println()
-    
+
     apply_ry_psi!(ψ, 1, Float64(π/2), N)
     println("  Full state:")
     print_teleport_state(ψ, "|ψ⟩ = |+⟩₁ ⊗ |Φ⁺⟩₂₃")
     println("  In standard notation:")
     println("    = (1/2)(|000⟩ + |011⟩ + |100⟩ + |111⟩)")
     println()
-    
+
     # STEP 3: Alice's Bell measurement preparation
     println("  STEP 3: Alice's Bell measurement (transform to comp. basis)")
     println("  " * "─"^55)
     println("  Gates: CNOT(1,2) → H(1)")
     println()
-    
+
     apply_hadamard_psi!(ψ, 2, N)
     apply_cz_psi!(ψ, 1, 2, N)
     apply_hadamard_psi!(ψ, 2, N)
     println("  After CNOT(1,2):")
     print_teleport_state(ψ, "|ψ⟩ after CNOT(1,2)")
     println()
-    
+
     apply_hadamard_psi!(ψ, 1, N)
     println("  After H(1) - ready to measure in Z basis:")
     print_teleport_state(ψ, "|ψ⟩ = superposition of 4 terms")
@@ -808,7 +808,7 @@ let N = 3
     println("  Each term |m1 m2 *⟩ corresponds to a measurement outcome.")
     println("  Bob's qubit (3) is in |+⟩ or needs correction based on m1,m2.")
     println()
-    
+
     # Show all 4 measurement outcomes
     println("  STEP 4: Measurement outcomes and corrections")
     println("  " * "─"^55)
@@ -973,54 +973,54 @@ end
 # prepare_state! is a function that prepares the state on qubit 1
 # target_state is the expected 2-element state vector
 function teleport_with_noise(prepare_state!::Function, target_state::Vector{ComplexF64},
-                             p::Float64, noise_model::Symbol, 
+                             p::Float64, noise_model::Symbol,
                              noise_on_all_gates::Bool, N::Int=3)
     dim = 1 << N
     ψ = zeros(ComplexF64, dim)
     ψ[1] = 1.0
-    
+
     # ========== CREATE BELL PAIR on qubits 2,3 ==========
     apply_hadamard_psi!(ψ, 2, N)
     if noise_on_all_gates
         apply_noise!(ψ, p, noise_model, [2], N)
     end
-    
+
     # CNOT(2,3) = H(3) CZ(2,3) H(3)
     apply_hadamard_psi!(ψ, 3, N)
     apply_cz_psi!(ψ, 2, 3, N)
     apply_hadamard_psi!(ψ, 3, N)
-    
+
     if noise_on_all_gates
         apply_noise!(ψ, p, noise_model, [2, 3], N)
     end
-    
+
     # NOISE ON BELL PAIR ONLY (Scenario A)
     if !noise_on_all_gates
         apply_noise!(ψ, p, noise_model, [2, 3], N)
     end
-    
+
     # ========== PREPARE INPUT STATE on qubit 1 ==========
     prepare_state!(ψ, 1, N)
-    
+
     # ========== ALICE'S BELL MEASUREMENT ==========
     # CNOT(1,2) = H(2) CZ(1,2) H(2)
     apply_hadamard_psi!(ψ, 2, N)
     if noise_on_all_gates
         apply_noise!(ψ, p, noise_model, [2], N)
     end
-    
+
     apply_cz_psi!(ψ, 1, 2, N)
     apply_hadamard_psi!(ψ, 2, N)
     apply_hadamard_psi!(ψ, 1, N)
-    
+
     if noise_on_all_gates
         apply_noise!(ψ, p, noise_model, [1, 2], N)
     end
-    
+
     # ========== MID-CIRCUIT MEASUREMENT (qubits 1,2) ==========
     outcomes, _ = projective_measurement!(ψ, [1, 2], :z, N)
     m1, m2 = outcomes[1], outcomes[2]
-    
+
     # ========== BOB'S CONDITIONAL CORRECTIONS ==========
     if m2 == 1
         apply_pauli_x_psi!(ψ, 3, N)
@@ -1028,12 +1028,12 @@ function teleport_with_noise(prepare_state!::Function, target_state::Vector{Comp
     if m1 == 1
         apply_pauli_z_psi!(ψ, 3, N)
     end
-    
+
     # ========== CALCULATE FIDELITY ==========
     ρ_3 = partial_trace(ψ, [1, 2], N)
     ρ_target = target_state * target_state'
     fidelity = real(tr(ρ_target * ρ_3))
-    
+
     return fidelity
 end
 
@@ -1061,10 +1061,10 @@ let n_trials = 100
     println("  ┌────────────────────────────────────────────────────────────┐")
     println("  │  Noise p   F(Depol)      F(Dephase)  F(AmpDamp)           │")
     println("  ├────────────────────────────────────────────────────────────┤")
-    
+
     for p in [0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0]
         fidelities = Dict{Symbol, Float64}()
-        
+
         for noise_model in [:depolarizing, :dephasing, :amplitude_damping]
             sum_f = 0.0
             for trial in 1:n_trials
@@ -1073,12 +1073,12 @@ let n_trials = 100
             end
             fidelities[noise_model] = sum_f / n_trials
         end
-        
+
         @printf("  │  %.2f       %.4f        %.4f      %.4f           │\n",
-                p, fidelities[:depolarizing], fidelities[:dephasing], 
+                p, fidelities[:depolarizing], fidelities[:dephasing],
                 fidelities[:amplitude_damping])
     end
-    
+
     println("  └────────────────────────────────────────────────────────────┘")
 end
 
@@ -1108,10 +1108,10 @@ let n_trials = 100
     println("  ┌────────────────────────────────────────────────────────────┐")
     println("  │  Noise p   F(Depol)      F(Dephase)  F(AmpDamp)           │")
     println("  ├────────────────────────────────────────────────────────────┤")
-    
+
     for p in [0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0]
         fidelities = Dict{Symbol, Float64}()
-        
+
         for noise_model in [:depolarizing, :dephasing, :amplitude_damping]
             sum_f = 0.0
             for trial in 1:n_trials
@@ -1120,12 +1120,12 @@ let n_trials = 100
             end
             fidelities[noise_model] = sum_f / n_trials
         end
-        
+
         @printf("  │  %.2f       %.4f        %.4f      %.4f           │\n",
-                p, fidelities[:depolarizing], fidelities[:dephasing], 
+                p, fidelities[:depolarizing], fidelities[:dephasing],
                 fidelities[:amplitude_damping])
     end
-    
+
     println("  └────────────────────────────────────────────────────────────┘")
 end
 
@@ -1183,14 +1183,14 @@ test_states = [
 ]
 
 let n_trials = 50
-    for (noise_sym, noise_name) in [(:depolarizing, "Depolarizing"), 
+    for (noise_sym, noise_name) in [(:depolarizing, "Depolarizing"),
                                      (:dephasing, "Dephasing"),
                                      (:amplitude_damping, "Amp Damping")]
         println("  $noise_name noise (Bell pair only):")
         println("  ┌──────────────────────────────────────────────────────────┐")
         println("  │  State      p=0.0   p=0.05  p=0.1   p=0.2   p=0.5       │")
         println("  ├──────────────────────────────────────────────────────────┤")
-        
+
         for (prep!, target, state_name) in test_states
             fids = Float64[]
             for p in [0.0, 0.05, 0.1, 0.2, 0.5]
@@ -1282,7 +1282,7 @@ function negativity_half_split(ρ::Matrix{ComplexF64}, N::Int)
     d_left = 1 << N_left
     d_right = 1 << (N - N_left)
     d_full = size(ρ, 1)
-    
+
     # Build partial transpose w.r.t. left subsystem
     ρ_pt = zeros(ComplexF64, d_full, d_full)
     @inbounds for i_L in 0:(d_left-1)
@@ -1299,7 +1299,7 @@ function negativity_half_split(ρ::Matrix{ComplexF64}, N::Int)
             end
         end
     end
-    
+
     λs = real.(eigvals(Hermitian(ρ_pt)))
     trace_norm = sum(abs, λs)
     return (trace_norm - 1.0) / 2.0
@@ -1310,7 +1310,7 @@ function entropy_half_split(ρ::Matrix{ComplexF64}, N::Int)
     N_left = N ÷ 2
     d_left = 1 << N_left
     d_right = 1 << (N - N_left)
-    
+
     # Trace out right subsystem
     ρ_left = zeros(ComplexF64, d_left, d_left)
     @inbounds for i_L in 0:(d_left-1)
@@ -1322,7 +1322,7 @@ function entropy_half_split(ρ::Matrix{ComplexF64}, N::Int)
             end
         end
     end
-    
+
     return von_neumann_entropy(ρ_left)
 end
 
@@ -1330,25 +1330,25 @@ let N = 4
     println("  ┌────────────────────────────────────────────────────────────┐")
     println("  │  Noise p   S_half(Depol)  N_half(Depol)  Interpretation   │")
     println("  ├────────────────────────────────────────────────────────────┤")
-    
+
     for p in [0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0]
         ρ = create_ghz_rho_4q!()
-        
+
         if p > 0
             apply_channel_depolarizing!(ρ, p, collect(1:N), N)
         end
-        
+
         S_half = entropy_half_split(ρ, N)
         N_half = negativity_half_split(ρ, N)
-        
+
         interp = N_half > 0.4 ? "Strong entanglement" :
                  N_half > 0.1 ? "Moderate entanglement" :
                  N_half > 0.01 ? "Weak entanglement" : "Separable"
-        
+
         @printf("  │  %.2f       %.4f        %.4f         %-18s│\n",
                 p, S_half, N_half, interp)
     end
-    
+
     println("  └────────────────────────────────────────────────────────────┘")
 end
 
@@ -1363,7 +1363,7 @@ println("  ├──────────────────────
 let N = 4
     for p in [0.0, 0.05, 0.1, 0.2, 0.5]
         negs = Dict{Symbol, Float64}()
-        
+
         for (noise_model, apply_fn!) in [
             (:depol, (ρ, p, N) -> apply_channel_depolarizing!(ρ, p, collect(1:N), N)),
             (:dephase, (ρ, p, N) -> apply_channel_dephasing!(ρ, p, collect(1:N), N)),
@@ -1375,14 +1375,14 @@ let N = 4
             end
             negs[noise_model] = negativity_half_split(ρ, N)
         end
-        
+
         best = negs[:depol] >= negs[:dephase] && negs[:depol] >= negs[:ampdamp] ? "Depol" :
                negs[:dephase] >= negs[:ampdamp] ? "Dephase" : "AmpDamp"
-        
+
         @printf("  │  %.2f       %.4f     %.4f      %.4f     %-10s │\n",
                 p, negs[:depol], negs[:dephase], negs[:ampdamp], best)
     end
-    
+
     println("  └────────────────────────────────────────────────────────────┘")
 end
 
@@ -1428,25 +1428,25 @@ function generate_noisy_bell_trajectory(seed::Int, p::Float64)
     dim = 1 << N
     ψ = zeros(ComplexF64, dim)
     ψ[1] = 1.0
-    
+
     # Create Bell state
     apply_hadamard_psi!(ψ, 1, N)
     apply_hadamard_psi!(ψ, 2, N)
     apply_cz_psi!(ψ, 1, 2, N)
     apply_hadamard_psi!(ψ, 2, N)
-    
+
     # Apply depolarizing noise (MCWF stochastic)
     if p > 0
         apply_channel_depolarizing!(ψ, p, collect(1:N), N)
     end
-    
+
     return ψ
 end
 
-# Reference: exact DM calculation  
+# Reference: exact DM calculation
 let N = 2, p = 0.1
     dim = 1 << N
-    
+
     # Exact DM reference
     ρ_ref = zeros(ComplexF64, dim, dim)
     ρ_ref[1,1] = 1.0
@@ -1455,41 +1455,41 @@ let N = 2, p = 0.1
     apply_cz_rho!(ρ_ref, 1, 2, N)
     apply_hadamard_rho!(ρ_ref, 2, N)
     apply_channel_depolarizing!(ρ_ref, p, collect(1:N), N)
-    
+
     # Reference values using existing functions
     P_ref = real(tr(ρ_ref * ρ_ref))  # purity
     S_ref = von_neumann_entropy(ρ_ref)
     N_ref = negativity_half_split(ρ_ref, N)  # our local function
-    
+
     @printf("  Reference (exact DM, p=%.2f):\n", p)
     @printf("    Purity     = %.4f\n", P_ref)
     @printf("    S_vN       = %.4f\n", S_ref)
     @printf("    Negativity = %.4f\n", N_ref)
     println()
-    
+
     # MCWF convergence study
     println("  ┌─────────────────────────────────────────────────────────────────────┐")
     println("  │  Traj M   Purity   S_vN    |S-S_ref|   N_half   |N-N_ref|          │")
     println("  ├─────────────────────────────────────────────────────────────────────┤")
-    
+
     for M in [10, 20, 50, 100, 200, 500, 1000]
         trajectories = [generate_noisy_bell_trajectory(seed, p) for seed in 1:M]
-        
+
         # Reconstruct density matrix from trajectories
         ρ_mcwf = reconstruct_density_matrix(trajectories)
-        
+
         # Compute measures on reconstructed ρ
         P_mcwf = real(tr(ρ_mcwf * ρ_mcwf))
         S_mcwf = von_neumann_entropy(ρ_mcwf)
         N_mcwf = negativity_half_split(ρ_mcwf, N)
-        
+
         err_S = abs(S_mcwf - S_ref)
         err_N = abs(N_mcwf - N_ref)
-        
+
         @printf("  │  %-6d   %.4f   %.4f  %.4f      %.4f    %.4f           │\n",
                 M, P_mcwf, S_mcwf, err_S, N_mcwf, err_N)
     end
-    
+
     println("  └─────────────────────────────────────────────────────────────────────┘")
     println()
     println("  Observation: Error decreases as 1/sqrt(M) (Central Limit Theorem)")
@@ -1526,16 +1526,16 @@ println("    B0 = (Z+X)/sqrt(2),  B1 = (Z-X)/sqrt(2)")
 println()
 
 # CHSH correlator calculation
-function chsh_correlator(ρ::Matrix{ComplexF64}, N::Int, 
+function chsh_correlator(ρ::Matrix{ComplexF64}, N::Int,
                          θ_A::Float64, θ_B::Float64)
     # Measure <A(θ_A) ⊗ B(θ_B)> where A,B are spin operators in XZ plane
     # A(θ) = cos(θ)*Z + sin(θ)*X
     # <A⊗B> = cos(θ_A)*cos(θ_B)*<ZZ> + cos(θ_A)*sin(θ_B)*<ZX>
     #       + sin(θ_A)*cos(θ_B)*<XZ> + sin(θ_A)*sin(θ_B)*<XX>
-    
+
     zz = real(expect_corr(ρ, 1, 2, N, :zz))
     xx = real(expect_corr(ρ, 1, 2, N, :xx))
-    
+
     # For ZX and XZ correlators, we need to compute manually
     # <ZX> = Tr(ρ * (Z⊗X))
     dim = size(ρ, 1)
@@ -1546,21 +1546,21 @@ function chsh_correlator(ρ::Matrix{ComplexF64}, N::Int,
             # Z⊗X matrix element
             i1, i2 = i & 1, (i >> 1) & 1
             j1, j2 = j & 1, (j >> 1) & 1
-            
+
             # Z on qubit 1: (-1)^i1 * δ(i1,j1)
             # X on qubit 2: δ(i2, 1-j2)
             if i1 == j1 && i2 == 1 - j2
                 zx += real(ρ[i+1, j+1]) * (i1 == 0 ? 1.0 : -1.0)
             end
-            
-            # X on qubit 1: δ(i1, 1-j1)  
+
+            # X on qubit 1: δ(i1, 1-j1)
             # Z on qubit 2: (-1)^i2 * δ(i2,j2)
             if i1 == 1 - j1 && i2 == j2
                 xz += real(ρ[i+1, j+1]) * (i2 == 0 ? 1.0 : -1.0)
             end
         end
     end
-    
+
     return cos(θ_A)*cos(θ_B)*zz + cos(θ_A)*sin(θ_B)*zx +
            sin(θ_A)*cos(θ_B)*xz + sin(θ_A)*sin(θ_B)*xx
 end
@@ -1571,12 +1571,12 @@ function compute_chsh(ρ::Matrix{ComplexF64}, N::Int)
     # B0 = (Z+X)/sqrt(2) (θ=π/4), B1 = (Z-X)/sqrt(2) (θ=-π/4)
     θ_A0, θ_A1 = 0.0, π/2
     θ_B0, θ_B1 = π/4, -π/4
-    
+
     E00 = chsh_correlator(ρ, N, θ_A0, θ_B0)
     E01 = chsh_correlator(ρ, N, θ_A0, θ_B1)
     E10 = chsh_correlator(ρ, N, θ_A1, θ_B0)
     E11 = chsh_correlator(ρ, N, θ_A1, θ_B1)
-    
+
     return E00 + E01 + E10 - E11
 end
 
@@ -1614,7 +1614,7 @@ println("  ├──────────────────────
 let N = 2
     for p in [0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0]
         chsh_vals = Float64[]
-        
+
         for noise_model in [:depolarizing, :dephasing, :amplitude_damping]
             ρ = create_bell_rho!(N)
             if p > 0
@@ -1628,15 +1628,15 @@ let N = 2
             end
             push!(chsh_vals, compute_chsh(ρ, N))
         end
-        
+
         # Check best violation
         best_idx = argmax(abs.(chsh_vals))
         best = chsh_vals[best_idx] > 2 ? "Quantum" : "Classical"
-        
+
         @printf("  │  %.2f       %.4f     %.4f      %.4f     %-10s │\n",
                 p, chsh_vals[1], chsh_vals[2], chsh_vals[3], best)
     end
-    
+
     println("  └────────────────────────────────────────────────────────────┘")
 end
 
@@ -1727,7 +1727,7 @@ function print_state_vector(ψ::Vector{ComplexF64}, label::String)
         B = ((i-1) >> 1) & 1
         C = ((i-1) >> 2) & 1
         D = ((i-1) >> 3) & 1
-        
+
         if abs(ψ[i]) > 1e-10
             amp = @sprintf("%+.4f", real(ψ[i]))
             if abs(imag(ψ[i])) > 1e-10
@@ -1997,36 +1997,36 @@ function entanglement_swapping_protocol(p_noise::Float64, meas_outcome::Int=0)
     dim = 1 << N
     ρ = zeros(ComplexF64, dim, dim)
     ρ[1,1] = 1.0
-    
+
     # Create Bell pair (A,B) on qubits 1,2: |Φ+⟩ = (|00⟩ + |11⟩)/√2
     apply_hadamard_rho!(ρ, 1, N)
     apply_hadamard_rho!(ρ, 2, N)
     apply_cz_rho!(ρ, 1, 2, N)
     apply_hadamard_rho!(ρ, 2, N)
-    
-    # Create Bell pair (C,D) on qubits 3,4: |Φ+⟩ 
+
+    # Create Bell pair (C,D) on qubits 3,4: |Φ+⟩
     apply_hadamard_rho!(ρ, 3, N)
     apply_hadamard_rho!(ρ, 4, N)
     apply_cz_rho!(ρ, 3, 4, N)
     apply_hadamard_rho!(ρ, 4, N)
-    
+
     # Apply noise to initial Bell pairs
     if p_noise > 0
         apply_channel_depolarizing!(ρ, p_noise, [1, 2, 3, 4], N)
     end
-    
+
     # Bell state measurement on qubits B,C (2,3)
     # Transform to computational basis: CNOT(B,C) then H(B)
     apply_hadamard_rho!(ρ, 3, N)
     apply_cz_rho!(ρ, 2, 3, N)
     apply_hadamard_rho!(ρ, 3, N)  # This is CNOT
     apply_hadamard_rho!(ρ, 2, N)
-    
+
     # Project onto specific measurement outcome for qubits B,C
     # meas_outcome encodes (b_B, b_C) where B=qubit2, C=qubit3
     b_B = (meas_outcome >> 0) & 1  # bit for qubit 2
     b_C = (meas_outcome >> 1) & 1  # bit for qubit 3
-    
+
     # Build projector: |b_B, b_C⟩⟨b_B, b_C| on qubits 2,3
     ρ_projected = zeros(ComplexF64, dim, dim)
     for i in 0:(dim-1)
@@ -2036,23 +2036,23 @@ function entanglement_swapping_protocol(p_noise::Float64, meas_outcome::Int=0)
             i_C = (i >> 2) & 1
             j_B = (j >> 1) & 1
             j_C = (j >> 2) & 1
-            
+
             # Only keep if both match the measurement outcome
             if i_B == b_B && i_C == b_C && j_B == b_B && j_C == b_C
                 ρ_projected[i+1, j+1] = ρ[i+1, j+1]
             end
         end
     end
-    
+
     # Normalize (probability of this outcome)
     prob = real(tr(ρ_projected))
     if prob > 1e-10
         ρ_projected ./= prob
     end
-    
+
     # Trace out qubits B,C (2,3) to get reduced state on (A,D)
     ρ_AD = zeros(ComplexF64, 4, 4)
-    
+
     for i_A in 0:1
         for i_D in 0:1
             for j_A in 0:1
@@ -2067,7 +2067,7 @@ function entanglement_swapping_protocol(p_noise::Float64, meas_outcome::Int=0)
             end
         end
     end
-    
+
     return ρ_AD, prob
 end
 
@@ -2101,18 +2101,18 @@ function compute_rho_AD_before()
     dim = 1 << N
     ρ = zeros(ComplexF64, dim, dim)
     ρ[1,1] = 1.0
-    
+
     # Create two Bell pairs
     apply_hadamard_rho!(ρ, 1, N)
     apply_hadamard_rho!(ρ, 2, N)
     apply_cz_rho!(ρ, 1, 2, N)
     apply_hadamard_rho!(ρ, 2, N)
-    
+
     apply_hadamard_rho!(ρ, 3, N)
     apply_hadamard_rho!(ρ, 4, N)
     apply_cz_rho!(ρ, 3, 4, N)
     apply_hadamard_rho!(ρ, 4, N)
-    
+
     # Trace out B,C (qubits 2,3) to get rho_AD
     ρ_AD = zeros(ComplexF64, 4, 4)
     for i_A in 0:1
@@ -2238,12 +2238,12 @@ println("  ├──────────────────────
 
 for p in [0.0, 0.02, 0.05, 0.1, 0.2, 0.5]
     local ρ_AD, prob = entanglement_swapping_protocol(p, 0)
-    
+
     P = real(tr(ρ_AD * ρ_AD))
     neg = negativity_half_split(ρ_AD, 2)
-    
+
     entangled = neg > 0.01 ? "Yes" : "No"
-    
+
     @printf("  │  %.2f       %.4f   %.4f       %.4f    %-12s│\n",
             p, prob, P, neg, entangled)
 end
@@ -2360,4 +2360,3 @@ println("  ═══════════════════════
 println()
 println("  Output saved to: demo_quantum_info_protocols/demo_quantum_info_protocols.txt")
 println()
-

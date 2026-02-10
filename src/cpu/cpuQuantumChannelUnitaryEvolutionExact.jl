@@ -13,7 +13,7 @@ In-place operations for memory efficiency.
 NAMING
 ------
 - _rho suffix: Density matrix operations
-- _psi suffix: Pure state operations  
+- _psi suffix: Pure state operations
 - _cpu suffix: CPU implementation
 
 EXPORTS

@@ -86,7 +86,7 @@ This makes it ideal for large parameter counts or hardware deployment.
 - `γ`: Perturbation decay exponent (default: 0.101)
 
 # Reference
-Spall, J. C. (1998). "An Overview of the Simultaneous Perturbation Method 
+Spall, J. C. (1998). "An Overview of the Simultaneous Perturbation Method
 for Efficient Optimization"
 """
 mutable struct SPSAOptimizer
@@ -95,7 +95,7 @@ mutable struct SPSAOptimizer
     A::Float64      # Stability constant
     α::Float64      # Step decay exponent
     γ::Float64      # Perturbation decay exponent
-    
+
     function SPSAOptimizer(; a::Float64=0.1, c::Float64=0.1, A::Float64=10.0,
                             α::Float64=0.602, γ::Float64=0.101)
         new(a, c, A, α, γ)
@@ -118,24 +118,24 @@ Perform one SPSA optimization step.
 """
 function step!(opt::SPSAOptimizer, θ::Vector{Float64}, cost_fn, k::Int)
     n_params = length(θ)
-    
+
     # Decaying gains (Spall's recommended schedule)
     aₖ = opt.a / (k + opt.A)^opt.α
     cₖ = opt.c / k^opt.γ
-    
+
     # Sample Bernoulli ±1 perturbation
     Δ = 2.0 .* (rand(n_params) .> 0.5) .- 1.0
-    
+
     # Only 2 function evaluations!
     θ_plus = θ .+ cₖ .* Δ
     θ_minus = θ .- cₖ .* Δ
-    
+
     c_plus = cost_fn(θ_plus)
     c_minus = cost_fn(θ_minus)
-    
+
     # SPSA gradient estimate
     gₖ = (c_plus - c_minus) ./ (2.0 * cₖ .* Δ)
-    
+
     # Update parameters
     return θ .- aₖ .* gₖ
 end
@@ -166,8 +166,8 @@ mutable struct AdamOptimizer
     m::Union{Nothing, Vector{Float64}}  # First moment estimate
     v::Union{Nothing, Vector{Float64}}  # Second moment estimate
     t::Int                               # Time step
-    
-    function AdamOptimizer(; lr::Float64=0.01, β1::Float64=0.9, 
+
+    function AdamOptimizer(; lr::Float64=0.01, β1::Float64=0.9,
                             β2::Float64=0.999, ε::Float64=1e-8)
         new(lr, β1, β2, ε, nothing, nothing, 0)
     end
@@ -179,7 +179,7 @@ end
 Perform one Adam optimization step.
 
 # Arguments
-- `opt`: Adam optimizer  
+- `opt`: Adam optimizer
 - `θ`: Current parameters
 - `gradient`: Gradient at current parameters
 
@@ -188,25 +188,25 @@ Perform one Adam optimization step.
 """
 function step!(opt::AdamOptimizer, θ::Vector{Float64}, gradient::Vector{Float64})
     n_params = length(θ)
-    
+
     # Initialize moments if needed
     if isnothing(opt.m)
         opt.m = zeros(n_params)
         opt.v = zeros(n_params)
     end
-    
+
     opt.t += 1
-    
+
     # Update biased first moment estimate
     opt.m .= opt.β1 .* opt.m .+ (1 - opt.β1) .* gradient
-    
+
     # Update biased second moment estimate
     opt.v .= opt.β2 .* opt.v .+ (1 - opt.β2) .* (gradient .^ 2)
-    
+
     # Bias correction
     m_hat = opt.m ./ (1 - opt.β1^opt.t)
     v_hat = opt.v ./ (1 - opt.β2^opt.t)
-    
+
     # Update parameters
     return θ .- opt.lr .* m_hat ./ (sqrt.(v_hat) .+ opt.ε)
 end
@@ -234,7 +234,7 @@ Simple gradient descent with fixed or decaying learning rate.
 mutable struct GradientDescentOptimizer
     lr::Float64
     decay::Float64  # lr_k = lr / (1 + decay * k)
-    
+
     function GradientDescentOptimizer(; lr::Float64=0.01, decay::Float64=0.0)
         new(lr, decay)
     end
@@ -243,7 +243,7 @@ end
 """
     step!(opt::GradientDescentOptimizer, θ, gradient, k) -> θ_new
 """
-function step!(opt::GradientDescentOptimizer, θ::Vector{Float64}, 
+function step!(opt::GradientDescentOptimizer, θ::Vector{Float64},
                gradient::Vector{Float64}, k::Int=1)
     lr_k = opt.lr / (1 + opt.decay * k)
     return θ .- lr_k .* gradient
@@ -275,26 +275,26 @@ Run optimization loop.
 - `history`: Vector of (iteration, cost) tuples
 """
 function optimize!(cost_fn, θ_init::Vector{Float64}, opt::SPSAOptimizer;
-                   max_iter::Int=100, tol::Float64=1e-6, 
+                   max_iter::Int=100, tol::Float64=1e-6,
                    verbose::Bool=false, callback=nothing)
     θ = copy(θ_init)
     history = Tuple{Int, Float64}[]
-    
+
     cost_prev = Inf
-    
+
     for k in 1:max_iter
         θ = step!(opt, θ, cost_fn, k)
         cost = cost_fn(θ)
         push!(history, (k, cost))
-        
+
         if !isnothing(callback)
             callback(k, θ, cost)
         end
-        
+
         if verbose && k % 10 == 0
             println("SPSA Iter $k: cost = $cost")
         end
-        
+
         # Check convergence
         if abs(cost - cost_prev) < tol && k > 10
             verbose && println("Converged at iteration $k")
@@ -302,7 +302,7 @@ function optimize!(cost_fn, θ_init::Vector{Float64}, opt::SPSAOptimizer;
         end
         cost_prev = cost
     end
-    
+
     return θ, history
 end
 
@@ -311,31 +311,31 @@ function optimize!(cost_fn, θ_init::Vector{Float64}, opt::AdamOptimizer;
                    verbose::Bool=false, callback=nothing)
     θ = copy(θ_init)
     history = Tuple{Int, Float64}[]
-    
+
     reset!(opt)
     cost_prev = Inf
-    
+
     for k in 1:max_iter
         gradient = grad_fn(cost_fn, θ)
         θ = step!(opt, θ, gradient)
         cost = cost_fn(θ)
         push!(history, (k, cost))
-        
+
         if !isnothing(callback)
             callback(k, θ, cost)
         end
-        
+
         if verbose && k % 10 == 0
             println("Adam Iter $k: cost = $cost")
         end
-        
+
         if abs(cost - cost_prev) < tol && k > 10
             verbose && println("Converged at iteration $k")
             break
         end
         cost_prev = cost
     end
-    
+
     return θ, history
 end
 
@@ -344,30 +344,30 @@ function optimize!(cost_fn, θ_init::Vector{Float64}, opt::GradientDescentOptimi
                    verbose::Bool=false, callback=nothing)
     θ = copy(θ_init)
     history = Tuple{Int, Float64}[]
-    
+
     cost_prev = Inf
-    
+
     for k in 1:max_iter
         gradient = grad_fn(cost_fn, θ)
         θ = step!(opt, θ, gradient, k)
         cost = cost_fn(θ)
         push!(history, (k, cost))
-        
+
         if !isnothing(callback)
             callback(k, θ, cost)
         end
-        
+
         if verbose && k % 10 == 0
             println("GD Iter $k: cost = $cost")
         end
-        
+
         if abs(cost - cost_prev) < tol && k > 10
             verbose && println("Converged at iteration $k")
             break
         end
         cost_prev = cost
     end
-    
+
     return θ, history
 end
 
@@ -389,18 +389,18 @@ Use Optim.jl for optimization. Requires Optim.jl to be installed.
 # Returns
 - Optim.OptimizationResults
 """
-function optimize_optim(cost_fn, grad_fn, θ_init::Vector{Float64}; 
+function optimize_optim(cost_fn, grad_fn, θ_init::Vector{Float64};
                         method::Symbol=:LBFGS, kwargs...)
     if !OPTIM_AVAILABLE
         error("Optim.jl not available. Install with: ] add Optim")
     end
-    
+
     # Wrapper for Optim's expected gradient signature g!(G, x)
     function g!(G, x)
         grad = grad_fn(cost_fn, x)
         G .= grad
     end
-    
+
     # Select method
     if method == :LBFGS
         opt = Optim.LBFGS()
@@ -416,7 +416,7 @@ function optimize_optim(cost_fn, grad_fn, θ_init::Vector{Float64};
     else
         error("Unknown method: $method. Use :LBFGS, :BFGS, :GradientDescent, :ConjugateGradient, :NelderMead")
     end
-    
+
     return Optim.optimize(cost_fn, g!, θ_init, opt; kwargs...)
 end
 

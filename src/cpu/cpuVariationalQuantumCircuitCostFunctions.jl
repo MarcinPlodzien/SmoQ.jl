@@ -157,13 +157,13 @@ qubits = [[1], [2], [1, 2]]
 E = expectation_cost(ψ, coeffs, paulis, qubits, 4)
 ```
 """
-function expectation_cost(ψ::Vector{ComplexF64}, 
+function expectation_cost(ψ::Vector{ComplexF64},
                           coeffs::Vector{Float64},
                           paulis::Vector{Vector{Symbol}},
                           qubits::Vector{Vector{Int}},
                           N::Int)
     @assert length(coeffs) == length(paulis) == length(qubits)
-    
+
     energy = 0.0
     for i in eachindex(coeffs)
         if length(paulis[i]) == 1
@@ -171,13 +171,13 @@ function expectation_cost(ψ::Vector{ComplexF64},
             energy += coeffs[i] * local_observable_cost(ψ, qubits[i][1], N, paulis[i][1])
         elseif length(paulis[i]) == 2
             # Two-qubit term
-            energy += coeffs[i] * _two_body_correlator(ψ, qubits[i][1], qubits[i][2], 
+            energy += coeffs[i] * _two_body_correlator(ψ, qubits[i][1], qubits[i][2],
                                                         paulis[i][1], paulis[i][2], N)
         else
             error("Only 1 and 2-body terms supported")
         end
     end
-    
+
     return energy
 end
 
@@ -327,19 +327,19 @@ Requires dim(ψ) = 2^N ≥ length(x). Pads with zeros if needed.
 function encode_amplitude!(ψ::Vector{ComplexF64}, x::Vector{Float64}, N::Int)
     dim = 1 << N
     @assert dim >= length(x) "Data length $(length(x)) > state dimension $dim"
-    
+
     # Normalize data
     norm_x = norm(x)
     if norm_x < 1e-10
         error("Data vector is nearly zero")
     end
-    
+
     # Set amplitudes
     fill!(ψ, 0.0)
     for i in eachindex(x)
         ψ[i] = ComplexF64(x[i] / norm_x)
     end
-    
+
     return ψ
 end
 

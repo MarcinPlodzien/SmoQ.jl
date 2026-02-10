@@ -43,7 +43,7 @@ PARAMETER COUNT:
 
 MATRIX-FREE GATE OPERATIONS:
 ```
-    Ry(θ)|ψ⟩: 
+    Ry(θ)|ψ⟩:
         For each pair (i, j) where bit_k differs:
             ψ'[i] = cos(θ/2)·ψ[i] - sin(θ/2)·ψ[j]
             ψ'[j] = sin(θ/2)·ψ[i] + cos(θ/2)·ψ[j]
@@ -75,10 +75,10 @@ GRADIENT COMPUTATION:
         apply_circuit!(ψ, circuit, θ)
         return compute_energy(ψ)  # real-valued
     end
-    
+
     # Enzyme reverse-mode autodiff
     grad = Enzyme.gradient(Reverse, cost, θ)
-    
+
     # ONE forward + ONE backward pass → O(1) gradient calls
     # vs parameter-shift: O(2×n_params) forward passes
 ```
@@ -174,7 +174,7 @@ println("E_exact = $(@sprintf("%.6f", E_exact))")
 # ==============================================================================
 
 println("\n--- Building circuit ---")
-circuit = hardware_efficient_ansatz(N_QUBITS, N_LAYERS; 
+circuit = hardware_efficient_ansatz(N_QUBITS, N_LAYERS;
                                      entangler=:cz, topology=:chain,
                                      rotations=[:ry, :rz],
                                      noise_type=:depolarizing, noise_p=NOISE_P)
@@ -261,25 +261,25 @@ end
 
 using Statistics  # For mean, std
 
-function train_vqe(cost_fn, θ_init::Vector{Float64}, name::String; 
+function train_vqe(cost_fn, θ_init::Vector{Float64}, name::String;
                    n_epochs::Int=100, lr::Float64=0.01)
     θ = copy(θ_init)
     opt_state = Optimisers.setup(Adam(lr), θ)
     energies = Float64[]
-    
+
     for epoch in 1:n_epochs
         E = cost_fn(θ)
         push!(energies, E)
-        
+
         g = gradient_param_shift(cost_fn, θ)
         opt_state, θ = Optimisers.update(opt_state, θ, g)
-        
+
         if epoch == 1 || epoch % 20 == 0 || epoch == n_epochs
-            @printf("  [%s] Epoch %3d: E = %.6f  |∇| = %.4f  (err: %.4f)\n", 
+            @printf("  [%s] Epoch %3d: E = %.6f  |∇| = %.4f  (err: %.4f)\n",
                     name, epoch, E, norm(g), E - E_exact)
         end
     end
-    
+
     return θ, energies
 end
 
@@ -290,7 +290,7 @@ function train_vqe_mcwf(single_traj_cost_fn, θ_init::Vector{Float64}, M::Int, n
     opt_state = Optimisers.setup(Adam(lr), θ)
     means = Float64[]
     stds = Float64[]
-    
+
     for epoch in 1:n_epochs
         # Evaluate M trajectories
         E_samples = Float64[]
@@ -299,12 +299,12 @@ function train_vqe_mcwf(single_traj_cost_fn, θ_init::Vector{Float64}, M::Int, n
             E = single_traj_cost_fn(θ, traj)
             push!(E_samples, E)
         end
-        
+
         E_mean = mean(E_samples)
         E_std = std(E_samples)
         push!(means, E_mean)
         push!(stds, E_std)
-        
+
         # Gradient from mean cost
         g = gradient_param_shift(θ -> begin
             total = 0.0
@@ -314,15 +314,15 @@ function train_vqe_mcwf(single_traj_cost_fn, θ_init::Vector{Float64}, M::Int, n
             end
             total / min(M, 10)
         end, θ)
-        
+
         opt_state, θ = Optimisers.update(opt_state, θ, g)
-        
+
         if epoch == 1 || epoch % 20 == 0 || epoch == n_epochs
-            @printf("  [%s] Epoch %3d: E = %.4f ± %.4f  (err: %.4f)\n", 
+            @printf("  [%s] Epoch %3d: E = %.4f ± %.4f  (err: %.4f)\n",
                     name, epoch, E_mean, E_std, E_mean - E_exact)
         end
     end
-    
+
     return θ, means, stds
 end
 
@@ -340,12 +340,12 @@ Random.seed!(42)
 θ_init = initialize_parameters(circuit; init=:small_random)
 
 # Build circuits with different noise levels
-circuit_pure = hardware_efficient_ansatz(N_QUBITS, N_LAYERS; 
+circuit_pure = hardware_efficient_ansatz(N_QUBITS, N_LAYERS;
                                           entangler=:cz, topology=:chain,
                                           rotations=[:ry, :rz],
                                           noise_type=:depolarizing, noise_p=0.0)
 
-circuit_noisy = hardware_efficient_ansatz(N_QUBITS, N_LAYERS; 
+circuit_noisy = hardware_efficient_ansatz(N_QUBITS, N_LAYERS;
                                            entangler=:cz, topology=:chain,
                                            rotations=[:ry, :rz],
                                            noise_type=:depolarizing, noise_p=NOISE_P)
@@ -463,7 +463,7 @@ hline!(p2, [E_exact], label="Exact GS", lw=2, ls=:dot, color=:green)
 xlabel!(p2, "Epoch"); ylabel!(p2, "Energy")
 title!(p2, "NOISY (p=$NOISE_P)")
 
-plt = plot(p1, p2, layout=(1,2), size=(1000, 400), 
+plt = plot(p1, p2, layout=(1,2), size=(1000, 400),
            plot_title="VQE: MCWF vs DM (N=$N_QUBITS, L=$N_LAYERS)")
 
 savefig(plt, joinpath(OUTPUT_DIR, "mcwf_vs_dm_comparison.png"))

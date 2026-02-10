@@ -1,7 +1,7 @@
 #=
 ================================================================================
     cpuStabilizerRenyiEntropyFastWalshHadamardTransform.jl
-    
+
     O(N·4^N) Stabilizer Rényi Entropy via Fast Walsh-Hadamard Transform
 ================================================================================
 
@@ -53,7 +53,7 @@ Here ⟨k,j⟩ = k₁j₁ ⊕ k₂j₂ ⊕ ... ⊕ kₙjₙ is the binary inner 
 ## The Walsh Matrix (Hadamard Matrix)
 
 For N=1, the Walsh matrix is the familiar Hadamard gate:
-    
+
     H₁ = [1   1]
          [1  -1]
 
@@ -116,7 +116,7 @@ Naive would need: 4² = 16 multiplications and additions
 ## The Quantum Hadamard Gate
 
 The single-qubit Hadamard gate is:
-    
+
     H = (1/√2) [1   1]
                [1  -1]
 
@@ -161,11 +161,11 @@ For diagonal Pauli operators (products of I and Z), we have:
     Z⁰ = I,  Z¹ = Z = diag(1, -1)
 
 The N-qubit diagonal Pauli for bit-string z = (z₁, z₂, ..., zₙ) is:
-    
+
     P_z = Z^{z₁} ⊗ Z^{z₂} ⊗ ... ⊗ Z^{zₙ} = diag((-1)^{⟨z,0⟩}, (-1)^{⟨z,1⟩}, ...)
 
 Its expectation value on state ψ:
-    
+
     ⟨ψ|P_z|ψ⟩ = ∑ⱼ (-1)^{⟨z,j⟩} |ψⱼ|²
 
 **This is exactly the WHT of the probability distribution p = |ψ|²!**
@@ -201,7 +201,7 @@ The same trick works for X and Y Paulis by rotating to their eigenbasis:
 ## The M₂ Sum
 
 The 2nd Stabilizer Rényi Entropy requires:
-    
+
     ∑_{P∈{I,X,Y,Z}^⊗N} |⟨ψ|P|ψ⟩|⁴
 
 This is a sum over 4^N Pauli strings. Brute force: O(4^N × 2^N) = O(8^N).
@@ -211,7 +211,7 @@ This is a sum over 4^N Pauli strings. Brute force: O(4^N × 2^N) = O(8^N).
 Partition the 4^N Paulis by which single-qubit operators appear:
 
 1. **Z-sector** (2^N terms): All Paulis using only I and Z
-2. **X-sector** (2^N terms): All Paulis using only I and X  
+2. **X-sector** (2^N terms): All Paulis using only I and X
 3. **Y-sector** (2^N terms): All Paulis using only I and Y
 4. **Mixed sectors**: Paulis with combinations (XZ, XY, ZY, XYZ)
 
@@ -226,7 +226,7 @@ Pass 1 (Z-sector):
 
 Pass 2 (X-sector):
     ψ̃ = H^⊗N |ψ⟩ (via FWHT)
-    p̃ = |ψ̃|²  
+    p̃ = |ψ̃|²
     FWHT(p̃) gives all ⟨X^x⟩ (as Z in rotated basis)
     Sum |⟨X^x⟩|⁴
 
@@ -271,7 +271,7 @@ A full O(N·2^N) algorithm exists (see Sierant et al., 2025) and is implemented 
    arXiv:2601.07824 [quant-ph]
    https://arxiv.org/abs/2601.07824
    https://doi.org/10.48550/arXiv.2601.07824
-   
+
    This paper introduces the O(N·2^N) algorithm using Fast Hadamard Transform
    for computing Stabilizer Rényi Entropy, which is the basis of this module.
    The authors also provide the open-source Julia package HadaMAG.jl:
@@ -279,13 +279,13 @@ A full O(N·2^N) algorithm exists (see Sierant et al., 2025) and is implemented 
 
 *** Additional foundational references: ***
 
-2. Haug, T., & Piroli, L. (2023). 
+2. Haug, T., & Piroli, L. (2023).
    "Stabilizer entropies and nonstabilizerness monotones."
    Quantum 7, 1092.
    arXiv:2303.10152 [quant-ph]
    https://doi.org/10.22331/q-2023-08-28-1092
 
-3. Leone, L., Oliviero, S. F. E., & Hamma, A. (2022). 
+3. Leone, L., Oliviero, S. F. E., & Hamma, A. (2022).
    "Stabilizer Rényi entropy."
    Physical Review Letters 128(5), 050402.
    arXiv:2106.12587 [quant-ph]
@@ -297,7 +297,7 @@ A full O(N·2^N) algorithm exists (see Sierant et al., 2025) and is implemented 
    https://doi.org/10.1090/S0025-5718-1965-0178586-1
    (Original FFT paper; FWHT uses same butterfly structure)
 
-5. Beauchamp, K. G. (1984). 
+5. Beauchamp, K. G. (1984).
    "Applications of Walsh and Related Functions."
    Academic Press, ISBN: 978-0120841509.
    (Classic textbook on Walsh-Hadamard transforms)
@@ -408,21 +408,21 @@ This is exactly the FWHT of the probability distribution p = |ψ|².
 """
 function compute_z_sector!(p::Vector{Float64}, ψ::Vector{ComplexF64})
     d = length(ψ)
-    
+
     # Compute probability distribution p[i] = |ψ[i]|²
     @inbounds for i in 1:d
         p[i] = abs2(ψ[i])
     end
-    
+
     # FWHT gives all Z-sector expectations
     fwht!(p)
-    
+
     # Sum |⟨Z^z⟩|⁴ over all z
     sum_fourth = 0.0
     @inbounds for i in 1:d
         sum_fourth += p[i]^4
     end
-    
+
     return sum_fourth
 end
 
@@ -442,7 +442,7 @@ But more directly: correlations[x] = ψ · circshift(ψ*, x) in Hadamard basis.
 """
 function compute_x_sector!(q::Vector{ComplexF64}, ψ::Vector{ComplexF64})
     d = length(ψ)
-    
+
     # First apply Hadamard to state: ψ̃ = H^⊗N ψ
     # In Hadamard basis, X becomes Z and Z becomes X
     @inbounds for i in 1:d
@@ -450,14 +450,14 @@ function compute_x_sector!(q::Vector{ComplexF64}, ψ::Vector{ComplexF64})
     end
     fwht!(q)
     q ./= sqrt(d)  # Normalize Hadamard
-    
+
     # Now compute Z-sector in this basis (which gives X-sector in original)
     sum_fourth = 0.0
     @inbounds for i in 1:d
         val = abs2(q[i])
         sum_fourth += val^2
     end
-    
+
     return sum_fourth * d  # Scale factor for normalization
 end
 
@@ -471,7 +471,7 @@ This is O(4^N) for pure Y terms but fewer than full brute force.
 """
 function compute_y_sector!(ψ::Vector{ComplexF64}, N::Int)
     d = length(ψ)
-    
+
     # Apply S† H to state: transforms Y → Z
     # S† = diag(1, -i), H = hadamard
     # Combined: puts Y-eigenstates onto computational basis
@@ -479,25 +479,25 @@ function compute_y_sector!(ψ::Vector{ComplexF64}, N::Int)
     @inbounds for i in 1:d
         q[i] = ψ[i]
     end
-    
+
     # Apply S†^⊗N: multiply by (-i)^(popcount(i))
     @inbounds for i in 0:(d-1)
         bits = count_ones(i)
         phase = (-im)^bits  # = 1, -i, -1, i for bits mod 4
         q[i+1] *= phase
     end
-    
+
     # Apply H^⊗N via FWHT
     fwht!(q)
     q ./= sqrt(d)
-    
+
     # Compute diagonal expectations (these are Y-sector in original basis)
     sum_fourth = 0.0
     @inbounds for i in 1:d
         val = abs2(q[i])
         sum_fourth += val^2
     end
-    
+
     return sum_fourth * d
 end
 
@@ -507,7 +507,7 @@ end
 Compute ∑_P |⟨P⟩|⁴ using FWHT decomposition.
 
 The key insight from Sierant et al. (arXiv:2601.07824):
-  
+
 For Pauli P = i^ν X^x Z^z, the expectation value is:
     ⟨X^x Z^z⟩ = ∑ⱼ (-1)^(z·j) ψⱼ* ψ_{j⊕x}
 
@@ -532,39 +532,39 @@ The true O(N·2^N) requires additional mathematical tricks not implemented here.
 function pauli_moment_sum_fwht(ψ::Vector{ComplexF64}, N::Int; power::Int=4)
     d = 2^N
     length(ψ) == d || error("State dimension mismatch: got $(length(ψ)), expected $d")
-    
+
     half_power = power ÷ 2  # |⟨P⟩|^{2n} = (|⟨P⟩|²)^n
-    
+
     # Thread-local workspaces and partial sums for parallelization
     max_tid = Threads.maxthreadid()
     workspaces = [Vector{ComplexF64}(undef, d) for _ in 1:max_tid]
     partial_sums = zeros(Float64, max_tid)
-    
+
     # Parallel loop over all x patterns (X-type contributions)
     # For each x, compute contributions from all z patterns using FWHT
     Threads.@threads :static for x in 0:(d-1)
         tid = Threads.threadid()
         C = workspaces[tid]
-        
+
         # Compute correlation C_x[j] = conj(ψ[j]) * ψ[j XOR x]
         @inbounds for j in 0:(d-1)
             j_xor_x = xor(j, x)
             C[j+1] = conj(ψ[j+1]) * ψ[j_xor_x+1]
         end
-        
+
         # Apply FWHT: transforms C into F where F[z] = ⟨X^x Z^z⟩
         fwht!(C)
-        
+
         # Sum |⟨X^x Z^z⟩|^{2n} over all z
         local_sum = 0.0
         @inbounds for z in 1:d
             val = abs2(C[z])  # |⟨P⟩|²
             local_sum += val ^ half_power  # |⟨P⟩|^{2n}
         end
-        
+
         @inbounds partial_sums[tid] += local_sum
     end
-    
+
     return sum(partial_sums)
 end
 
@@ -597,11 +597,11 @@ M3 = get_stabilizer_renyi_entropy(ψ; n=3) # M₃
 """
 function get_stabilizer_renyi_entropy(ψ::Vector{ComplexF64}; n::Int=2)
     n < 2 && error("Rényi index n must be ≥ 2 (n=1 limit requires log-sum)")
-    
+
     N = Int(log2(length(ψ)))
     d = 2^N
     moment_sum = pauli_moment_sum_fwht(ψ, N; power=2*n)
-    
+
     # Mₙ = log₂(moment_sum/d) / (1-n)
     argument = moment_sum / d
     return argument > 0 ? log2(argument) / (1 - n) : Inf
@@ -639,15 +639,15 @@ function validate_fwht_vs_brute(brute_force_fn::Function, N_max::Int=8)
     println("Validating FWHT against brute force:")
     println("  N    M₂(brute)    M₂(FWHT)     |diff|")
     println("  " * "-"^45)
-    
+
     for N in 2:N_max
         # Test state: random
         ψ = randn(ComplexF64, 2^N)
         ψ ./= norm(ψ)
-        
+
         M2_brute = brute_force_fn(ψ, N)
         M2_fwht = get_stabilizer_renyi_entropy(ψ)
-        
+
         diff = abs(M2_brute - M2_fwht)
         @printf("  %2d   %+.6f    %+.6f    %.2e\n", N, M2_brute, M2_fwht, diff)
     end

@@ -152,7 +152,7 @@ export apply_sigma_z!
 # PHYSICS:
 # --------
 # The σ_z operator = diag(1, -1) describes pure dephasing:
-#   σ_z|0⟩ = +|0⟩   (ground state gets +1 phase)  
+#   σ_z|0⟩ = +|0⟩   (ground state gets +1 phase)
 #   σ_z|1⟩ = -|1⟩   (excited state gets -1 phase)
 #
 # BITWISE IMPLEMENTATION:
@@ -171,7 +171,7 @@ For pure dephasing jumps: flips sign of amplitudes where qubit k is in |1⟩.
 function apply_sigma_z!(ψ::Vector{ComplexF64}, k::Int, N::Int)
     dim = 1 << N
     mask = 1 << (k - 1)  # Binary mask with only bit k set
-    
+
     @inbounds for i in 0:(dim-1)
         if (i & mask) != 0  # Bit k is set (qubit in |1⟩)
             ψ[i+1] = -ψ[i+1]  # Flip sign
@@ -223,32 +223,32 @@ Uses the CORRECT effective Hamiltonian algorithm.
 function lindblad_mcwf_step!(ψ::Vector{ComplexF64}, U::Matrix{ComplexF64}, N::Int, γ::Float64, dt::Float64)
     # Step 1: Coherent (unitary) evolution
     ψ .= U * ψ
-    
+
     # Step 2: Non-Hermitian decay from effective Hamiltonian H_eff = H - iγN/2 × I
     # For σ_z: L†L = I for each qubit, so total decay is uniform
     # Decay factor: sqrt(1 - Nγdt) applied to ALL amplitudes
     decay_factor = sqrt(1.0 - N * γ * dt)
     ψ .*= decay_factor
-    
+
     # Step 3: Compute total decay probability dp = 1 - ||ψ̃||²
     norm_sq = real(dot(ψ, ψ))
     dp = 1.0 - norm_sq  # Total probability of jump
-    
+
     # Step 4: Jump decision
     r = rand()
     if r < dp && dp > 0
         # JUMP occurred - for σ_z, all qubits have equal jump probability
         # Select qubit uniformly at random
         selected_k = rand(1:N)
-        
+
         # Apply σ_z on selected qubit (phase flip)
         apply_sigma_z!(ψ, selected_k, N)
     end
     # If r >= dp: NO JUMP - state already has correct "no-jump" information
-    
+
     # Step 5: Renormalize (always needed after decay + possible jump)
     normalize!(ψ)
-    
+
     return ψ
 end
 
@@ -277,32 +277,32 @@ Uses σ_z (dephasing) jump operators.
 - Coherent evolution: O(N × 2^N) vs O(4^N) for dense matrix
 - σ_z jumps: O(2^N) bitwise, matrix-free
 """
-function lindblad_mcwf_step_trotter!(ψ::Vector{ComplexF64}, gates, apply_trotter!::Function, 
+function lindblad_mcwf_step_trotter!(ψ::Vector{ComplexF64}, gates, apply_trotter!::Function,
                                       N::Int, γ::Float64, dt::Float64)
     # Step 1: Apply Trotter gates (coherent evolution - MATRIX-FREE)
     apply_trotter!(ψ, gates, N)
-    
+
     # Step 2: Non-Hermitian decay for σ_z: uniform across all amplitudes
     decay_factor = sqrt(1.0 - N * γ * dt)
     ψ .*= decay_factor
-    
+
     # Step 3: Compute total decay probability dp = 1 - ||ψ̃||²
     norm_sq = real(dot(ψ, ψ))
     dp = 1.0 - norm_sq
-    
+
     # Step 4: Jump decision
     r = rand()
     if r < dp && dp > 0
         # JUMP occurred - for σ_z, all qubits have equal jump probability
         selected_k = rand(1:N)
-        
+
         # Apply σ_z on selected qubit (phase flip)
         apply_sigma_z!(ψ, selected_k, N)
     end
-    
+
     # Step 5: Renormalize
     normalize!(ψ)
-    
+
     return ψ
 end
 
@@ -342,14 +342,14 @@ function lindblad_mcwf_batched_step!(Ψ::Matrix{ComplexF64}, gates, apply_trotte
                                       N::Int, n_traj::Int, γ::Float64, dt::Float64)
     dim = size(Ψ, 1)
     decay_factor = sqrt(1.0 - γ * dt)  # Precompute decay factor
-    
+
     @inbounds Threads.@threads for traj in 1:n_traj
         # Get view of this trajectory
         ψ = view(Ψ, :, traj)
-        
+
         # Step 1: Apply Trotter gates (matrix-free coherent evolution)
         apply_trotter!(ψ, gates, N)
-        
+
         # Step 2: Non-Hermitian decay from effective Hamiltonian
         for i in 0:(dim-1)
             n_excited = count_ones(i)
@@ -357,17 +357,17 @@ function lindblad_mcwf_batched_step!(Ψ::Matrix{ComplexF64}, gates, apply_trotte
                 Ψ[i+1, traj] *= decay_factor^n_excited
             end
         end
-        
+
         # Step 3: Compute decay probability and make jump decision
         norm_sq = real(dot(ψ, ψ))
         dp = 1.0 - norm_sq
-        
+
         r = rand()
         if r < dp && dp > 0
             # JUMP - select qubit with weighted probability
             cumulative = 0.0
             selected_k = 1
-            
+
             for k in 1:N
                 p_k = γ * dt * population_excited(ψ, k, N) / norm_sq
                 cumulative += p_k
@@ -376,24 +376,24 @@ function lindblad_mcwf_batched_step!(Ψ::Matrix{ComplexF64}, gates, apply_trotte
                     break
                 end
             end
-            
+
             apply_sigma_minus!(ψ, selected_k, N)
         end
-        
+
         # Step 4: Renormalize
         nrm = norm(ψ)
         @simd for i in 1:dim
             Ψ[i, traj] /= nrm
         end
     end
-    
+
     return Ψ
 end
 
 export lindblad_mcwf_batched_step!
 
 """
-    evolve_mcwf_batched_trotter!(Ψ, gates, apply_trotter!, N, n_traj, n_steps, γ, dt; 
+    evolve_mcwf_batched_trotter!(Ψ, gates, apply_trotter!, N, n_traj, n_steps, γ, dt;
                                   observables_fn=nothing, results=nothing)
 
 Run full batched MCWF evolution for multiple trajectories.
@@ -415,7 +415,7 @@ function evolve_mcwf_batched_trotter!(Ψ::Matrix{ComplexF64}, gates, apply_trott
                                        observables_fn=nothing, results=nothing)
     for step in 1:n_steps
         lindblad_mcwf_batched_step!(Ψ, gates, apply_trotter!, N, n_traj, γ, dt)
-        
+
         if observables_fn !== nothing && results !== nothing
             observables_fn(Ψ, step, results)
         end
@@ -430,7 +430,7 @@ function population_excited(ψ::SubArray{ComplexF64}, k::Int, N::Int)
     dim = length(ψ)
     mask = 1 << (k - 1)
     result = 0.0
-    
+
     @inbounds for i in 0:(dim-1)
         if (i & mask) != 0
             result += abs2(ψ[i+1])
@@ -442,7 +442,7 @@ end
 function apply_sigma_minus!(ψ::SubArray{ComplexF64}, k::Int, N::Int)
     dim = length(ψ)
     mask = 1 << (k - 1)
-    
+
     @inbounds for i in 0:(dim-1)
         if (i & mask) != 0
             j = xor(i, mask)

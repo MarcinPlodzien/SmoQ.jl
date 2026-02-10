@@ -12,7 +12,7 @@ Avoids tensor product construction entirely - provides 20,000-600,000× speedup
 over bitwise operations for pure states, and 30-22,000× for density matrices.
 
 Supports:
-  - Pure states (Vector{ComplexF64}): |ψ⟩ 
+  - Pure states (Vector{ComplexF64}): |ψ⟩
   - Density matrices (Matrix{ComplexF64}): ρ
   - Partial trace for both pure states and density matrices
 
@@ -21,9 +21,9 @@ SPEEDUP SUMMARY (vs bitwise operations)
   Pure State Observables:
     - Local (X, Y, Z):       100-150× faster
     - Correlators (XX, YY, ZZ): 300-220,000× faster
-  
+
   Density Matrix Observables:
-    - Local (X, Y, Z):       30-100× faster  
+    - Local (X, Y, Z):       30-100× faster
     - Correlators (XX, YY, ZZ): 350-22,000× faster
 
   Partial Trace:
@@ -40,9 +40,9 @@ We use LITTLE-ENDIAN bit ordering, consistent with bitwise operations:
 
 State Vector Indexing:
   Basis state |qN qN-1 ... q2 q1⟩ maps to index:
-  
+
     index = q1×2⁰ + q2×2¹ + ... + qN×2^(N-1)
-  
+
   Examples for N=3 qubits:
     |000⟩ → index 0 (binary: 000)
     |001⟩ → index 1 (binary: 001)  ← qubit 1 is |1⟩
@@ -53,7 +53,7 @@ State Vector Indexing:
 
 Extracting Qubit k from Index i:
   bit_k = (i >> (k-1)) & 1
-  
+
   Example: For index i=5 (binary: 101), N=3:
     Qubit 1: (5 >> 0) & 1 = 5 & 1 = 1   (bit 0)
     Qubit 2: (5 >> 1) & 1 = 2 & 1 = 0   (bit 1)
@@ -64,46 +64,46 @@ MATHEMATICAL DERIVATIONS
 ------------------------
 
 1. Z Observable on Pure State:
-   
+
    Zₖ |s⟩ = (-1)^{sₖ} |s⟩  where sₖ ∈ {0,1} is the k-th qubit
-   
+
    ⟨Zₖ⟩ = ⟨ψ|Zₖ|ψ⟩ = Σᵢ |ψᵢ|² × (-1)^{bit_k(i)}
         = Σᵢ |ψᵢ|² × (1 - 2×bit_k(i))
-   
+
    Implementation: O(2^N) loop, single pass
 
 2. X Observable on Pure State:
-   
+
    Xₖ |sₖ=0⟩ = |sₖ=1⟩,  Xₖ |sₖ=1⟩ = |sₖ=0⟩
-   
+
    Xₖ flips bit k: |i⟩ → |i ⊕ 2^(k-1)⟩
-   
+
    ⟨Xₖ⟩ = Σᵢ:bₖ=0 [ψᵢ* ψᵢ₊ₛₜₑₚ + ψᵢ₊ₛₜₑₚ* ψᵢ]  where step = 2^(k-1)
         = 2 × Re(Σᵢ:bₖ=0 ψᵢ* ψᵢ₊ₛₜₑₚ)
-   
+
    Implementation: O(2^(N-1)) loop (only bₖ=0 terms)
 
 3. Y Observable on Pure State:
-   
+
    Yₖ |sₖ=0⟩ = i|sₖ=1⟩,  Yₖ |sₖ=1⟩ = -i|sₖ=0⟩
-   
+
    ⟨Yₖ⟩ = Σᵢ:bₖ=0 [ψᵢ* (iψᵢ₊ₛₜₑₚ) + ψᵢ₊ₛₜₑₚ* (-iψᵢ)]
         = Σᵢ:bₖ=0 [i ψᵢ* ψᵢ₊ₛₜₑₚ - i ψᵢ₊ₛₜₑₚ* ψᵢ]
         = i × 2i × Im(ψᵢ* ψᵢ₊ₛₜₑₚ) = -2 × Im(ψᵢ* ψᵢ₊ₛₜₑₚ)
 
 4. ZZ Correlator on Pure State:
-   
+
    ZᵢZⱼ |s⟩ = (-1)^{sᵢ⊕sⱼ} |s⟩
-   
+
    ⟨ZᵢZⱼ⟩ = Σₛ |ψₛ|² × (1 - 2×(bᵢ(s) ⊕ bⱼ(s)))
-   
+
    Implementation: O(2^N) loop, XOR for parity
 
 5. XX, YY Correlators on Pure State:
-   
+
    Group states into 4-tuples: |00ᵢⱼ⟩, |01ᵢⱼ⟩, |10ᵢⱼ⟩, |11ᵢⱼ⟩
    XX flips both bits i,j simultaneously.
-   
+
    ⟨XᵢXⱼ⟩ = 2 × Re(Σₛ:bᵢ=bⱼ=0 [ψ₀₀* ψ₁₁ + ψ₀₁* ψ₁₀])
    ⟨YᵢYⱼ⟩ = -2 × Re(ψ₀₀* ψ₁₁) + 2 × Re(ψ₀₁* ψ₁₀)
 
@@ -378,7 +378,7 @@ Matrix elements within each group:
 Both connections are included:
   |00⟩↔|11⟩: 2 Re(ψ₀₀* ψ₁₁) = 2 × 0.25 = 0.5
   |01⟩↔|10⟩: 2 Re(ψ₀₁* ψ₁₀) = 2 × 0.25 = 0.5
-  Total: ⟨XX⟩ = 0.5 + 0.5 = 1.0 = ⟨X⟩₁⟨X⟩₂ 
+  Total: ⟨XX⟩ = 0.5 + 0.5 = 1.0 = ⟨X⟩₁⟨X⟩₂
 """
 function _expect_XX(ψ::Vector{ComplexF64}, i::Int, j::Int, N::Int)
     bit_i = i - 1  # Little-endian
@@ -392,7 +392,7 @@ function _expect_XX(ψ::Vector{ComplexF64}, i::Int, j::Int, N::Int)
             s_01 = s + step_j              # Bit j flipped to 1
             s_10 = s + step_i              # Bit i flipped to 1
             s_11 = s + step_i + step_j     # Both bits flipped to 1
-            
+
             # XX swaps |00⟩↔|11⟩ and |01⟩↔|10⟩, both with coefficient +1
             result += 2 * real(conj(ψ[s_00+1]) * ψ[s_11+1])  # |00⟩↔|11⟩
             result += 2 * real(conj(ψ[s_01+1]) * ψ[s_10+1])  # |01⟩↔|10⟩
@@ -835,24 +835,24 @@ get_expectation_pauli_string(ψ, [:X, :X, :X], [1, 2, 3], 3)  # Returns 1.0 for 
 
 See also: [`expect_local`](@ref), [`expect_corr`](@ref)
 """
-function get_expectation_pauli_string(ψ::Vector{ComplexF64}, operators::Vector{Symbol}, 
+function get_expectation_pauli_string(ψ::Vector{ComplexF64}, operators::Vector{Symbol},
                                 qubits::Vector{Int}, N::Int)
     @assert length(operators) == length(qubits) "operators and qubits must have same length"
     @assert all(q -> 1 <= q <= N, qubits) "qubit indices must be in range [1, N]"
     @assert length(unique(qubits)) == length(qubits) "qubits must be unique"
-    
+
     k = length(operators)
     if k == 0
         return 1.0  # Identity operator: ⟨ψ|I|ψ⟩ = 1 for normalized states
     end
-    
+
     # ────────────────────────────────────────────────────────────────────────────
     # Step 1: SEPARATE operators into Z-type (diagonal) and X/Y-type (off-diagonal)
     # ────────────────────────────────────────────────────────────────────────────
     z_qubits = Int[]      # Qubits with Z operators (diagonal contribution)
     xy_ops = Symbol[]      # X or Y operators (off-diagonal)
     xy_qubits = Int[]      # Qubits with X/Y operators
-    
+
     for (op, q) in zip(operators, qubits)
         if op == :Z || op == :z
             push!(z_qubits, q)
@@ -861,10 +861,10 @@ function get_expectation_pauli_string(ψ::Vector{ComplexF64}, operators::Vector{
             push!(xy_qubits, q)
         end
     end
-    
+
     n_z = length(z_qubits)
     n_xy = length(xy_ops)
-    
+
     # ────────────────────────────────────────────────────────────────────────────
     # Step 2: DISPATCH to specialized routine based on operator types
     # ────────────────────────────────────────────────────────────────────────────
@@ -872,7 +872,7 @@ function get_expectation_pauli_string(ψ::Vector{ComplexF64}, operators::Vector{
         # Case 1: All Z operators - simple diagonal sum with parity
         return _expect_pauli_Z_string(ψ, z_qubits, N)
     end
-    
+
     # Case 2: Mixed or all X/Y - requires bit-flip grouping
     return _expect_pauli_mixed_string(ψ, z_qubits, xy_ops, xy_qubits, N)
 end
@@ -898,7 +898,7 @@ Complexity: O(2^N) - single pass over state vector, O(1) memory.
 function _expect_pauli_Z_string(ψ::Vector{ComplexF64}, qubits::Vector{Int}, N::Int)
     result = 0.0
     dim = length(ψ)
-    
+
     @inbounds @simd for i in 0:(dim-1)
         # ──────────────────────────────────────────────────────────────────────
         # Compute parity = XOR of all qubit bits in state index i
@@ -914,7 +914,7 @@ function _expect_pauli_Z_string(ψ::Vector{ComplexF64}, qubits::Vector{Int}, N::
         sign = 1 - 2 * parity  # Map {0,1} → {+1,-1}
         result += abs2(ψ[i+1]) * sign
     end
-    
+
     return result
 end
 
@@ -943,20 +943,20 @@ where ⟨s|P|t⟩ ≠ 0 only when:
 
 Complexity: O(2^(N-n_xy) × 2^n_xy) = O(2^N), but faster due to early termination.
 """
-function _expect_pauli_mixed_string(ψ::Vector{ComplexF64}, z_qubits::Vector{Int}, 
+function _expect_pauli_mixed_string(ψ::Vector{ComplexF64}, z_qubits::Vector{Int},
                                      xy_ops::Vector{Symbol}, xy_qubits::Vector{Int}, N::Int)
     dim = length(ψ)
     n_xy = length(xy_ops)
-    
+
     # ────────────────────────────────────────────────────────────────────────────
     # Precompute bit positions and step sizes for X/Y qubits
     # Step size = 2^(qubit-1), the distance between states differing at that qubit
     # ────────────────────────────────────────────────────────────────────────────
     bit_positions = [q - 1 for q in xy_qubits]  # Convert 1-indexed to bit position
     steps = [1 << bp for bp in bit_positions]   # 2^(bit_position)
-    
+
     result = 0.0
-    
+
     # ────────────────────────────────────────────────────────────────────────────
     # Iterate over BASE states where all X/Y qubit bits are 0
     # This avoids double-counting since each pair (s, t) is visited exactly once
@@ -970,11 +970,11 @@ function _expect_pauli_mixed_string(ψ::Vector{ComplexF64}, z_qubits::Vector{Int
                 break
             end
         end
-        
+
         if !all_zero
             continue  # Skip: this base state has some X/Y qubit = 1
         end
-        
+
         # ────────────────────────────────────────────────────────────────────────
         # Iterate over all 2^(n_xy) flip patterns
         # Each pattern determines which X/Y qubits are flipped in the ket state
@@ -983,14 +983,14 @@ function _expect_pauli_mixed_string(ψ::Vector{ComplexF64}, z_qubits::Vector{Int
             # Compute bra and ket indices
             bra_idx = base  # bra has all X/Y qubits = 0
             ket_idx = base
-            
+
             # Flip bits in ket according to pattern
             for k in 1:n_xy
                 if ((flip_pattern >> (k-1)) & 1) == 1
                     ket_idx += steps[k]  # Set bit k to 1
                 end
             end
-            
+
             # ────────────────────────────────────────────────────────────────────
             # Compute the matrix element coefficient
             # For each X/Y operator, check if the flip is valid and accumulate phase
@@ -1000,7 +1000,7 @@ function _expect_pauli_mixed_string(ψ::Vector{ComplexF64}, z_qubits::Vector{Int
                 op = xy_ops[k]
                 bra_bit = (bra_idx >> bit_positions[k]) & 1  # Always 0 for bra
                 ket_bit = (ket_idx >> bit_positions[k]) & 1
-                
+
                 if op == :X || op == :x
                     # X flips bit: only contributes when bra_bit ≠ ket_bit
                     # ⟨0|X|1⟩ = 1, ⟨1|X|0⟩ = 1, ⟨0|X|0⟩ = ⟨1|X|1⟩ = 0
@@ -1009,7 +1009,7 @@ function _expect_pauli_mixed_string(ψ::Vector{ComplexF64}, z_qubits::Vector{Int
                         break
                     end
                     # X contributes factor of 1 (just flips, no phase)
-                    
+
                 elseif op == :Y || op == :y
                     # Y flips bit with phase: Y|0⟩ = i|1⟩, Y|1⟩ = -i|0⟩
                     # ⟨0|Y|1⟩ = -i (since Y|1⟩=-i|0⟩, so ⟨0|(-i|0⟩)=-i)
@@ -1024,11 +1024,11 @@ function _expect_pauli_mixed_string(ψ::Vector{ComplexF64}, z_qubits::Vector{Int
                     end
                 end
             end
-            
+
             if coeff == 0.0
                 continue  # This flip pattern gives zero contribution
             end
-            
+
             # ────────────────────────────────────────────────────────────────────
             # Apply Z operator signs based on ket state
             # Z_q contributes (-1)^{bit_q(ket_idx)}
@@ -1037,12 +1037,12 @@ function _expect_pauli_mixed_string(ψ::Vector{ComplexF64}, z_qubits::Vector{Int
             for q in z_qubits
                 z_sign *= 1 - 2 * ((ket_idx >> (q-1)) & 1)
             end
-            
+
             # Add contribution: ψ_bra* × coeff × z_sign × ψ_ket
             result += real(coeff * z_sign * conj(ψ[bra_idx+1]) * ψ[ket_idx+1])
         end
     end
-    
+
     return result
 end
 
@@ -1089,22 +1089,22 @@ The sparse structure of Pauli operators makes this O(2^N) instead of O(4^N).
 get_expectation_pauli_string(ρ, [:Z, :Z, :Z], [1, 2, 3], 3)  # Returns 1.0
 ```
 """
-function get_expectation_pauli_string(ρ::Matrix{ComplexF64}, operators::Vector{Symbol}, 
+function get_expectation_pauli_string(ρ::Matrix{ComplexF64}, operators::Vector{Symbol},
                                       qubits::Vector{Int}, N::Int)
     @assert length(operators) == length(qubits) "operators and qubits must have same length"
     @assert all(q -> 1 <= q <= N, qubits) "qubit indices must be in range [1, N]"
     @assert length(unique(qubits)) == length(qubits) "qubits must be unique"
-    
+
     k = length(operators)
     if k == 0
         return real(tr(ρ))  # Identity operator: Tr(ρ I) = Tr(ρ) = 1 for normalized states
     end
-    
+
     # Separate Z from X/Y operators
     z_qubits = Int[]
     xy_ops = Symbol[]
     xy_qubits = Int[]
-    
+
     for (op, q) in zip(operators, qubits)
         if op == :Z || op == :z
             push!(z_qubits, q)
@@ -1113,14 +1113,14 @@ function get_expectation_pauli_string(ρ::Matrix{ComplexF64}, operators::Vector{
             push!(xy_qubits, q)
         end
     end
-    
+
     n_xy = length(xy_ops)
-    
+
     if n_xy == 0
         # All Z operators - diagonal sum with parity
         return _expect_pauli_Z_string_dm(ρ, z_qubits, N)
     end
-    
+
     # Mixed or all X/Y - requires bit-flip grouping
     return _expect_pauli_mixed_string_dm(ρ, z_qubits, xy_ops, xy_qubits, N)
 end
@@ -1155,27 +1155,27 @@ Compute Tr(ρ P) for Pauli string P containing X and/or Y operators.
 Uses base state iteration and flip patterns to efficiently compute the trace
 without constructing the full operator matrix.
 """
-function _expect_pauli_mixed_string_dm(ρ::Matrix{ComplexF64}, z_qubits::Vector{Int}, 
+function _expect_pauli_mixed_string_dm(ρ::Matrix{ComplexF64}, z_qubits::Vector{Int},
                                         xy_ops::Vector{Symbol}, xy_qubits::Vector{Int}, N::Int)
     dim = size(ρ, 1)
     n_xy = length(xy_ops)
     bit_positions = [q - 1 for q in xy_qubits]  # 0-indexed bit positions
-    
+
     # Precompute XOR mask to flip all X/Y bits at once
     flip_mask = 0
     for bp in bit_positions
         flip_mask |= (1 << bp)
     end
-    
+
     result = 0.0
-    
+
     # For X/Y operators: P|bra⟩ = coeff × |xor(bra, flip_mask)⟩
     # So Tr(ρ P) = Σ_bra ρ[bra, xor(bra, flip_mask)] × P[ket, bra]
     # where ket = xor(bra, flip_mask)
-    
+
     @inbounds for bra_idx in 0:(dim-1)
         ket_idx = xor(bra_idx, flip_mask)  # Flip all X/Y bits
-        
+
         # Compute coefficient from X/Y operators
         # X[bra_bit, ket_bit] = 1 if bra_bit ≠ ket_bit (always true after XOR)
         # Y[0,1] = -i, Y[1,0] = +i
@@ -1194,17 +1194,17 @@ function _expect_pauli_mixed_string_dm(ρ::Matrix{ComplexF64}, z_qubits::Vector{
             end
             # For X: coefficient is just 1
         end
-        
+
         # Z operator signs from ket state (Z is diagonal: Z[b,b] = 1-2b)
         z_sign = 1
         for q in z_qubits
             z_sign *= 1 - 2 * ((ket_idx >> (q-1)) & 1)
         end
-        
+
         # Tr(ρ P) contribution: ρ[bra, ket] × P[ket, bra]
         result += real(coeff * z_sign * ρ[bra_idx+1, ket_idx+1])
     end
-    
+
     return result
 end
 
@@ -1334,7 +1334,7 @@ end
 Compute ⟨σᵢᵅ σⱼᵅ⟩ = Tr(σᵢσⱼ ρ) for a density matrix using bitwise indexing.
 
 Arguments:
-- ρ: Density matrix (2^N × 2^N)  
+- ρ: Density matrix (2^N × 2^N)
 - i, j: Qubit indices (1-indexed)
 - N: Total number of qubits
 - pauli_pair: :zz, :xx, or :yy
@@ -1389,7 +1389,7 @@ function _expect_XX_dm(ρ::Matrix{ComplexF64}, i::Int, j::Int, N::Int)
     return result
 end
 
-# YY: Tr(YᵢYⱼ ρ) - uses 4-state groupings  
+# YY: Tr(YᵢYⱼ ρ) - uses 4-state groupings
 function _expect_YY_dm(ρ::Matrix{ComplexF64}, i::Int, j::Int, N::Int)
     bit_i = i - 1
     bit_j = j - 1
@@ -1432,14 +1432,14 @@ Total: 3N + 3(L-1)×R + 3L×(R-1) = 3(L×R + (L-1)×R + L×(R-1))
 function measure_all_observables_state_vector_cpu(ψ::Vector{ComplexF64}, L::Int, n_rails::Int)
     N = L * n_rails
     results = Float64[]
-    
+
     # 1. Local observables (3N)
     for k in 1:N
         push!(results, _expect_X(ψ, k, N))
         push!(results, _expect_Y(ψ, k, N))
         push!(results, _expect_Z(ψ, k, N))
     end
-    
+
     # 2. Intra-rail correlators (horizontal bonds)
     for rail in 1:n_rails
         offset = (rail - 1) * L
@@ -1451,7 +1451,7 @@ function measure_all_observables_state_vector_cpu(ψ::Vector{ComplexF64}, L::Int
             push!(results, _expect_ZZ(ψ, i, j, N))
         end
     end
-    
+
     # 3. Inter-rail correlators (rungs)
     for rail in 1:(n_rails-1)
         for site in 1:L
@@ -1462,7 +1462,7 @@ function measure_all_observables_state_vector_cpu(ψ::Vector{ComplexF64}, L::Int
             push!(results, _expect_ZZ(ψ, i, j, N))
         end
     end
-    
+
     return results
 end
 
@@ -1478,18 +1478,18 @@ Avoids allocation - use in hot loops.
 - `L`: Qubits per rail
 - `n_rails`: Number of rails
 """
-function measure_all_observables_state_vector_cpu!(results::Vector{Float64}, 
+function measure_all_observables_state_vector_cpu!(results::Vector{Float64},
                                                     ψ::Vector{ComplexF64}, L::Int, n_rails::Int)
     N = L * n_rails
     idx = 0
-    
+
     # 1. Local observables (3N)
     @inbounds for k in 1:N
         idx += 1; results[idx] = _expect_X(ψ, k, N)
         idx += 1; results[idx] = _expect_Y(ψ, k, N)
         idx += 1; results[idx] = _expect_Z(ψ, k, N)
     end
-    
+
     # 2. Intra-rail correlators (horizontal bonds)
     @inbounds for rail in 1:n_rails
         offset = (rail - 1) * L
@@ -1501,7 +1501,7 @@ function measure_all_observables_state_vector_cpu!(results::Vector{Float64},
             idx += 1; results[idx] = _expect_ZZ(ψ, i, j, N)
         end
     end
-    
+
     # 3. Inter-rail correlators (rungs)
     @inbounds for rail in 1:(n_rails-1)
         for site in 1:L
@@ -1512,7 +1512,7 @@ function measure_all_observables_state_vector_cpu!(results::Vector{Float64},
             idx += 1; results[idx] = _expect_ZZ(ψ, i, j, N)
         end
     end
-    
+
     return nothing
 end
 
@@ -1530,33 +1530,33 @@ X, Y, XX, YY require pair-wise amplitude access and are computed separately.
 function measure_all_observables_one_pass(ψ::Vector{ComplexF64}, L::Int, n_rails::Int)
     N = L * n_rails
     dim = length(ψ)
-    
+
     # Pre-allocate result arrays
     local_X = zeros(Float64, N)
     local_Y = zeros(Float64, N)
     local_Z = zeros(Float64, N)
-    
+
     n_intra = (L - 1) * n_rails
     intra_XX = zeros(Float64, n_intra)
     intra_YY = zeros(Float64, n_intra)
     intra_ZZ = zeros(Float64, n_intra)
-    
+
     n_inter = L * (n_rails - 1)
     inter_XX = zeros(Float64, n_inter)
     inter_YY = zeros(Float64, n_inter)
     inter_ZZ = zeros(Float64, n_inter)
-    
+
     # === FUSED PASS 1: All Z-based observables ===
     @inbounds for i in 0:(dim - 1)
         prob_i = abs2(ψ[i+1])
-        
+
         # Local Z
         for k in 1:N
             bit_k = k - 1
             sign_k = 1 - 2 * ((i >> bit_k) & 1)
             local_Z[k] += sign_k * prob_i
         end
-        
+
         # Intra-rail ZZ
         bond_idx = 0
         for rail in 1:n_rails
@@ -1569,7 +1569,7 @@ function measure_all_observables_one_pass(ψ::Vector{ComplexF64}, L::Int, n_rail
                 intra_ZZ[bond_idx] += sign1 * sign2 * prob_i
             end
         end
-        
+
         # Inter-rail ZZ
         bond_idx = 0
         for rail in 1:(n_rails-1)
@@ -1583,13 +1583,13 @@ function measure_all_observables_one_pass(ψ::Vector{ComplexF64}, L::Int, n_rail
             end
         end
     end
-    
+
     # === PASS 2: X, Y (require pair access) ===
     for k in 1:N
         local_X[k] = _expect_X(ψ, k, N)
         local_Y[k] = _expect_Y(ψ, k, N)
     end
-    
+
     # === PASS 3: XX, YY correlators ===
     bond_idx = 0
     for rail in 1:n_rails
@@ -1602,7 +1602,7 @@ function measure_all_observables_one_pass(ψ::Vector{ComplexF64}, L::Int, n_rail
             intra_YY[bond_idx] = _expect_YY(ψ, i, j, N)
         end
     end
-    
+
     bond_idx = 0
     for rail in 1:(n_rails-1)
         for site in 1:L
@@ -1613,7 +1613,7 @@ function measure_all_observables_one_pass(ψ::Vector{ComplexF64}, L::Int, n_rail
             inter_YY[bond_idx] = _expect_YY(ψ, i, j, N)
         end
     end
-    
+
     # === Assemble results ===
     results = Float64[]
     for k in 1:N
@@ -1631,7 +1631,7 @@ function measure_all_observables_one_pass(ψ::Vector{ComplexF64}, L::Int, n_rail
         push!(results, inter_YY[b])
         push!(results, inter_ZZ[b])
     end
-    
+
     return results
 end
 
@@ -1649,14 +1649,14 @@ Returns vector containing:
 function measure_all_observables_state_vector_cpu(ρ::Matrix{ComplexF64}, L::Int, n_rails::Int)
     N = L * n_rails
     results = Float64[]
-    
+
     # 1. Local observables (3N)
     for k in 1:N
         push!(results, _expect_X_dm(ρ, k, N))
         push!(results, _expect_Y_dm(ρ, k, N))
         push!(results, _expect_Z_dm(ρ, k, N))
     end
-    
+
     # 2. Intra-rail correlators (horizontal bonds)
     for rail in 1:n_rails
         offset = (rail - 1) * L
@@ -1668,7 +1668,7 @@ function measure_all_observables_state_vector_cpu(ρ::Matrix{ComplexF64}, L::Int
             push!(results, _expect_ZZ_dm(ρ, i, j, N))
         end
     end
-    
+
     # 3. Inter-rail correlators (rungs)
     for rail in 1:(n_rails-1)
         for site in 1:L
@@ -1679,7 +1679,7 @@ function measure_all_observables_state_vector_cpu(ρ::Matrix{ComplexF64}, L::Int
             push!(results, _expect_ZZ_dm(ρ, i, j, N))
         end
     end
-    
+
     return results
 end
 
@@ -1710,35 +1710,35 @@ Net effect: ~50% speedup for most QRC setups where Z dominates.
 function measure_all_observables_one_pass(ρ::Matrix{ComplexF64}, L::Int, n_rails::Int)
     N = L * n_rails
     dim = 1 << N
-    
+
     # Pre-allocate result arrays
     local_X = zeros(Float64, N)
     local_Y = zeros(Float64, N)
     local_Z = zeros(Float64, N)
-    
+
     # Intra-rail ZZ, XX, YY: (L-1) bonds per rail × n_rails
     n_intra = (L - 1) * n_rails
     intra_XX = zeros(Float64, n_intra)
     intra_YY = zeros(Float64, n_intra)
     intra_ZZ = zeros(Float64, n_intra)
-    
+
     # Inter-rail ZZ, XX, YY: L bonds × (n_rails - 1)
     n_inter = L * (n_rails - 1)
     inter_XX = zeros(Float64, n_inter)
     inter_YY = zeros(Float64, n_inter)
     inter_ZZ = zeros(Float64, n_inter)
-    
+
     # === FUSED PASS 1: All Z-based observables (diagonal only) ===
     @inbounds for i in 0:(dim - 1)
         ρ_ii = real(ρ[i+1, i+1])
-        
+
         # Local Z: sign = 1 - 2*bit_k
         for k in 1:N
             bit_k = k - 1
             sign_k = 1 - 2 * ((i >> bit_k) & 1)
             local_Z[k] += sign_k * ρ_ii
         end
-        
+
         # Intra-rail ZZ (horizontal bonds)
         bond_idx = 0
         for rail in 1:n_rails
@@ -1753,7 +1753,7 @@ function measure_all_observables_one_pass(ρ::Matrix{ComplexF64}, L::Int, n_rail
                 intra_ZZ[bond_idx] += sign1 * sign2 * ρ_ii
             end
         end
-        
+
         # Inter-rail ZZ (rungs)
         bond_idx = 0
         for rail in 1:(n_rails-1)
@@ -1768,14 +1768,14 @@ function measure_all_observables_one_pass(ρ::Matrix{ComplexF64}, L::Int, n_rail
             end
         end
     end
-    
+
     # === PASS 2: X, Y observables (require off-diagonal, can't fully fuse) ===
     # Use existing fast functions for these
     for k in 1:N
         local_X[k] = _expect_X_dm(ρ, k, N)
         local_Y[k] = _expect_Y_dm(ρ, k, N)
     end
-    
+
     # === PASS 3: XX, YY correlators ===
     bond_idx = 0
     for rail in 1:n_rails
@@ -1788,7 +1788,7 @@ function measure_all_observables_one_pass(ρ::Matrix{ComplexF64}, L::Int, n_rail
             intra_YY[bond_idx] = _expect_YY_dm(ρ, i, j, N)
         end
     end
-    
+
     bond_idx = 0
     for rail in 1:(n_rails-1)
         for site in 1:L
@@ -1799,31 +1799,31 @@ function measure_all_observables_one_pass(ρ::Matrix{ComplexF64}, L::Int, n_rail
             inter_YY[bond_idx] = _expect_YY_dm(ρ, i, j, N)
         end
     end
-    
+
     # === Assemble results in standard order ===
     results = Float64[]
-    
+
     # 1. Local (X, Y, Z) for each qubit
     for k in 1:N
         push!(results, local_X[k])
         push!(results, local_Y[k])
         push!(results, local_Z[k])
     end
-    
+
     # 2. Intra-rail correlators (XX, YY, ZZ per bond)
     for b in 1:n_intra
         push!(results, intra_XX[b])
         push!(results, intra_YY[b])
         push!(results, intra_ZZ[b])
     end
-    
+
     # 3. Inter-rail correlators
     for b in 1:n_inter
         push!(results, inter_XX[b])
         push!(results, inter_YY[b])
         push!(results, inter_ZZ[b])
     end
-    
+
     return results
 end
 
@@ -1891,7 +1891,7 @@ function collective_spin_fast(ψ::Vector{ComplexF64}, N::Int)
         jz_eigenvalue = (N - 2*popcnt) / 2
         Jz += abs2(ψ[s+1]) * jz_eigenvalue
     end
-    
+
     # For Jx, Jy: Need to sum single-qubit expectations (O(N × 2^N) but can optimize)
     Jx = 0.0
     Jy = 0.0
@@ -1901,7 +1901,7 @@ function collective_spin_fast(ψ::Vector{ComplexF64}, N::Int)
     end
     Jx /= 2
     Jy /= 2
-    
+
     return Jx, Jy, Jz
 end
 
@@ -1920,7 +1920,7 @@ function collective_spin_second_moment_fast(ψ::Vector{ComplexF64}, N::Int)
         jz_eigenvalue = (N - 2*popcnt) / 2
         JzJz += abs2(ψ[s+1]) * jz_eigenvalue^2
     end
-    
+
     # JxJx, JyJy: Need correlators (expensive but can't avoid for X,Y)
     JxJx = N / 4.0  # Diagonal contribution
     JyJy = N / 4.0
@@ -1930,7 +1930,7 @@ function collective_spin_second_moment_fast(ψ::Vector{ComplexF64}, N::Int)
             JyJy += expect_corr(ψ, i, j, N, :yy) / 2
         end
     end
-    
+
     return JxJx, JyJy, JzJz
 end
 
@@ -1945,25 +1945,25 @@ Uses correlators O(N² × 2^(N-1)) for JyJy
 """
 function spin_squeezing_wineland_fast(ψ::Vector{ComplexF64}, N::Int)
     Jx, Jy, Jz = collective_spin_fast(ψ, N)
-    
+
     # For CSS along x: denominator is |⟨Jx⟩|², not |⟨J⟩|²
     if abs(Jx) < 1e-10
         return 1.0, Jx, Jy, Jz  # Mean spin vanished
     end
-    
+
     # Variances in y-z plane (perpendicular to x)
     _, JyJy, JzJz = collective_spin_second_moment_fast(ψ, N)
     var_y = JyJy - Jy^2
     var_z = JzJz - Jz^2
-    
+
     # For OAT: squeezing direction rotates in y-z plane
     # Use minimum variance (diagonalize 2x2 covariance matrix)
     # Approximation: skip covariance term (often small for OAT)
     λ_min = min(var_y, var_z)
-    
+
     # Wineland definition: ξ² = N Var_min / |⟨Jx⟩|²
     ξ² = N * max(0.0, λ_min) / (Jx^2)
-    
+
     return ξ², Jx, Jy, Jz
 end
 
@@ -1975,4 +1975,3 @@ export collective_spin, collective_spin_second_moment, collective_spin_variance
 export collective_spin_covariance_yz, spin_squeezing_wineland
 
 end # module
-

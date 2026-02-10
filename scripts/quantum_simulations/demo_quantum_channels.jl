@@ -66,7 +66,7 @@ where {K_k} are Kraus operators satisfying: Σ_k K_k† K_k = I
 
 IMPLEMENTED CHANNELS:
 ─────────────────────
-                                                                                
+
   ┌─────────────────┬───────────────────────────────────────────────────────────┐
   │ DEPHASING (T2)  │  K₀ = √(1-p) I                                            │
   │                 │  K₁ = √p |0⟩⟨0|,  K₂ = √p |1⟩⟨1|                          │
@@ -93,7 +93,7 @@ IMPLEMENTED CHANNELS:
   └─────────────────┴───────────────────────────────────────────────────────────┘
 
 ================================================================================
-                       MCWF: MONTE CARLO WAVE FUNCTION METHOD  
+                       MCWF: MONTE CARLO WAVE FUNCTION METHOD
 ================================================================================
 
 The MCWF method trades exact deterministic evolution for stochastic sampling:
@@ -105,7 +105,7 @@ The MCWF method trades exact deterministic evolution for stochastic sampling:
   MCWF (stochastic):
   ──────────────────
     |ψ'⟩ = K_j |ψ⟩ / ||K_j|ψ⟩||   ← Randomly sample ONE Kraus operator
-    
+
     Probability of choosing K_j:  P_j = ||K_j|ψ⟩||²
 
 ALGORITHM:
@@ -113,7 +113,7 @@ ALGORITHM:
   1. Start with pure state |ψ⟩
   2. For each channel application:
      a. Compute probabilities P_k = ||K_k|ψ⟩||² for each Kraus operator
-     b. Sample k with probability P_k  
+     b. Sample k with probability P_k
      c. Apply |ψ⟩ → K_k|ψ⟩ / ||K_k|ψ⟩||
   3. Measure observable ⟨ψ|O|ψ⟩
   4. Repeat n_traj times with different random seeds
@@ -123,15 +123,15 @@ KEY THEOREM (MCWF Convergence):
 ───────────────────────────────
     lim_{n→∞} (1/n) Σᵢ ⟨ψᵢ|O|ψᵢ⟩  =  Tr(O·ρ)
 
-    The ensemble average of MCWF trajectories EXACTLY equals 
+    The ensemble average of MCWF trajectories EXACTLY equals
     the density matrix expectation value in the limit n → ∞!
 
 STATISTICAL ERROR:
 ──────────────────
     Standard error scales as 1/√n_traj
-    
+
     n_traj = 100    → ~10% error
-    n_traj = 1000   → ~3% error  
+    n_traj = 1000   → ~3% error
     n_traj = 10000  → ~1% error
 
 ================================================================================
@@ -142,7 +142,7 @@ Both approaches use the SAME FUNCTION via Julia's multiple dispatch:
 
   # Density matrix (exact):
   apply_channel_dephasing!(ρ::Matrix, 0.1, [1, 2], N)
-  
+
   # MCWF (stochastic):
   apply_channel_dephasing!(ψ::Vector, 0.1, [1, 2], N)
 
@@ -287,7 +287,7 @@ println("\n  [PASS] Dephasing channel tests complete")
 
 
 # ------------------------------------------------------------------------------
-#  TEST 1.2: AMPLITUDE DAMPING CHANNEL  
+#  TEST 1.2: AMPLITUDE DAMPING CHANNEL
 # ------------------------------------------------------------------------------
 println("\n" * "-" ^ 80)
 println("  TEST 1.2: AMPLITUDE DAMPING CHANNEL (T1 decay)")
@@ -334,7 +334,7 @@ println("\n  [PASS] Bit flip tests complete")
 #  TEST 1.4: PHASE FLIP CHANNEL
 # ------------------------------------------------------------------------------
 println("\n" * "-" ^ 80)
-println("  TEST 1.4: PHASE FLIP CHANNEL")  
+println("  TEST 1.4: PHASE FLIP CHANNEL")
 println("-" ^ 80)
 
 ψ_plus = ComplexF64[1, 1] / sqrt(2)
@@ -427,7 +427,7 @@ println("\n  -- MCWF converges to exact result as n_traj → ∞")
 
 
 # ------------------------------------------------------------------------------
-#  TEST 2.2: AMPLITUDE DAMPING CONVERGENCE  
+#  TEST 2.2: AMPLITUDE DAMPING CONVERGENCE
 # ------------------------------------------------------------------------------
 println("\n" * "-" ^ 80)
 println("  TEST 2.2: AMPLITUDE DAMPING - MCWF vs DENSITY MATRIX CONVERGENCE")
@@ -548,23 +548,23 @@ println("  +------------------+-------+-------+-------+-------+----+-----+------
 for (name, channel!) in channels
     # Create GHZ state using the module
     local psi_plus = make_product_ket(fill(:plus, N))
-    
+
     # Density matrix
     rho = psi_plus * psi_plus'
     channel!(rho, p, [1], N)
-    
+
     Z1_rho = expect_Z_rho(rho, 1, N)
     ZN_rho = expect_Z_rho(rho, N, N)
     X1_rho = expect_X_rho(rho, 1, N)
     XN_rho = expect_X_rho(rho, N, N)
     tr_rho = real(tr(rho))
     pur_rho = purity(rho)
-    
+
     # MCWF
     Random.seed!(42)
     Z1_vals, ZN_vals = Float64[], Float64[]
     X1_vals, XN_vals = Float64[], Float64[]
-    
+
     for _ in 1:n_traj
         local psi = make_product_ket(fill(:plus, N))
         channel!(psi, p, [1], N)
@@ -573,7 +573,7 @@ for (name, channel!) in channels
         push!(X1_vals, expect_X_psi(psi, 1, N))
         push!(XN_vals, expect_X_psi(psi, N, N))
     end
-    
+
     @printf("  | %-16s | %+.2f | %+.2f | %+.2f | %+.2f | %.1f| %.2f | %+.2f | %+.2f | %+.2f | %+.2f | %.1f| %.2f |\n",
             name, Z1_rho, ZN_rho, X1_rho, XN_rho, tr_rho, pur_rho,
             mean(Z1_vals), mean(ZN_vals), mean(X1_vals), mean(XN_vals), 1.0, 1.0)
@@ -675,10 +675,10 @@ println("""
     State vector (MCWF):    2^N × 16 bytes
     Density matrix:        (2^N)² × 16 bytes
 
-  For N=14: ρ needs 4 GB    
-  For N=16: ρ needs 64 GB    
-  For N=20: ρ needs 16 TB   
-  For N=25: ρ needs 16 PB  
+  For N=14: ρ needs 4 GB
+  For N=16: ρ needs 64 GB
+  For N=20: ρ needs 16 TB
+  For N=25: ρ needs 16 PB
 
   But MCWF with N=25 needs only 512 MB!
 """)
@@ -704,20 +704,20 @@ println("  ├──────┼───────────────
 for N_test in test_sizes
     dim = 1 << N_test
     GC.gc()
-    
+
     # Density matrix results (if feasible)
     if N_test <= max_rho_N
         local psi_init = make_product_ket(fill(:plus, N_test))
         rho = psi_init * psi_init'
         apply_channel_dephasing!(rho, p_noise, [1, N_test], N_test)
-        
+
         X1_rho = expect_X_rho(rho, 1, N_test)
         Y1_rho = expect_Y_rho(rho, 1, N_test)
         Z1_rho = expect_Z_rho(rho, 1, N_test)
         XN_rho = expect_X_rho(rho, N_test, N_test)
         YN_rho = expect_Y_rho(rho, N_test, N_test)
         ZN_rho = expect_Z_rho(rho, N_test, N_test)
-        
+
         rho1_str = @sprintf("%+.2f %+.2f %+.2f", X1_rho, Y1_rho, Z1_rho)
         rhoN_str = @sprintf("%+.2f %+.2f %+.2f", XN_rho, YN_rho, ZN_rho)
         rho = nothing
@@ -725,7 +725,7 @@ for N_test in test_sizes
         rho1_str = " ---   ---   --- "
         rhoN_str = " ---   ---   --- "
     end
-    
+
     # MCWF with timing - use batching for large systems to limit memory
     t_start = time()
     X1_vals = zeros(n_traj_scale)
@@ -734,19 +734,19 @@ for N_test in test_sizes
     XN_vals = zeros(n_traj_scale)
     YN_vals = zeros(n_traj_scale)
     ZN_vals = zeros(n_traj_scale)
-    
+
     # Adaptive batch size based on system size to avoid OOM
     # For N>=24: limit concurrent allocations to avoid memory pressure
     state_size_bytes = (1 << N_test) * 16  # 2^N * sizeof(ComplexF64)
     max_concurrent_bytes = 32 * 1024^3  # 32 GB max concurrent memory
     max_concurrent_states = max(1, floor(Int, max_concurrent_bytes / state_size_bytes))
     batch_size = min(n_traj_scale, max_concurrent_states)
-    
+
     n_batches = ceil(Int, n_traj_scale / batch_size)
     for batch_idx in 1:n_batches
         traj_start = (batch_idx - 1) * batch_size + 1
         traj_end = min(batch_idx * batch_size, n_traj_scale)
-        
+
         Threads.@threads for traj in traj_start:traj_end
             Random.seed!(N_test * 1000000 + traj)  # Unique seed per trajectory
             local psi = make_product_ket(fill(:plus, N_test))
@@ -761,23 +761,23 @@ for N_test in test_sizes
         GC.gc(false)  # Quick GC between batches
     end
     t_mcwf = time() - t_start
-    
+
     se = x -> std(x) / sqrt(n_traj_scale)
-    mcwf1_str = @sprintf("%+.2f±%.2f %+.2f±%.2f %+.2f±%.2f", 
+    mcwf1_str = @sprintf("%+.2f±%.2f %+.2f±%.2f %+.2f±%.2f",
                          mean(X1_vals), se(X1_vals), mean(Y1_vals), se(Y1_vals), mean(Z1_vals), se(Z1_vals))
     mcwfN_str = @sprintf("%+.2f±%.2f %+.2f±%.2f %+.2f±%.2f",
                          mean(XN_vals), se(XN_vals), mean(YN_vals), se(YN_vals), mean(ZN_vals), se(ZN_vals))
-    
+
     # Format time as hh:mm:ss:ms
     hours = floor(Int, t_mcwf / 3600)
     mins = floor(Int, (t_mcwf % 3600) / 60)
     secs = floor(Int, t_mcwf % 60)
     ms = floor(Int, (t_mcwf * 1000) % 1000)
     time_str = @sprintf("%02d:%02d:%02d:%03d", hours, mins, secs, ms)
-    
+
     @printf("  │ %4d │ %-18s │ %-18s │ %-26s │ %-29s │ %s │\n",
             N_test, rho1_str, rhoN_str, mcwf1_str, mcwfN_str, time_str)
-    
+
     GC.gc()
 end
 

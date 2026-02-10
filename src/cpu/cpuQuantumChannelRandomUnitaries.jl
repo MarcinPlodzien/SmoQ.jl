@@ -20,44 +20,44 @@ Haar Random Unitaries:
   random_unitary(1)               Single-qubit Haar random (2x2 matrix)
   random_unitary(2)               Two-qubit Haar random (4x4 matrix)
   random_unitary(N)               N-qubit Haar random (2^N x 2^N matrix)
-  
+
   ALGORITHM: QR decomposition of complex Gaussian matrix
   - Draw: A[i,j] ~ N(0,1) + i*N(0,1) for complex Gaussian
   - Compute: Q, R = qr(A)
   - Fix phase: Q = Q * diag(sign(diag(R))) to ensure Haar measure
-  
+
   COMPLEXITY:
     Storage: O(4^N) - unavoidable for random unitary
     Generation: O(4^N) for QR decomposition
-    
+
   EXAMPLES:
     U1 = random_unitary(1)    # 2x2 Haar random
-    U2 = random_unitary(2)    # 4x4 Haar random  
+    U2 = random_unitary(2)    # 4x4 Haar random
     U5 = random_unitary(5)    # 32x32 Haar random (use cautiously N>10)
 
 Brick-Wall Circuit:
   apply_brickwall_layer!(psi, gates_even, gates_odd, N)
       Apply one layer of brick-wall circuit (even + odd pairs)
       MATRIX-FREE: Uses bitwise 2-qubit gate application
-  
+
   apply_brickwall!(psi, depth, gates, N)
       Apply full brick-wall circuit of given depth
-      
+
   random_brickwall!(psi, depth, N)
       Apply brick-wall with fresh Haar random 2-qubit gates per layer
-      
+
   BRICK-WALL STRUCTURE (N=6 qubits, one layer):
       Layer even: (1,2)   (3,4)   (5,6)
       Layer odd:     (2,3)   (4,5)     (6,1) [optional periodic]
-      
+
   COMPLEXITY:
     Storage: O(16 * N/2) per layer = O(N) for 4x4 gate matrices
     Application: O(N * 2^N) per layer using bitwise indexing
-    
+
   EXAMPLES:
     # Random brick-wall circuit
     random_brickwall!(psi, 10, N)   # Apply 10 layers of random gates
-    
+
     # Custom brick-wall with specified gates
     gates = [random_unitary(2) for _ in 1:N÷2]
     apply_brickwall_layer!(psi, gates, [], N)
@@ -66,7 +66,7 @@ Single/Two-Qubit Gate Application:
   apply_gate!(psi, U, qubit, N)
       Apply single-qubit gate U to qubit k
       BITWISE: O(2^N) with @inbounds @simd
-      
+
   apply_2qubit_gate!(psi, U, q1, q2, N)
       Apply 2-qubit gate U to qubits (q1, q2)
       BITWISE: O(2^N) with precomputed index mapping
@@ -151,18 +151,18 @@ U3 = random_unitary(3)   # 8×8 random unitary
 """
 function random_unitary(n_qubits::Int)
     @assert n_qubits >= 1 "Need at least 1 qubit"
-    
+
     dim = 1 << n_qubits  # 2^n_qubits
-    
+
     # Generate complex Gaussian matrix
     A = randn(ComplexF64, dim, dim)
-    
+
     # QR decomposition
     Q, R = qr(A)
-    
+
     # Extract Q as dense matrix
     Q_dense = Matrix(Q)
-    
+
     # Phase correction to ensure Haar measure
     # Multiply each column by sign of corresponding diagonal of R
     @inbounds for j in 1:dim
@@ -174,7 +174,7 @@ function random_unitary(n_qubits::Int)
             Q_dense[i, j] *= phase
         end
     end
-    
+
     return Q_dense
 end
 
@@ -230,28 +230,28 @@ apply_gate!(psi, H, 1, 3)
 function apply_gate!(psi::Vector{ComplexF64}, U::Matrix{ComplexF64}, qubit::Int, N::Int)
     @assert 1 <= qubit <= N "Qubit index must be in 1..N"
     @assert size(U) == (2, 2) "U must be 2×2"
-    
+
     mask = 1 << (qubit - 1)  # Bit mask for qubit position
     dim = length(psi)
-    
+
     # Extract gate elements for speed
     u00, u01 = U[1, 1], U[1, 2]
     u10, u11 = U[2, 1], U[2, 2]
-    
+
     @inbounds for i in 0:(dim-1)
         # Only process indices where target bit is 0
         if (i & mask) == 0
             j = i | mask  # Index with target bit = 1
-            
+
             # Apply 2x2 gate
             a = psi[i + 1]
             b = psi[j + 1]
-            
+
             psi[i + 1] = u00 * a + u01 * b
             psi[j + 1] = u10 * a + u11 * b
         end
     end
-    
+
     return psi
 end
 
@@ -281,7 +281,7 @@ end
 # ==============================================================================
 
 """
-    apply_2qubit_gate!(psi::Vector{ComplexF64}, U::Matrix{ComplexF64}, 
+    apply_2qubit_gate!(psi::Vector{ComplexF64}, U::Matrix{ComplexF64},
                        q1::Int, q2::Int, N::Int)
 
 Apply two-qubit gate U to qubits (q1, q2) in-place.
@@ -314,12 +314,12 @@ CNOT = [1 0 0 0; 0 1 0 0; 0 0 0 1; 0 0 1 0]
 apply_2qubit_gate!(psi, CNOT, 1, 2, 3)
 ```
 """
-function apply_2qubit_gate!(psi::Vector{ComplexF64}, U::Matrix{ComplexF64}, 
+function apply_2qubit_gate!(psi::Vector{ComplexF64}, U::Matrix{ComplexF64},
                              q1::Int, q2::Int, N::Int)
     @assert 1 <= q1 <= N && 1 <= q2 <= N "Qubit indices must be in 1..N"
     @assert q1 != q2 "Qubits must be different"
     @assert size(U) == (4, 4) "U must be 4×4"
-    
+
     # Ensure q1 < q2 for consistent indexing
     if q1 > q2
         q1, q2 = q2, q1
@@ -327,13 +327,13 @@ function apply_2qubit_gate!(psi::Vector{ComplexF64}, U::Matrix{ComplexF64},
         SWAP = [1 0 0 0; 0 0 1 0; 0 1 0 0; 0 0 0 1]
         U = SWAP * U * SWAP
     end
-    
+
     mask1 = 1 << (q1 - 1)
     mask2 = 1 << (q2 - 1)
     mask_both = mask1 | mask2
-    
+
     dim = length(psi)
-    
+
     @inbounds for i in 0:(dim-1)
         # Only process indices where both target bits are 0
         if (i & mask_both) == 0
@@ -342,13 +342,13 @@ function apply_2qubit_gate!(psi::Vector{ComplexF64}, U::Matrix{ComplexF64},
             i10 = i | mask1
             i01 = i | mask2
             i11 = i | mask_both
-            
+
             # Extract amplitudes
             a00 = psi[i00 + 1]
             a10 = psi[i10 + 1]
             a01 = psi[i01 + 1]
             a11 = psi[i11 + 1]
-            
+
             # Apply 4x4 gate
             psi[i00 + 1] = U[1,1]*a00 + U[1,2]*a10 + U[1,3]*a01 + U[1,4]*a11
             psi[i10 + 1] = U[2,1]*a00 + U[2,2]*a10 + U[2,3]*a01 + U[2,4]*a11
@@ -356,7 +356,7 @@ function apply_2qubit_gate!(psi::Vector{ComplexF64}, U::Matrix{ComplexF64},
             psi[i11 + 1] = U[4,1]*a00 + U[4,2]*a10 + U[4,3]*a01 + U[4,4]*a11
         end
     end
-    
+
     return psi
 end
 
@@ -388,7 +388,7 @@ end
 # ==============================================================================
 
 """
-    apply_brickwall_layer!(psi::Vector{ComplexF64}, gates_even::Vector, 
+    apply_brickwall_layer!(psi::Vector{ComplexF64}, gates_even::Vector,
                            gates_odd::Vector, N::Int; periodic::Bool=false)
 
 Apply one brick-wall layer (even pairs, then odd pairs).
@@ -404,7 +404,7 @@ Apply one brick-wall layer (even pairs, then odd pairs).
 ```
 Even:  ─[U1]─   ─[U2]─   ─[U3]─
        q1-q2   q3-q4   q5-q6
-       
+
 Odd:      ─[V1]─   ─[V2]─   [V3]  (periodic only)
          q2-q3   q4-q5   q6-q1
 ```
@@ -417,21 +417,21 @@ gates_odd = [random_unitary(2) for _ in 1:(N÷2 - 1)]
 apply_brickwall_layer!(psi, gates_even, gates_odd, N)
 ```
 """
-function apply_brickwall_layer!(psi::Vector{ComplexF64}, 
-                                 gates_even::Vector, 
-                                 gates_odd::Vector, 
-                                 N::Int; 
+function apply_brickwall_layer!(psi::Vector{ComplexF64},
+                                 gates_even::Vector,
+                                 gates_odd::Vector,
+                                 N::Int;
                                  periodic::Bool=false)
     # Even layer: (1,2), (3,4), (5,6), ...
     n_even = N ÷ 2
     @assert length(gates_even) >= n_even "Need $n_even gates for even layer"
-    
+
     for k in 1:n_even
         q1 = 2k - 1
         q2 = 2k
         apply_2qubit_gate!(psi, gates_even[k], q1, q2, N)
     end
-    
+
     # Odd layer: (2,3), (4,5), ...
     n_odd = periodic ? (N ÷ 2) : (N ÷ 2 - 1)
     if n_odd > 0 && length(gates_odd) >= n_odd
@@ -447,12 +447,12 @@ function apply_brickwall_layer!(psi::Vector{ComplexF64},
             apply_2qubit_gate!(psi, gates_odd[k], q1, q2, N)
         end
     end
-    
+
     return psi
 end
 
 """
-    apply_brickwall!(psi::Vector{ComplexF64}, depth::Int, 
+    apply_brickwall!(psi::Vector{ComplexF64}, depth::Int,
                      even_gates::Vector{Vector}, odd_gates::Vector{Vector}, N::Int;
                      periodic::Bool=false)
 
@@ -479,14 +479,14 @@ function apply_brickwall!(psi::Vector{ComplexF64}, depth::Int,
                           even_gates::Vector, odd_gates::Vector, N::Int;
                           periodic::Bool=false)
     for layer in 1:depth
-        apply_brickwall_layer!(psi, even_gates[layer], odd_gates[layer], N; 
+        apply_brickwall_layer!(psi, even_gates[layer], odd_gates[layer], N;
                                periodic=periodic)
     end
     return psi
 end
 
 """
-    random_brickwall!(psi::Vector{ComplexF64}, depth::Int, N::Int; 
+    random_brickwall!(psi::Vector{ComplexF64}, depth::Int, N::Int;
                       periodic::Bool=false)
 
 Apply brick-wall circuit with fresh Haar random 2-qubit gates at each layer.
@@ -523,19 +523,19 @@ random_brickwall!(psi, 20, 10)  # 20 layers on 10 qubits
 function random_brickwall!(psi::Vector{ComplexF64}, depth::Int, N::Int;
                             periodic::Bool=false)
     @assert iseven(N) "N should be even for brick-wall"
-    
+
     n_even = N ÷ 2
     n_odd = periodic ? n_even : (n_even - 1)
-    
+
     for _ in 1:depth
         # Generate fresh random gates
         gates_even = [random_unitary(2) for _ in 1:n_even]
         gates_odd = n_odd > 0 ? [random_unitary(2) for _ in 1:n_odd] : Matrix{ComplexF64}[]
-        
+
         # Apply layer
         apply_brickwall_layer!(psi, gates_even, gates_odd, N; periodic=periodic)
     end
-    
+
     return psi
 end
 

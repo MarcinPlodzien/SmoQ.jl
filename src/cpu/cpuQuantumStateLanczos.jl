@@ -154,10 +154,10 @@ Compute out = H_XXZ |ψ⟩ where:
 Use negative values (Jx=-1) for antiferromagnetic, positive for ferromagnetic.
 Matrix-free: O(2^N) complexity, O(2^N) memory.
 """
-function apply_H_xxz!(ψ::Vector{ComplexF64}, out::Vector{ComplexF64}, 
+function apply_H_xxz!(ψ::Vector{ComplexF64}, out::Vector{ComplexF64},
                        N::Int, Jx::Float64, Jy::Float64, Jz::Float64, h::Float64)
     fill!(out, zero(ComplexF64))
-    
+
     # Nearest-neighbor interactions
     for i in 1:(N-1)
         if Jx != 0.0
@@ -165,11 +165,11 @@ function apply_H_xxz!(ψ::Vector{ComplexF64}, out::Vector{ComplexF64},
             out .*= -Jx / (-Jx)  # Scale temp - we'll do it properly
         end
     end
-    
+
     # Actually, let's do this properly with accumulation
     fill!(out, zero(ComplexF64))
     temp = zeros(ComplexF64, length(ψ))
-    
+
     # XX terms
     if Jx != 0.0
         for i in 1:(N-1)
@@ -178,7 +178,7 @@ function apply_H_xxz!(ψ::Vector{ComplexF64}, out::Vector{ComplexF64},
             out .+= Jx .* temp
         end
     end
-    
+
     # YY terms
     if Jy != 0.0
         for i in 1:(N-1)
@@ -187,7 +187,7 @@ function apply_H_xxz!(ψ::Vector{ComplexF64}, out::Vector{ComplexF64},
             out .+= Jy .* temp
         end
     end
-    
+
     # ZZ terms
     if Jz != 0.0
         for i in 1:(N-1)
@@ -196,7 +196,7 @@ function apply_H_xxz!(ψ::Vector{ComplexF64}, out::Vector{ComplexF64},
             out .+= Jz .* temp
         end
     end
-    
+
     # Transverse field
     if h != 0.0
         for i in 1:N
@@ -205,7 +205,7 @@ function apply_H_xxz!(ψ::Vector{ComplexF64}, out::Vector{ComplexF64},
             out .+= h .* temp
         end
     end
-    
+
     return out
 end
 
@@ -242,60 +242,60 @@ Find ground state of XXZ chain using Lanczos algorithm.
 - `max_iter`: Maximum Lanczos iterations
 - `tol`: Convergence tolerance
 """
-function lanczos_ground_state_xxz(; N::Int, Jx::Float64=1.0, Jy::Float64=1.0, 
+function lanczos_ground_state_xxz(; N::Int, Jx::Float64=1.0, Jy::Float64=1.0,
                                     Jz::Float64=1.0, h::Float64=0.0,
                                     max_iter::Int=100, tol::Float64=1e-10)
     dim = 1 << N
-    
+
     # Random initial vector
     v = randn(ComplexF64, dim)
     v ./= norm(v)
-    
+
     # Lanczos vectors and tridiagonal matrix
     V = zeros(ComplexF64, dim, max_iter + 1)
     α = zeros(Float64, max_iter)  # Diagonal
     β = zeros(Float64, max_iter)  # Off-diagonal
-    
+
     V[:, 1] = v
     w = zeros(ComplexF64, dim)
-    
+
     E_prev = Inf
-    
+
     for j in 1:max_iter
         # w = H * v_j
         apply_H_xxz!(V[:, j], w, N, Jx, Jy, Jz, h)
-        
+
         # α_j = ⟨v_j | w⟩
         α[j] = real(dot(V[:, j], w))
-        
+
         # Orthogonalize: w = w - α_j v_j - β_{j-1} v_{j-1}
         w .-= α[j] .* V[:, j]
         if j > 1
             w .-= β[j-1] .* V[:, j-1]
         end
-        
+
         # Reorthogonalize (for numerical stability)
         for k in 1:j
             w .-= dot(V[:, k], w) .* V[:, k]
         end
-        
+
         # β_j = ||w||
         β[j] = norm(w)
-        
+
         if β[j] < 1e-14
             # Invariant subspace found
             max_iter = j
             break
         end
-        
+
         # v_{j+1} = w / β_j
         V[:, j+1] = w ./ β[j]
-        
+
         # Check convergence: diagonalize tridiagonal matrix
         T = SymTridiagonal(α[1:j], β[1:j-1])
         eigs = eigvals(T)
         E0 = minimum(eigs)
-        
+
         if abs(E0 - E_prev) < tol
             # Converged - compute ground state
             evecs = eigvecs(T)
@@ -303,10 +303,10 @@ function lanczos_ground_state_xxz(; N::Int, Jx::Float64=1.0, Jy::Float64=1.0,
             ψ0 ./= norm(ψ0)
             return E0, ψ0
         end
-        
+
         E_prev = E0
     end
-    
+
     # Return best estimate
     j = min(max_iter, length(α))
     T = SymTridiagonal(α[1:j], β[1:max(1,j-1)])
@@ -314,7 +314,7 @@ function lanczos_ground_state_xxz(; N::Int, Jx::Float64=1.0, Jy::Float64=1.0,
     E0 = eigs[1]
     ψ0 = V[:, 1:j] * evecs[:, 1]
     ψ0 ./= norm(ψ0)
-    
+
     return E0, ψ0
 end
 
@@ -341,29 +341,29 @@ function exact_ground_state_xxz(N::Int, Jx::Float64, Jy::Float64, Jz::Float64, h
     if N > 14
         @warn "N=$N is large for exact diagonalization. Consider using Lanczos."
     end
-    
+
     dim = 1 << N
     H = zeros(ComplexF64, dim, dim)
-    
+
     # Build H by applying to each basis state
     ψ_basis = zeros(ComplexF64, dim)
     Hψ = zeros(ComplexF64, dim)
-    
+
     for i in 1:dim
         fill!(ψ_basis, zero(ComplexF64))
         ψ_basis[i] = 1.0
         apply_H_xxz!(ψ_basis, Hψ, N, Jx, Jy, Jz, h)
         H[:, i] = Hψ
     end
-    
+
     # Diagonalize
     eigs = eigvals(Hermitian(H))
     E0 = real(eigs[1])
-    
+
     # Get ground state
     _, evecs = eigen(Hermitian(H))
     ψ0 = evecs[:, 1]
-    
+
     return E0, ψ0
 end
 
@@ -375,7 +375,7 @@ Compute ground state, automatically choosing method based on system size.
 - N ≤ 12: Exact diagonalization
 - N > 12: Lanczos
 """
-function ground_state_xxz(N::Int, Jx::Float64, Jy::Float64, Jz::Float64, h::Float64; 
+function ground_state_xxz(N::Int, Jx::Float64, Jy::Float64, Jz::Float64, h::Float64;
                           method::Symbol=:auto)
     if method == :exact || (method == :auto && N <= 12)
         return exact_ground_state_xxz(N, Jx, Jy, Jz, h)

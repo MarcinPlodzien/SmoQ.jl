@@ -106,7 +106,7 @@ p_noise_range = collect(0.0:0.02:0.5)  # 21 points from 0 to 1
 
 # Modes to compare
 modes = [
-            :dm, 
+            :dm,
             :mcwf
         ]
 
@@ -148,11 +148,11 @@ end
 function make_ghz_random(N::Int)
     ψ, _ = make_ghz_z(N)
     bases = Char[]
-    
+
     for k in 1:N
         b = rand(['X', 'Y', 'Z'])
         push!(bases, b)
-        
+
         if b == 'X'
             apply_hadamard_psi!(ψ, k, N)
         elseif b == 'Y'
@@ -160,7 +160,7 @@ function make_ghz_random(N::Int)
             apply_hadamard_psi!(ψ, k, N)
         end
     end
-    
+
     normalize_state!(ψ)
     return ψ, String(bases)
 end
@@ -214,7 +214,7 @@ end
 function generate_trajectories(ψ, noise::Symbol, p::Float64, N::Int, M::Int)
     trajectories = Vector{Vector{ComplexF64}}(undef, M)
     qubits = collect(1:N)
-    
+
     # Multithreaded trajectory generation
     Threads.@threads for i in 1:M
         ψ_t = copy(ψ)
@@ -245,7 +245,7 @@ for state in test_states
     # Check if this is a GHZ state (returns tuple with bases)
     test_result = state.gen(N_range_quick[1])
     is_ghz_state = test_result isa Tuple
-    
+
     # Print table header with |ψ⟩ = prefix
     if state.name == "plus_product"
         println("  ── |ψ⟩ = |+⟩⊗N ──")
@@ -260,7 +260,7 @@ for state in test_states
     else
         println("  ── |ψ⟩ = $(state.label) ──")
     end
-    
+
     # Table format depends on whether we have bases
     if is_ghz_state
         println("  ┌─────┬─────────┬──────────┬──────────┬──────────┐")
@@ -271,38 +271,38 @@ for state in test_states
         println("  │  N  │  Q_ent   │  Q_bell  │ time (s) │")
         println("  ├─────┼──────────┼──────────┼──────────┤")
     end
-    
+
     for N in N_range_quick
         result = state.gen(N)
-        
+
         if result isa Tuple
             ψ, bases = result
         else
             ψ = result
             bases = ""
         end
-        
-        t = @elapsed Q_bell, Q_ent, θ_opt = get_bell_correlator(ψ; 
+
+        t = @elapsed Q_bell, Q_ent, θ_opt = get_bell_correlator(ψ;
             method=opt_default.method, max_iter=opt_default.max_iter)
-        
+
         # Validation: product states should have Q_ent <= 0
         if !state.entangled && Q_ent > 0.1
             @warn "Product state has Q_ent > 0 ($(Q_ent)) - check optimizer!"
         end
-        
+
         push!(all_results, (
-            state=state.name, N=N, rep=:pure, mixed=false, 
+            state=state.name, N=N, rep=:pure, mixed=false,
             noise="none", p=0.0, Q_bell=Q_bell, Q_ent=Q_ent, time=t,
             bases=bases
         ))
-        
+
         if is_ghz_state
             @printf("  │ %2d  │ %s │  %+6.3f  │  %+6.3f  │  %6.3f  │\n", N, bases, Q_ent, Q_bell, t)
         else
             @printf("  │ %2d  │  %+6.3f  │  %+6.3f  │  %6.3f  │\n", N, Q_ent, Q_bell, t)
         end
     end
-    
+
     if is_ghz_state
         println("  └─────┴─────────┴──────────┴──────────┴──────────┘")
     else
@@ -334,12 +334,12 @@ for state in test_states[1:3]
                 bases = ""
             end
             ρ = p > 0 ? apply_noise_dm(ψ, noise, p, N_dm) : ψ * ψ'
-            
-            t = @elapsed Q_bell, Q_ent, θ_opt = get_bell_correlator(ρ; 
+
+            t = @elapsed Q_bell, Q_ent, θ_opt = get_bell_correlator(ρ;
                 method=opt_default.method, max_iter=opt_default.max_iter)
-            
+
             push!(all_results, (
-                state=state.name, N=N_dm, rep=:dm, mixed=(p>0), 
+                state=state.name, N=N_dm, rep=:dm, mixed=(p>0),
                 noise=String(noise), p=p, Q_bell=Q_bell, Q_ent=Q_ent, time=t,
                 bases=bases
             ))
@@ -350,7 +350,7 @@ end
 # Print tables for each state
 for state in test_states[1:3]
     is_ghz_random = (state.name == "ghz_random")
-    
+
     if state.name == "ghz_z"
         println("  ── |ψ⟩ = |GHZ⟩ (Z basis) ──")
     elseif state.name == "ghz_random"
@@ -358,7 +358,7 @@ for state in test_states[1:3]
     else
         println("  ── |ψ⟩ = $(state.label) ──")
     end
-    
+
     if is_ghz_random
         println("  ┌───────┬───────┬──────────────────────┬──────────────────────┐")
         println("  │   p   │ bases │      dephasing       │     depolarizing     │")
@@ -370,28 +370,28 @@ for state in test_states[1:3]
         println("  │       │  Q_bell  │   Q_ent   │  Q_bell  │   Q_ent   │")
         println("  ├───────┼──────────┼───────────┼──────────┼───────────┤")
     end
-    
+
     for p in noise_strengths_quick
-        deph = filter(r -> r.state == state.name && r.noise == "dephasing" && 
+        deph = filter(r -> r.state == state.name && r.noise == "dephasing" &&
                       r.rep == :dm && abs(r.p - p) < 0.01, all_results)
-        depol = filter(r -> r.state == state.name && r.noise == "depolarizing" && 
+        depol = filter(r -> r.state == state.name && r.noise == "depolarizing" &&
                        r.rep == :dm && abs(r.p - p) < 0.01, all_results)
-        
+
         deph_bell = !isempty(deph) ? fmt_val(deph[1].Q_bell) : "  ---  "
         deph_ent = !isempty(deph) ? fmt_val(deph[1].Q_ent) : "  ---  "
         depol_bell = !isempty(depol) ? fmt_val(depol[1].Q_bell) : "  ---  "
         depol_ent = !isempty(depol) ? fmt_val(depol[1].Q_ent) : "  ---  "
-        
+
         if is_ghz_random
             bases = !isempty(deph) ? deph[1].bases : "---"
-            @printf("  │ %.2f  │ %s │ %s │  %s  │ %s │  %s  │\n", 
+            @printf("  │ %.2f  │ %s │ %s │  %s  │ %s │  %s  │\n",
                     p, bases, deph_bell, deph_ent, depol_bell, depol_ent)
         else
-            @printf("  │ %.2f  │ %s │  %s  │ %s │  %s  │\n", 
+            @printf("  │ %.2f  │ %s │  %s  │ %s │  %s  │\n",
                     p, deph_bell, deph_ent, depol_bell, depol_ent)
         end
     end
-    
+
     if is_ghz_random
         println("  └───────┴───────┴──────────┴───────────┴──────────┴───────────┘")
     else
@@ -421,12 +421,12 @@ for state in test_states[1:2]
                 bases = ""
             end
             trajectories = generate_trajectories(ψ, noise, p, N_dm, N_trajectories_quick)
-            
-            t = @elapsed Q_bell, Q_ent, θ_opt = get_bell_correlator(trajectories; 
+
+            t = @elapsed Q_bell, Q_ent, θ_opt = get_bell_correlator(trajectories;
                 method=opt_default.method, max_iter=opt_default.max_iter)
-            
+
             push!(all_results, (
-                state=state.name, N=N_dm, rep=:mcwf, mixed=true, 
+                state=state.name, N=N_dm, rep=:mcwf, mixed=true,
                 noise=String(noise), p=p, Q_bell=Q_bell, Q_ent=Q_ent, time=t,
                 bases=bases
             ))
@@ -441,14 +441,14 @@ for state in test_states[1:2]
     println("  │   p   │      dephasing       │")
     println("  │       │  Q_bell  │   Q_ent   │")
     println("  ├───────┼──────────┼───────────┤")
-    
+
     for p in [0.1, 0.2]
-        deph = filter(r -> r.state == state.name && r.noise == "dephasing" && 
+        deph = filter(r -> r.state == state.name && r.noise == "dephasing" &&
                       r.rep == :mcwf && abs(r.p - p) < 0.01, all_results)
-        
+
         deph_bell = !isempty(deph) ? @sprintf("%+6.2f", deph[1].Q_bell) : "  ---  "
         deph_ent = !isempty(deph) ? @sprintf("%+6.2f", deph[1].Q_ent) : "  ---  "
-        
+
         @printf("  │ %.2f  │ %s │  %s  │\n", p, deph_bell, deph_ent)
     end
     println("  └───────┴──────────┴───────────┘")
@@ -477,7 +477,7 @@ sweep_states = [
 sweep_data = Dict{Tuple{String,Int,Symbol,String}, Dict{Symbol,Tuple{Vector{Float64},Vector{Float64},Vector{Float64},Vector{Float64}}}}()
 
 # Generate filename helper
-function make_data_filename(; state::String, N::Int, mode::Symbol, 
+function make_data_filename(; state::String, N::Int, mode::Symbol,
                              optimizer::String, M_traj::Int)
     if mode == :dm
         return @sprintf("data_Q_vs_p_%s_N%02d_dm_%s_M0.txt", state, N, optimizer)
@@ -497,31 +497,31 @@ println()
 
 for (idx, (state, N, mode, opt)) in enumerate(configs)
     M_traj = mode == :mcwf ? N_trajectories_sweep : 0
-    
+
     # Print current config with counter
     mode_str = mode == :dm ? "DM" : "MCWF(M=$M_traj)"
     println("  [$idx/$total_configs] $(state.label) | N=$N | $mode_str | $(opt.label)")
-    
+
     ψ_init = state.gen(N)
     config_data = Dict{Symbol,Tuple{Vector{Float64},Vector{Float64},Vector{Float64},Vector{Float64}}}()
-    
+
     for (noise_idx, noise) in enumerate(noise_models)
         p_vals = Float64[]
         Q_vals = Float64[]
         Q_errs = Float64[]  # Bootstrap errors for MCWF, 0 for DM
         t_vals = Float64[]
-        
+
         # Progress bar for p values
         progress_desc = "      $noise: "
         @showprogress dt=0.5 desc=progress_desc for p in p_noise_range
             if mode == :dm
                 ρ = apply_noise_dm(ψ_init, noise, p, N)
-                t = @elapsed Q_bell, Q_ent, θ_opt = get_bell_correlator(ρ; 
+                t = @elapsed Q_bell, Q_ent, θ_opt = get_bell_correlator(ρ;
                     method=opt.method, max_iter=opt.max_iter)
                 Q_err = 0.0  # No error for DM
             else
                 trajectories = generate_trajectories(ψ_init, noise, p, N, M_traj)
-                t = @elapsed Q_bell, Q_ent, θ_opt = get_bell_correlator(trajectories; 
+                t = @elapsed Q_bell, Q_ent, θ_opt = get_bell_correlator(trajectories;
                     method=opt.method, max_iter=opt.max_iter)
                 # Bootstrap error estimation for MCWF (with error handling)
                 Q_err = try
@@ -531,22 +531,22 @@ for (idx, (state, N, mode, opt)) in enumerate(configs)
                     0.0  # Fallback if bootstrap fails
                 end
             end
-            
+
             push!(p_vals, p)
             push!(Q_vals, Q_bell)
             push!(Q_errs, Q_err)
             push!(t_vals, t)
         end
-        
+
         config_data[noise] = (p_vals, Q_vals, Q_errs, t_vals)
         avg_time = round(sum(t_vals)/length(t_vals), digits=3)
         println("        → Q_bell ∈ [$(round(minimum(Q_vals), digits=2)), $(round(maximum(Q_vals), digits=2))], avg_t=$(avg_time)s")
     end
-    
+
     sweep_data[(state.name, N, mode, opt.name)] = config_data
-    
+
     # Save data file
-    filename = make_data_filename(state=state.name, N=N, mode=mode, 
+    filename = make_data_filename(state=state.name, N=N, mode=mode,
                                    optimizer=opt.name, M_traj=M_traj)
     open(joinpath(DATA_DIR, filename), "w") do io
         println(io, "# Q_bell vs p_noise for $(state.label), N=$N, mode=$mode")
@@ -556,9 +556,9 @@ for (idx, (state, N, mode, opt)) in enumerate(configs)
         println(io, "#")
         println(io, "# p_noise  dephasing  depolarizing  amplitude_damping")
         for (i, p) in enumerate(p_noise_range)
-            @printf(io, "%.4f  %+.6f  %+.6f  %+.6f\n", 
-                    p, config_data[:dephasing][2][i], 
-                    config_data[:depolarizing][2][i], 
+            @printf(io, "%.4f  %+.6f  %+.6f  %+.6f\n",
+                    p, config_data[:dephasing][2][i],
+                    config_data[:depolarizing][2][i],
                     config_data[:amplitude_damping][2][i])
         end
     end
@@ -576,7 +576,7 @@ println()
 
 # Noise and state configuration
 noise_colors = Dict(:dephasing => :blue, :depolarizing => :red, :amplitude_damping => :green)
-noise_labels = Dict(:dephasing => "Dephasing", :depolarizing => "Depolarizing", 
+noise_labels = Dict(:dephasing => "Dephasing", :depolarizing => "Depolarizing",
                     :amplitude_damping => "Amp. Damping")
 opt_colors = Dict("spsa_adam" => :blue, "lbfgs" => :green, "autograd_adam" => :red)
 opt_markers = Dict("spsa_adam" => :circle, "lbfgs" => :square, "autograd_adam" => :diamond)
@@ -593,14 +593,14 @@ for opt in optimizers
         n_rows = length(noise_models)
         n_cols = length(entangled_states)
         plots_array = []
-        
+
         for (row_idx, noise) in enumerate(noise_models)
             for (col_idx, state) in enumerate(entangled_states)
-                
+
                 # Use first N in sweep range
                 N = N_range_sweep[1]
                 data = get(sweep_data, (state.name, N, mode, opt.name), nothing)
-                
+
                 p = plot(
                     xlabel = row_idx == n_rows ? L"p_\mathrm{noise}" : "",
                     ylabel = col_idx == 1 ? L"Q_\mathrm{Bell}" : "",
@@ -614,43 +614,43 @@ for opt in optimizers
                     guidefontsize = 12,
                     titlefontsize = 12
                 )
-                
+
                 # Add noise label on right side for first column
                 if col_idx == n_cols
-                    annotate!(p, maximum(p_noise_range)*0.95, 0.95, 
+                    annotate!(p, maximum(p_noise_range)*0.95, 0.95,
                              text(noise_labels[noise], 9, :right))
                 end
-                
+
                 if data !== nothing && haskey(data, noise)
                     p_vals, Q_vals, Q_errs, _ = data[noise]
                     # Clamp to non-negative for display
                     Q_display = max.(Q_vals, 0.0)
-                    
+
                     if mode == :mcwf && any(Q_errs .> 0)
-                        plot!(p, p_vals, Q_display, 
+                        plot!(p, p_vals, Q_display,
                               ribbon=Q_errs, fillalpha=0.3,
-                              color=noise_colors[noise], linewidth=2.5, 
+                              color=noise_colors[noise], linewidth=2.5,
                               marker=:circle, markersize=3,
                               label="")
                     else
-                        plot!(p, p_vals, Q_display, 
-                              color=noise_colors[noise], linewidth=2.5, 
+                        plot!(p, p_vals, Q_display,
+                              color=noise_colors[noise], linewidth=2.5,
                               marker=:circle, markersize=3,
                               label="")
                     end
                 end
-                
+
                 push!(plots_array, p)
             end
         end
-        
+
         mode_label = mode == :dm ? "DM" : "MCWF (M=$N_trajectories_sweep)"
-        fig = plot(plots_array..., 
-                   layout=(n_rows, n_cols), 
+        fig = plot(plots_array...,
+                   layout=(n_rows, n_cols),
                    size=(400*n_cols, 300*n_rows),
                    margin=8Plots.mm,
                    plot_title=L"Q_\mathrm{Bell}\ \mathrm{vs}\ p_\mathrm{noise}" * " - $(opt.label), $mode_label, N=$(N_range_sweep[1])")
-        
+
         fig_filename = @sprintf("fig_Q_bell_grid_%s_%s.png", mode, opt.name)
         savefig(fig, joinpath(FIG_DIR, fig_filename))
         println("  Saved: figures/$fig_filename")
@@ -668,14 +668,14 @@ for opt in optimizers
     n_rows = length(noise_models)
     n_cols = length(entangled_states)
     plots_array = []
-    
+
     for (row_idx, noise) in enumerate(noise_models)
         for (col_idx, state) in enumerate(entangled_states)
-            
+
             N = N_range_sweep[1]
             dm_data = get(sweep_data, (state.name, N, :dm, opt.name), nothing)
             mcwf_data = get(sweep_data, (state.name, N, :mcwf, opt.name), nothing)
-            
+
             p = plot(
                 xlabel = row_idx == n_rows ? L"p_\mathrm{noise}" : "",
                 ylabel = col_idx == 1 ? L"Q_\mathrm{Bell}" : "",
@@ -689,22 +689,22 @@ for opt in optimizers
                 guidefontsize = 12,
                 titlefontsize = 12
             )
-            
+
             # Add noise label
             if col_idx == n_cols && row_idx > 1
-                annotate!(p, maximum(p_noise_range)*0.95, 0.95, 
+                annotate!(p, maximum(p_noise_range)*0.95, 0.95,
                          text(noise_labels[noise], 9, :right))
             end
-            
+
             if dm_data !== nothing && haskey(dm_data, noise)
                 p_vals, Q_vals, _, _ = dm_data[noise]
                 Q_display = max.(Q_vals, 0.0)
                 lbl = (row_idx == 1 && col_idx == n_cols) ? "DM (exact)" : ""
-                plot!(p, p_vals, Q_display, 
+                plot!(p, p_vals, Q_display,
                       color=noise_colors[noise], linewidth=2.5, linestyle=:solid,
                       label=lbl)
             end
-            
+
             if mcwf_data !== nothing && haskey(mcwf_data, noise)
                 p_vals, Q_vals, Q_errs, _ = mcwf_data[noise]
                 Q_display = max.(Q_vals, 0.0)
@@ -714,22 +714,22 @@ for opt in optimizers
                           color=noise_colors[noise], linewidth=2, linestyle=:dash,
                           label=lbl)
                 else
-                    plot!(p, p_vals, Q_display, 
+                    plot!(p, p_vals, Q_display,
                           color=noise_colors[noise], linewidth=2, linestyle=:dash,
                           label=lbl)
                 end
             end
-            
+
             push!(plots_array, p)
         end
     end
-    
-    fig_combined = plot(plots_array..., 
-                        layout=(n_rows, n_cols), 
+
+    fig_combined = plot(plots_array...,
+                        layout=(n_rows, n_cols),
                         size=(400*n_cols, 300*n_rows),
                         margin=8Plots.mm,
                         plot_title=L"Q_\mathrm{Bell}" * ": DM vs MCWF - $(opt.label), N=$(N_range_sweep[1])")
-    
+
     fig_filename = @sprintf("fig_Q_bell_dm_vs_mcwf_%s.png", opt.name)
     savefig(fig_combined, joinpath(FIG_DIR, fig_filename))
     println("  Saved: figures/$fig_filename")
@@ -746,12 +746,12 @@ for mode in modes
     n_rows = length(noise_models)
     n_cols = length(entangled_states)
     plots_array = []
-    
+
     for (row_idx, noise) in enumerate(noise_models)
         for (col_idx, state) in enumerate(entangled_states)
-            
+
             N = N_range_sweep[1]
-            
+
             p = plot(
                 xlabel = row_idx == n_rows ? L"p_\mathrm{noise}" : "",
                 ylabel = col_idx == 1 ? L"Q_\mathrm{Bell}" : "",
@@ -766,13 +766,13 @@ for mode in modes
                 titlefontsize = 12,
                 legendfontsize = 8
             )
-            
+
             # Add noise label
             if col_idx == n_cols && row_idx > 1
-                annotate!(p, maximum(p_noise_range)*0.95, 0.95, 
+                annotate!(p, maximum(p_noise_range)*0.95, 0.95,
                          text(noise_labels[noise], 9, :right))
             end
-            
+
             for opt in optimizers
                 data = get(sweep_data, (state.name, N, mode, opt.name), nothing)
                 if data !== nothing && haskey(data, noise)
@@ -780,7 +780,7 @@ for mode in modes
                     Q_display = max.(Q_vals, 0.0)
                     avg_t = round(sum(t_vals)/length(t_vals)*1000, digits=1)  # ms
                     opt_label = (row_idx == 1 && col_idx == n_cols) ? "$(opt.label) ($(avg_t)ms)" : ""
-                    
+
                     if mode == :mcwf && any(Q_errs .> 0)
                         plot!(p, p_vals, Q_display,
                               ribbon=Q_errs, fillalpha=0.15,
@@ -795,18 +795,18 @@ for mode in modes
                     end
                 end
             end
-            
+
             push!(plots_array, p)
         end
     end
-    
+
     mode_label = mode == :dm ? "DM" : "MCWF (M=$N_trajectories_sweep)"
     fig = plot(plots_array...,
                layout=(n_rows, n_cols),
                size=(400*n_cols, 300*n_rows),
                margin=8Plots.mm,
                plot_title="Optimizer Comparison: $mode_label, N=$(N_range_sweep[1])")
-    
+
     fig_filename = @sprintf("fig_optimizer_comparison_%s.png", mode)
     savefig(fig, joinpath(FIG_DIR, fig_filename))
     println("  Saved: figures/$fig_filename")

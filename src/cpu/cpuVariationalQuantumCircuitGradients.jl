@@ -100,12 +100,12 @@ Internal Enzyme gradient computation.
 function _enzyme_gradient(cost_fn, θ::Vector{Float64})
     # Allocate gradient storage
     dθ = zeros(Float64, length(θ))
-    
+
     # Enzyme reverse-mode autodiff
     # autodiff(Reverse, f, Active, Duplicated(x, dx))
     # After call: dθ contains ∂f/∂θ
     Enzyme.autodiff(Enzyme.Reverse, cost_fn, Enzyme.Active, Enzyme.Duplicated(θ, dθ))
-    
+
     return dθ
 end
 
@@ -138,27 +138,27 @@ Use this to verify Enzyme gradients are correct.
 function calculate_gradients_parameter_shift(cost_fn, θ::Vector{Float64}; shift::Float64=π/2)
     n_params = length(θ)
     grad = zeros(Float64, n_params)
-    
+
     θ_plus = copy(θ)
     θ_minus = copy(θ)
-    
+
     for k in 1:n_params
         # Shift parameter k forward
         θ_plus[k] = θ[k] + shift
         θ_minus[k] = θ[k] - shift
-        
+
         # Evaluate cost at shifted parameters
         c_plus = cost_fn(θ_plus)
         c_minus = cost_fn(θ_minus)
-        
+
         # Parameter-shift formula
         grad[k] = (c_plus - c_minus) / (2 * sin(shift))
-        
+
         # Reset
         θ_plus[k] = θ[k]
         θ_minus[k] = θ[k]
     end
-    
+
     return grad
 end
 
@@ -192,26 +192,26 @@ where Δ is a Bernoulli ±1 random vector.
 SPSA requires only 2 function evaluations regardless of the number of parameters!
 This makes it ideal for hardware deployment or very large parameter counts.
 """
-function calculate_gradients_spsa(cost_fn, θ::Vector{Float64}, c::Float64; 
+function calculate_gradients_spsa(cost_fn, θ::Vector{Float64}, c::Float64;
                                    Δ::Union{Nothing, Vector{Float64}}=nothing)
     n_params = length(θ)
-    
+
     # Generate Bernoulli ±1 perturbation if not provided
     if isnothing(Δ)
         Δ = 2.0 .* (rand(n_params) .> 0.5) .- 1.0
     end
-    
+
     # Perturbed parameter vectors
     θ_plus = θ .+ c .* Δ
     θ_minus = θ .- c .* Δ
-    
+
     # Only 2 function evaluations!
     c_plus = cost_fn(θ_plus)
     c_minus = cost_fn(θ_minus)
-    
+
     # SPSA gradient estimate
     grad = (c_plus - c_minus) ./ (2.0 * c .* Δ)
-    
+
     return grad
 end
 
@@ -250,21 +250,21 @@ This is a fallback method. Use Enzyme or parameter-shift for exact gradients.
 function calculate_gradients_finite_difference(cost_fn, θ::Vector{Float64}; ε::Float64=1e-5)
     n_params = length(θ)
     grad = zeros(Float64, n_params)
-    
+
     θ_work = copy(θ)
-    
+
     for k in 1:n_params
         θ_work[k] = θ[k] + ε
         c_plus = cost_fn(θ_work)
-        
+
         θ_work[k] = θ[k] - ε
         c_minus = cost_fn(θ_work)
-        
+
         grad[k] = (c_plus - c_minus) / (2 * ε)
-        
+
         θ_work[k] = θ[k]
     end
-    
+
     return grad
 end
 
@@ -284,14 +284,14 @@ Compare Enzyme gradients with parameter-shift rule for verification.
 function verify_gradients(cost_fn, θ::Vector{Float64}; atol::Float64=1e-4)
     grad_enzyme = calculate_gradients(cost_fn, θ)
     grad_ps = calculate_gradients_parameter_shift(cost_fn, θ)
-    
+
     max_diff = maximum(abs.(grad_enzyme .- grad_ps))
     match = max_diff < atol
-    
+
     if !match
         @warn "Gradient mismatch! max_diff = $max_diff"
     end
-    
+
     return match, max_diff
 end
 

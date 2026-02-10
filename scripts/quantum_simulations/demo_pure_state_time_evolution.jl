@@ -122,7 +122,7 @@ using .CPUQuantumChannelUnitaryEvolutionTrotter
 using .CPUQuantumChannelUnitaryEvolutionExact
 using .CPUHamiltonianBuilder
 using SparseArrays
-using Plots  
+using Plots
 
 # ==============================================================================
 #                       SIMULATION PARAMETERS
@@ -140,7 +140,7 @@ const TEST_SIZES = collect(1:1:24)
 # Hamiltonian parameters: XXZ + transverse X field
 # H = Σ(Jxx σxσx + Jyy σyσy + Jzz σzσz) + hx·Σσx
 const Jxx = 1.0   # XX coupling
-const Jyy = 1.0   # YY coupling  
+const Jyy = 1.0   # YY coupling
 const Jzz = 0.5   # ZZ coupling (anisotropy)
 const hx = 1.0    # Transverse X field
 
@@ -164,38 +164,38 @@ Gates per step: 3(N-1) two-qubit + N single-qubit = 4N-3 total
 """
 function build_xxz_transverse_gates(N::Int, dt::Float64; Jxx=1.0, Jyy=1.0, Jzz=0.5, hx=0.5)
     gates = FastTrotterGate[]
-    
+
     # Pauli matrices
     σx = ComplexF64[0 1; 1 0]
     σy = ComplexF64[0 -im; im 0]
     σz = ComplexF64[1 0; 0 -1]
-    
+
     # Two-qubit Pauli-Pauli operators
     XX = kron(σx, σx)
     YY = kron(σy, σy)
     ZZ = kron(σz, σz)
-    
+
     # Apply separate Rxx, Ryy, Rzz gates for each bond (true Trotter decomposition)
     for i in 1:(N-1)
         # exp(-i · Jxx · XX · dt)
         U_xx = exp(-im * Jxx * XX * dt)
         push!(gates, FastTrotterGate([i, i+1], U_xx))
-        
+
         # exp(-i · Jyy · YY · dt)
         U_yy = exp(-im * Jyy * YY * dt)
         push!(gates, FastTrotterGate([i, i+1], U_yy))
-        
+
         # exp(-i · Jzz · ZZ · dt)
         U_zz = exp(-im * Jzz * ZZ * dt)
         push!(gates, FastTrotterGate([i, i+1], U_zz))
     end
-    
+
     # Single-qubit X field: exp(-i · hx · X · dt)
     for i in 1:N
         U_x = exp(-im * hx * σx * dt)
         push!(gates, FastTrotterGate([i], U_x))
     end
-    
+
     return gates
 end
 
@@ -204,13 +204,13 @@ function measure_local_observables(ψ::Vector{ComplexF64}, N::Int)
     X_vals = Float64[]
     Y_vals = Float64[]
     Z_vals = Float64[]
-    
+
     for k in 1:N
         push!(X_vals, expect_local(ψ, k, N, :x))
         push!(Y_vals, expect_local(ψ, k, N, :y))
         push!(Z_vals, expect_local(ψ, k, N, :z))
     end
-    
+
     return X_vals, Y_vals, Z_vals
 end
 
@@ -219,13 +219,13 @@ function measure_nn_correlators(ψ::Vector{ComplexF64}, N::Int)
     XX_vals = Float64[]
     YY_vals = Float64[]
     ZZ_vals = Float64[]
-    
+
     for i in 1:(N-1)
         push!(XX_vals, expect_corr(ψ, i, i+1, N, :xx))
         push!(YY_vals, expect_corr(ψ, i, i+1, N, :yy))
         push!(ZZ_vals, expect_corr(ψ, i, i+1, N, :zz))
     end
-    
+
     return XX_vals, YY_vals, ZZ_vals
 end
 
@@ -239,12 +239,12 @@ compute_norm(ψ::Vector{ComplexF64}) = norm(ψ)
 """Build header string for observables CSV."""
 function build_observables_header(N::Int)
     cols = ["time"]
-    
+
     # Local X
     for i in 1:N
         push!(cols, "X_$i")
     end
-    # Local Y  
+    # Local Y
     for i in 1:N
         push!(cols, "Y_$i")
     end
@@ -264,7 +264,7 @@ function build_observables_header(N::Int)
     for i in 1:(N-1)
         push!(cols, "ZZ_$(i)$(i+1)")
     end
-    
+
     return join(cols, ",")
 end
 
@@ -273,7 +273,7 @@ H = Σᵢ(Jxx XᵢXᵢ₊₁ + Jyy YᵢYᵢ₊₁ + Jzz ZᵢZᵢ₊₁) + hx·Σ
 """
 function build_xxz_transverse_hamiltonian(N::Int; Jxx=1.0, Jyy=1.0, Jzz=0.5, hx=0.5)
     # For 1D chain: Nx=N, Ny=1 (single rail)
-    params = build_hamiltonian_parameters(N, 1; 
+    params = build_hamiltonian_parameters(N, 1;
         J_x_direction=(Jxx, Jyy, Jzz),    # XXZ coupling
         J_y_direction=(0.0, 0.0, 0.0),    # No y-direction bonds in 1D
         h_field=(hx, 0.0, 0.0))           # Transverse X field
@@ -307,31 +307,31 @@ end
 Generate 3×3 plot grid for a given system size N.
 Layout:
   Row 1: Sum of X, Sum of Y, Sum of Z (local observables)
-  Row 2: Sum of XX, Sum of YY, Sum of ZZ (correlators)  
+  Row 2: Sum of XX, Sum of YY, Sum of ZZ (correlators)
   Row 3: Fidelity (if N≤max_N_exact), IPR, Norm
   Row 4: S_vN (entropy), Negativity, (placeholder if no entanglement)
-  
+
 Suptitle shows: N qubits, T_max, dt, #gates, elapsed time
 """
-function generate_plot_grid(N::Int, obs_trotter::Vector, obs_exact::Vector, 
+function generate_plot_grid(N::Int, obs_trotter::Vector, obs_exact::Vector,
                             svn_data::Vector, neg_data::Vector, ipr_data::Vector, norm_data::Vector,
                             fidelity_data::Vector, do_exact::Bool, n_gates::Int, elapsed::Float64)
-    
+
     # Format elapsed time as hh:mm:ss:ms
     elapsed_str = format_time(elapsed)
-    
+
     # Extract time points from first column of obs_trotter
     times = [row[1] for row in obs_trotter]
-    
+
     # Parse observables: columns are [time, X_1..X_N, Y_1..Y_N, Z_1..Z_N, XX_12..XX, YY.., ZZ..]
     # Total X = sum of X_i for i=1..N → columns 2:(N+1)
     # Total Y = sum of Y_i for i=1..N → columns (N+2):(2N+1)
     # Total Z = sum of Z_i for i=1..N → columns (2N+2):(3N+1)
-    
+
     total_X_trotter = [sum(row[2:N+1]) for row in obs_trotter]
     total_Y_trotter = [sum(row[N+2:2N+1]) for row in obs_trotter]
     total_Z_trotter = [sum(row[2N+2:3N+1]) for row in obs_trotter]
-    
+
     # Correlator column indices
     start_XX = 3N + 2
     end_XX = start_XX + (N-1) - 1
@@ -339,11 +339,11 @@ function generate_plot_grid(N::Int, obs_trotter::Vector, obs_exact::Vector,
     end_YY = start_YY + (N-1) - 1
     start_ZZ = end_YY + 1
     end_ZZ = start_ZZ + (N-1) - 1
-    
+
     total_XX_trotter = [sum(row[start_XX:end_XX]) for row in obs_trotter]
     total_YY_trotter = [sum(row[start_YY:end_YY]) for row in obs_trotter]
     total_ZZ_trotter = [sum(row[start_ZZ:end_ZZ]) for row in obs_trotter]
-    
+
     # If exact data available, extract same observables
     if do_exact && length(obs_exact) > 0
         total_X_exact = [sum(row[2:N+1]) for row in obs_exact]
@@ -353,36 +353,36 @@ function generate_plot_grid(N::Int, obs_trotter::Vector, obs_exact::Vector,
         total_YY_exact = [sum(row[start_YY:end_YY]) for row in obs_exact]
         total_ZZ_exact = [sum(row[start_ZZ:end_ZZ]) for row in obs_exact]
     end
-    
+
     # Extract entanglement data (may be empty if COMPUTE_ENTANGLEMENT=false)
     svn_times = length(svn_data) > 0 ? [t for (t, _) in svn_data] : times
     svn_vals = length(svn_data) > 0 ? [s for (_, s) in svn_data] : fill(NaN, length(times))
     neg_vals = length(neg_data) > 0 ? [n for (_, n) in neg_data] : fill(NaN, length(times))
-    
+
     # Extract IPR and norm data
     ipr_times = [t for (t, _) in ipr_data]
     ipr_vals = [v for (_, v) in ipr_data]
     norm_vals = [v for (_, v) in norm_data]
-    
+
     # Create plot - Row 1: X, Y, Z
     if do_exact && length(obs_exact) > 0
         # Plot both exact (solid) and Trotter (dashed)
         p1 = plot(times, total_X_exact, label="Exact", xlabel="t", ylabel="Σᵢ Xᵢ", lw=2, color=:blue)
         plot!(p1, times, total_X_trotter, label="Trotter", lw=2, ls=:dash, color=:red)
-        
+
         p2 = plot(times, total_Y_exact, label="Exact", xlabel="t", ylabel="Σᵢ Yᵢ", lw=2, color=:blue)
         plot!(p2, times, total_Y_trotter, label="Trotter", lw=2, ls=:dash, color=:red)
-        
+
         p3 = plot(times, total_Z_exact, label="Exact", xlabel="t", ylabel="Σᵢ Zᵢ", lw=2, color=:blue)
         plot!(p3, times, total_Z_trotter, label="Trotter", lw=2, ls=:dash, color=:red)
-        
+
         # Row 2: XX, YY, ZZ
         p4 = plot(times, total_XX_exact, label="Exact", xlabel="t", ylabel="Σᵢ XᵢXᵢ₊₁", lw=2, color=:blue)
         plot!(p4, times, total_XX_trotter, label="Trotter", lw=2, ls=:dash, color=:red)
-        
+
         p5 = plot(times, total_YY_exact, label="Exact", xlabel="t", ylabel="Σᵢ YᵢYᵢ₊₁", lw=2, color=:blue)
         plot!(p5, times, total_YY_trotter, label="Trotter", lw=2, ls=:dash, color=:red)
-        
+
         p6 = plot(times, total_ZZ_exact, label="Exact", xlabel="t", ylabel="Σᵢ ZᵢZᵢ₊₁", lw=2, color=:blue)
         plot!(p6, times, total_ZZ_trotter, label="Trotter", lw=2, ls=:dash, color=:red)
     else
@@ -394,23 +394,23 @@ function generate_plot_grid(N::Int, obs_trotter::Vector, obs_exact::Vector,
         p5 = plot(times, total_YY_trotter, label="Trotter", xlabel="t", ylabel="Σᵢ YᵢYᵢ₊₁", lw=2, color=:red)
         p6 = plot(times, total_ZZ_trotter, label="Trotter", xlabel="t", ylabel="Σᵢ ZᵢZᵢ₊₁", lw=2, color=:red)
     end
-    
+
     # Row 3: Fidelity, IPR, Norm
     if do_exact && length(fidelity_data) > 0
         fid_times = [t for (t, _) in fidelity_data]
         fid_vals = [f for (_, f) in fidelity_data]
-        p7 = plot(fid_times, fid_vals, label="Fidelity", xlabel="t", ylabel="|⟨ψₑ|ψₜ⟩|²", 
+        p7 = plot(fid_times, fid_vals, label="Fidelity", xlabel="t", ylabel="|⟨ψₑ|ψₜ⟩|²",
                   lw=2, color=:green, ylims=(minimum(fid_vals)-0.01, 1.01))
     else
         p7 = plot([0, T_max], [NaN, NaN], label="N/A", xlabel="t", ylabel="|⟨ψₑ|ψₜ⟩|²",
                   title="(N > max_N_exact)")
     end
-    
+
     ipr_min = 1.0 / (1 << N)  # 1/2^N
     p8 = plot(ipr_times, log2.(ipr_vals), label="log₂(IPR)", xlabel="t", ylabel="log₂(IPR)", lw=2, color=:orange)
     hline!(p8, [log2(ipr_min)], label="1/2^N", lw=1, ls=:dot, color=:black)
     p9 = plot(ipr_times, norm_vals, label="Norm", xlabel="t", ylabel="||ψ||", lw=2, color=:teal)
-    
+
     # Row 4: S_vN, Negativity, placeholder
     if length(svn_data) > 0
         p10 = plot(svn_times, svn_vals, label="S_vN", xlabel="t", ylabel="S_vN", lw=2, color=:purple)
@@ -420,17 +420,17 @@ function generate_plot_grid(N::Int, obs_trotter::Vector, obs_exact::Vector,
         p11 = plot([0, T_max], [NaN, NaN], label="Neg", xlabel="t", ylabel="Negativity", title="(disabled)")
     end
     p12 = plot([0, T_max], [NaN, NaN], xlabel="t", ylabel="", label="", title="")  # Placeholder
-    
+
     # Combine into 4×3 layout with suptitle
     suptitle = "N=$N | H=XXZ+hx | T_max=$T_max | dt=$dt | time=$elapsed_str"
     fig = plot(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12,
-               layout=(4, 3), size=(1200, 1100), 
+               layout=(4, 3), size=(1200, 1100),
                plot_title=suptitle, plot_titlefontsize=11)
-    
+
     # Save to figures directory
     fig_path = joinpath(FIGURES_DIR, "N$(N)_evolution.png")
     savefig(fig, fig_path)
-    
+
     return fig_path
 end
 
@@ -480,23 +480,23 @@ println("  ├──────┼─────────┼─────
 
 for N in TEST_SIZES
     t_start = time()
-    
+
     # Memory check
     state_size_gb = (1 << N) * 16 / 1e9
     n_gates = 4*N - 3  # (N-1) Rxx + (N-1) Ryy + (N-1) Rzz + N Rx gates per Trotter step
-    
+
     if state_size_gb > 32
         @printf("  │ %4d │  %5d  │  SKIPPED: %.1f GB required                           │\n", N, n_gates, state_size_gb)
         push!(summary_data, (N, NaN, "SKIPPED", NaN, NaN))
         continue
     end
-    
+
     @printf("  │ %4d │  %5d  │  Running...                                              │\r", N, n_gates)
-    
+
     # Initialize Trotter state
     ψ_trotter = make_zero_state(N)
     gates = build_xxz_transverse_gates(N, dt; Jxx=Jxx, Jyy=Jyy, Jzz=Jzz, hx=hx)
-    
+
     # Initialize exact evolution if N is small enough
     do_exact = (N <= max_N_exact)
     ψ_exact = nothing
@@ -506,7 +506,7 @@ for N in TEST_SIZES
         H = build_xxz_transverse_hamiltonian(N; Jxx=Jxx, Jyy=Jyy, Jzz=Jzz, hx=hx)
         U_exact, _ = precompute_exact_propagator_cpu(H, dt)
     end
-    
+
     # Storage for results
     obs_data_trotter = []
     obs_data_exact = []
@@ -516,15 +516,15 @@ for N in TEST_SIZES
     norm_data = []  # Norm tracking
     fidelity_data = []
     obs_deviation_data = []
-    
+
     # Initial measurements
     X_vals, Y_vals, Z_vals = measure_local_observables(ψ_trotter, N)
     XX_vals, YY_vals, ZZ_vals = measure_nn_correlators(ψ_trotter, N)
-    
+
     # IPR and norm (always computed - cheap)
     push!(ipr_data, (0.0, compute_ipr(ψ_trotter)))
     push!(norm_data, (0.0, compute_norm(ψ_trotter)))
-    
+
     # Entanglement metrics (optional - expensive for large N)
     if COMPUTE_ENTANGLEMENT
         S_vN = entanglement_entropy_1d_chain(ψ_trotter, N)
@@ -532,46 +532,46 @@ for N in TEST_SIZES
         push!(svn_data, (0.0, S_vN))
         push!(neg_data, (0.0, neg))
     end
-    
+
     obs_trotter = vcat(X_vals, Y_vals, Z_vals, XX_vals, YY_vals, ZZ_vals)
     push!(obs_data_trotter, vcat([0.0], obs_trotter))
-    
+
     if do_exact
         push!(obs_data_exact, vcat([0.0], obs_trotter))  # Same at t=0
         push!(fidelity_data, (0.0, 1.0))  # Perfect fidelity at start
         push!(obs_deviation_data, (0.0, 0.0))  # No deviation at start
     end
-    
+
     # Time evolution with progress display
     current_time = 0.0
     step_count = 0
     next_shot_idx = 1
-    
+
     while current_time < T_max - dt/2
         # Evolve Trotter one step
         apply_fast_trotter_step_cpu!(ψ_trotter, gates, N)
-        
+
         # Evolve exact one step (if applicable)
         if do_exact
             evolve_exact_psi_cpu!(ψ_exact, U_exact)
         end
-        
+
         current_time += dt
         step_count += 1
-        
+
         # Check if measurement needed
         if next_shot_idx <= length(time_points) && step_count * dt >= time_points[next_shot_idx]
             # Trotter observables
             X_vals, Y_vals, Z_vals = measure_local_observables(ψ_trotter, N)
             XX_vals, YY_vals, ZZ_vals = measure_nn_correlators(ψ_trotter, N)
-            
+
             obs_trotter = vcat(X_vals, Y_vals, Z_vals, XX_vals, YY_vals, ZZ_vals)
             push!(obs_data_trotter, vcat([current_time], obs_trotter))
-            
+
             # IPR and norm (always computed - cheap)
             push!(ipr_data, (current_time, compute_ipr(ψ_trotter)))
             push!(norm_data, (current_time, compute_norm(ψ_trotter)))
-            
+
             # Entanglement metrics (optional)
             if COMPUTE_ENTANGLEMENT
                 S_vN = entanglement_entropy_1d_chain(ψ_trotter, N)
@@ -579,42 +579,42 @@ for N in TEST_SIZES
                 push!(svn_data, (current_time, S_vN))
                 push!(neg_data, (current_time, neg))
             end
-            
+
             # Exact comparison (if applicable)
             if do_exact
                 X_ex, Y_ex, Z_ex = measure_local_observables(ψ_exact, N)
                 XX_ex, YY_ex, ZZ_ex = measure_nn_correlators(ψ_exact, N)
                 obs_exact = vcat(X_ex, Y_ex, Z_ex, XX_ex, YY_ex, ZZ_ex)
                 push!(obs_data_exact, vcat([current_time], obs_exact))
-                
+
                 # Fidelity and deviation
                 fid = compute_fidelity(ψ_exact, ψ_trotter)
                 dev = compute_observable_deviation(obs_exact, obs_trotter)
                 push!(fidelity_data, (current_time, fid))
                 push!(obs_deviation_data, (current_time, dev))
             end
-            
+
             next_shot_idx += 1
         end
-        
+
         # Progress bar (for large N)
         if N >= 24 && step_count % 20 == 0
             progress = current_time / T_max * 100
             @printf("  │ %4d │  Progress: %5.1f%%                                                  │\r", N, progress)
         end
     end
-    
+
     elapsed = time() - t_start
-    
+
     # Final fidelity for summary
     final_fidelity = do_exact && length(fidelity_data) > 0 ? fidelity_data[end][2] : NaN
     final_deviation = do_exact && length(obs_deviation_data) > 0 ? obs_deviation_data[end][2] : NaN
-    
+
     # Write results
     obs_file = joinpath(DATA_DIR, "observables_trotter_N$(N).csv")
     svn_file = joinpath(DATA_DIR, "entropy_SvN_N$(N).csv")
     neg_file = joinpath(DATA_DIR, "negativity_N$(N).csv")
-    
+
     # Write Trotter observables
     open(obs_file, "w") do f
         println(f, build_observables_header(N))
@@ -622,7 +622,7 @@ for N in TEST_SIZES
             println(f, join([@sprintf("%.8f", v) for v in row], ","))
         end
     end
-    
+
     # Write exact observables (if applicable)
     if do_exact
         obs_exact_file = joinpath(DATA_DIR, "observables_exact_N$(N).csv")
@@ -632,7 +632,7 @@ for N in TEST_SIZES
                 println(f, join([@sprintf("%.8f", v) for v in row], ","))
             end
         end
-        
+
         # Write fidelity
         fid_file = joinpath(DATA_DIR, "fidelity_trotter_vs_exact_N$(N).csv")
         open(fid_file, "w") do f
@@ -641,7 +641,7 @@ for N in TEST_SIZES
                 println(f, @sprintf("%.8f,%.12f", t, fid))
             end
         end
-        
+
         # Write observable deviation
         dev_file = joinpath(DATA_DIR, "observable_deviation_N$(N).csv")
         open(dev_file, "w") do f
@@ -651,7 +651,7 @@ for N in TEST_SIZES
             end
         end
     end
-    
+
     # Write entropy
     open(svn_file, "w") do f
         println(f, "time,S_vN")
@@ -659,7 +659,7 @@ for N in TEST_SIZES
             println(f, @sprintf("%.8f,%.8f", t, s))
         end
     end
-    
+
     # Write negativity
     open(neg_file, "w") do f
         println(f, "time,negativity")
@@ -671,10 +671,10 @@ for N in TEST_SIZES
             end
         end
     end
-    
+
     # Generate 4×3 plot for this N (includes both exact and Trotter curves for N≤max_N_exact)
     fig_path = generate_plot_grid(N, obs_data_trotter, obs_data_exact, svn_data, neg_data, ipr_data, norm_data, fidelity_data, do_exact, n_gates, elapsed)
-    
+
     push!(summary_data, (N, elapsed, "OK", final_fidelity, final_deviation, n_gates))
     time_str = format_time(elapsed)
     if do_exact
@@ -682,7 +682,7 @@ for N in TEST_SIZES
     else
         @printf("  │ %4d │  %5d  │  DONE (%s)                                       │\n", N, n_gates, time_str)
     end
-    
+
     GC.gc()
 end
 
@@ -776,18 +776,18 @@ if length(timing_data) > 0
         end
     end
     println("  Timing data: $timing_file")
-    
+
     # Create timing plot: log10(time) vs N
     Ns = [N for (N, _) in timing_data]
     times = [t for (_, t) in timing_data]
     log_times = [t > 0 ? log10(t) : -3 for t in times]
-    
-    timing_plot = plot(Ns, log_times, 
+
+    timing_plot = plot(Ns, log_times,
                        xlabel="N (qubits)", ylabel="log₁₀(time [s])",
                        label="Trotter evolution", lw=2, marker=:circle, ms=6,
                        title="Pure State Evolution Time vs System Size\n($n_threads threads, T=$T_max, dt=$dt)",
                        legend=:topleft)
-    
+
     # Save timing plot
     timing_fig_path = joinpath(FIGURES_DIR, "timing_vs_N.png")
     savefig(timing_plot, timing_fig_path)

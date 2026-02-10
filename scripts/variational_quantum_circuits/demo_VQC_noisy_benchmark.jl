@@ -62,12 +62,12 @@ println("=" ^ 70)
 
 const SYSTEM_SIZES = [4, 6, 8, 10, 12]
 const REPRESENTATIONS = [
-                        #   :DM, 
+                        #   :DM,
                             :MCWF
                         ]
 const NOISE_MODELS = [
-                      # nothing, 
-                        #:depolarizing, 
+                      # nothing,
+                        #:depolarizing,
                         :amplitude_damping
                     ]
 const NOISE_PROBS = [0.05]
@@ -144,7 +144,7 @@ function gradient_spsa!(g::Vector{Float64}, cost_fn, θ::Vector{Float64}, schedu
     k = schedule.k
     a_k = schedule.a / (schedule.A + k)^schedule.α
     c_k = schedule.c / k^schedule.γ
-    
+
     n = length(θ)
     Δ = 2.0 .* (rand(n) .> 0.5) .- 1.0
     f_plus = cost_fn(θ .+ c_k .* Δ)
@@ -164,13 +164,13 @@ function train_spsa_ket(circuit, θ_init, N; n_epochs=100)
     energies = Float64[]
     schedule = SPSASchedule(a=0.2, c=0.2, A=0.1*n_epochs)
     g = zeros(length(θ))
-    
+
     cost_fn = θ -> begin
         ψ = zeros(ComplexF64, dim); ψ[1] = 1.0
         apply_circuit!(ψ, circuit, θ)
         compute_energy_ket(ψ, N)
     end
-    
+
     t_start = time()
     for epoch in 1:n_epochs
         a_k = gradient_spsa!(g, cost_fn, θ, schedule)
@@ -178,7 +178,7 @@ function train_spsa_ket(circuit, θ_init, N; n_epochs=100)
         push!(energies, cost_fn(θ))
     end
     total_time = time() - t_start
-    
+
     return θ, energies, total_time
 end
 
@@ -190,13 +190,13 @@ function train_adam_spsa_ket(circuit, θ_init, N; n_epochs=100, lr=0.02)
     energies = Float64[]
     schedule = SPSASchedule(a=0.2, c=0.2, A=0.1*n_epochs)
     g = zeros(length(θ))
-    
+
     cost_fn = θ -> begin
         ψ = zeros(ComplexF64, dim); ψ[1] = 1.0
         apply_circuit!(ψ, circuit, θ)
         compute_energy_ket(ψ, N)
     end
-    
+
     t_start = time()
     for epoch in 1:n_epochs
         gradient_spsa!(g, cost_fn, θ, schedule)
@@ -204,7 +204,7 @@ function train_adam_spsa_ket(circuit, θ_init, N; n_epochs=100, lr=0.02)
         push!(energies, cost_fn(θ))
     end
     total_time = time() - t_start
-    
+
     return θ, energies, total_time
 end
 
@@ -214,11 +214,11 @@ function train_enzyme_dm(circuit, θ_init, N; n_epochs=100, lr=0.02)
     θ = copy(θ_init)
     opt_state = Optimisers.setup(Adam(lr), θ)
     energies = Float64[]
-    
+
     wrapper = build_enzyme_wrapper(circuit)
     energy_fn = ρ -> compute_energy_dm(ρ, N)
     cost = make_cost_dm(wrapper, energy_fn)
-    
+
     t_start = time()
     for epoch in 1:n_epochs
         E = cost(θ)
@@ -227,7 +227,7 @@ function train_enzyme_dm(circuit, θ_init, N; n_epochs=100, lr=0.02)
         push!(energies, E)
     end
     total_time = time() - t_start
-    
+
     return θ, energies, total_time
 end
 
@@ -237,10 +237,10 @@ function train_mcwf_spsa(circuit, θ_init, N, M; n_epochs=100)
     θ = copy(θ_init)
     E_mean = Float64[]
     E_std = Float64[]
-    
+
     schedule = SPSASchedule(a=0.2, c=0.2, A=0.1*n_epochs)
     g = zeros(length(θ))
-    
+
     cost_fn = θ -> begin
         E_samples = zeros(Float64, M)
         Threads.@threads for t in 1:M
@@ -250,12 +250,12 @@ function train_mcwf_spsa(circuit, θ_init, N, M; n_epochs=100)
         end
         mean(E_samples)
     end
-    
+
     t_start = time()
     for epoch in 1:n_epochs
         a_k = gradient_spsa!(g, cost_fn, θ, schedule)
         θ = θ .- a_k .* g
-        
+
         # Evaluate with statistics
         E_samples = zeros(Float64, M)
         Threads.@threads for t in 1:M
@@ -267,7 +267,7 @@ function train_mcwf_spsa(circuit, θ_init, N, M; n_epochs=100)
         push!(E_std, std(E_samples))
     end
     total_time = time() - t_start
-    
+
     return θ, E_mean, E_std, total_time
 end
 
@@ -278,10 +278,10 @@ function train_mcwf_adam_spsa(circuit, θ_init, N, M; n_epochs=100, lr=0.02)
     opt_state = Optimisers.setup(Adam(lr), θ)
     E_mean = Float64[]
     E_std = Float64[]
-    
+
     schedule = SPSASchedule(a=0.2, c=0.2, A=0.1*n_epochs)
     g = zeros(length(θ))
-    
+
     cost_fn = θ -> begin
         E_samples = zeros(Float64, M)
         Threads.@threads for t in 1:M
@@ -291,12 +291,12 @@ function train_mcwf_adam_spsa(circuit, θ_init, N, M; n_epochs=100, lr=0.02)
         end
         mean(E_samples)
     end
-    
+
     t_start = time()
     for epoch in 1:n_epochs
         gradient_spsa!(g, cost_fn, θ, schedule)
         opt_state, θ = Optimisers.update(opt_state, θ, g)
-        
+
         # Evaluate with statistics
         E_samples = zeros(Float64, M)
         Threads.@threads for t in 1:M
@@ -308,7 +308,7 @@ function train_mcwf_adam_spsa(circuit, θ_init, N, M; n_epochs=100, lr=0.02)
         push!(E_std, std(E_samples))
     end
     total_time = time() - t_start
-    
+
     return θ, E_mean, E_std, total_time
 end
 
@@ -319,17 +319,17 @@ function train_mcwf_enzyme(circuit, θ_init, N, M; n_epochs=100, lr=0.02)
     opt_state = Optimisers.setup(Adam(lr), θ)
     E_mean = Float64[]
     E_std = Float64[]
-    
+
     wrapper = build_enzyme_wrapper(circuit)
     energy_fn = ρ -> compute_energy_dm(ρ, N)
     cost = make_cost_dm(wrapper, energy_fn)
-    
+
     t_start = time()
     for epoch in 1:n_epochs
         E = cost(θ)
         g = gradient_enzyme(cost, θ)
         opt_state, θ = Optimisers.update(opt_state, θ, g)
-        
+
         # Evaluate with statistics using MCWF sampling
         E_samples = zeros(Float64, M)
         Threads.@threads for t in 1:M
@@ -341,7 +341,7 @@ function train_mcwf_enzyme(circuit, θ_init, N, M; n_epochs=100, lr=0.02)
         push!(E_std, std(E_samples))
     end
     total_time = time() - t_start
-    
+
     return θ, E_mean, E_std, total_time
 end
 
@@ -356,34 +356,34 @@ println("=" ^ 70)
 for (i, (N, repr, noise, p, n_layers)) in enumerate(configs)
     noise_str = noise === nothing ? "none" : string(noise)
     p_str = @sprintf("p%.2f", p)
-    
+
     println("\n[$i/$(length(configs))] N=$N, repr=$repr, L=$n_layers, noise=$noise_str, p=$p")
-    
+
     # Compute exact ground state
     E_exact, _ = ground_state_xxz(N, Jx, Jy, Jz, h_field)
-    
+
     # Create circuit with noise
     Random.seed!(42)
-    circuit = hardware_efficient_ansatz(N, n_layers; 
+    circuit = hardware_efficient_ansatz(N, n_layers;
         rotations=[:ry, :rz], noise_type=noise, noise_p=p)
     θ_init = initialize_parameters(circuit; init=:small_random)
     n_params = length(θ_init)
-    
+
     epochs = 1:N_EPOCHS
-    
+
     # Title info
     ansatz_info = "HEA, L=$n_layers, N_θ=$n_params"
-    
+
     if repr == :DM
         # DM training with 2 optimizers (SPSA variants only - fast & suitable for noisy)
         print("  SPSA:        ")
         _, E_spsa, t_spsa = train_spsa_ket(circuit, θ_init, N; n_epochs=N_EPOCHS)
         @printf("E=%.4f, T=%.1fs\n", E_spsa[end], t_spsa)
-        
+
         print("  Adam+SPSA:   ")
         _, E_adam, t_adam = train_adam_spsa_ket(circuit, θ_init, N; n_epochs=N_EPOCHS)
         @printf("E=%.4f, T=%.1fs\n", E_adam[end], t_adam)
-        
+
         # Create figure
         plt = plot(
             title = "$HARDWARE DM (N=$N, $ansatz_info, $noise_str, p=$p)",
@@ -398,19 +398,19 @@ for (i, (N, repr, noise, p, n_layers)) in enumerate(configs)
               label="Adam+SPSA (T=$(round(t_adam, digits=1))s)")
         hline!(plt, [E_exact], lw=2, ls=:dash, color=:red,
                label="Exact GS ($(round(E_exact, digits=3)))")
-        
+
     else  # MCWF
         # MCWF training with 2 optimizers (SPSA variants only)
         print("  SPSA:        ")
         _, E_spsa_mean, E_spsa_std, t_spsa = train_mcwf_spsa(
             circuit, θ_init, N, N_TRAJECTORIES; n_epochs=N_EPOCHS)
         @printf("E=%.4f±%.4f, T=%.1fs\n", E_spsa_mean[end], E_spsa_std[end], t_spsa)
-        
+
         print("  Adam+SPSA:   ")
         _, E_adam_mean, E_adam_std, t_adam = train_mcwf_adam_spsa(
             circuit, θ_init, N, N_TRAJECTORIES; n_epochs=N_EPOCHS)
         @printf("E=%.4f±%.4f, T=%.1fs\n", E_adam_mean[end], E_adam_std[end], t_adam)
-        
+
         # Create figure
         plt = plot(
             title = "$HARDWARE MCWF (N=$N, M=$N_TRAJECTORIES, $ansatz_info, $noise_str, p=$p)",
@@ -426,7 +426,7 @@ for (i, (N, repr, noise, p, n_layers)) in enumerate(configs)
         hline!(plt, [E_exact], lw=2, ls=:dash, color=:red,
                label="Exact GS ($(round(E_exact, digits=3)))")
     end
-    
+
     # Save figure immediately (PNG and PDF)
     fig_name = @sprintf("fig_%s_N%02d_L%d_%s_%s_%s", HARDWARE, N, n_layers, repr, noise_str, p_str)
     savefig(plt, joinpath(OUTPUT_DIR, "$(fig_name).png"))

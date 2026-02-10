@@ -59,7 +59,7 @@ psi_mixed = make_ket("|0+0-1+>")
 psi_explicit = make_ket("|0101>", 4)
 @assert length(psi_explicit) == 16 "|0101> with N=4 should work"
 
-# Test equivalence: |0000> == make_ket("|0>", 4)  
+# Test equivalence: |0000> == make_ket("|0>", 4)
 @assert make_ket("|0000>") ≈ make_ket("|0>", 4) "|0000> should equal make_ket(|0>, 4)"
 @assert make_ket("|1111>") ≈ make_ket("|1>", 4) "|1111> should equal make_ket(|1>, 4)"
 @assert make_ket("|++++>") ≈ make_ket("|+>", 4) "|++++> should equal make_ket(|+>, 4)"
@@ -381,9 +381,8 @@ println("     make_rho(...), make_maximally_mixed(N)")
 println("   Normalization:")
 println("     normalize_state!(psi/rho)          - In-place normalization")
 println("     get_norm(psi), get_trace(rho) - SIMD-optimized metrics")
-println("   Tensor Products:")  
+println("   Tensor Products:")
 println("     tensor(a, b)                 - Two-state tensor")
 println("     tensor_product([a, b, c])    - Multi-state tensor (mixed psi/rho)")
 println("   Partial Trace:")
 println("     partial_trace_regions(rho, trace_sites, N) - Disconnected regions")
-

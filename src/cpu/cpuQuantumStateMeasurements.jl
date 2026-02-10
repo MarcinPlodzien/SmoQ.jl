@@ -180,7 +180,7 @@ module CPUQuantumStateMeasurements
 
 using LinearAlgebra
 
-# Import gates from the gates module (avoid duplication)  
+# Import gates from the gates module (avoid duplication)
 using ..CPUQuantumChannelGates: apply_hadamard_psi!, apply_s_psi!, apply_sdagger_psi!
 
 # Main unified interface
@@ -224,7 +224,7 @@ Measure qubit k in Z-basis with collapse. Returns 0 or 1.
 function _measure_z_single!(ψ::Vector{ComplexF64}, k::Int, N::Int)
     dim = 1 << N
     mask = 1 << (k - 1)
-    
+
     # Compute P(0)
     prob_0 = 0.0
     @inbounds for i in 0:(dim-1)
@@ -232,10 +232,10 @@ function _measure_z_single!(ψ::Vector{ComplexF64}, k::Int, N::Int)
             prob_0 += abs2(ψ[i+1])
         end
     end
-    
+
     # Sample outcome
     outcome = rand() < prob_0 ? 0 : 1
-    
+
     # Collapse and renormalize
     norm_sq = 0.0
     @inbounds for i in 0:(dim-1)
@@ -246,12 +246,12 @@ function _measure_z_single!(ψ::Vector{ComplexF64}, k::Int, N::Int)
             norm_sq += abs2(ψ[i+1])
         end
     end
-    
+
     norm_factor = 1.0 / sqrt(norm_sq)
     @inbounds for i in 1:dim
         ψ[i] *= norm_factor
     end
-    
+
     return outcome
 end
 
@@ -259,7 +259,7 @@ end
 function _measure_z_single!(ρ::Matrix{ComplexF64}, k::Int, N::Int)
     dim = 1 << N
     mask = 1 << (k - 1)
-    
+
     # Compute P(0) from diagonal
     prob_0 = 0.0
     @inbounds for i in 0:(dim-1)
@@ -267,10 +267,10 @@ function _measure_z_single!(ρ::Matrix{ComplexF64}, k::Int, N::Int)
             prob_0 += real(ρ[i+1, i+1])
         end
     end
-    
+
     outcome = rand() < prob_0 ? 0 : 1
     prob_outcome = outcome == 0 ? prob_0 : (1.0 - prob_0)
-    
+
     # Project: zero out inconsistent rows/columns
     @inbounds for i in 0:(dim-1)
         if (i >> (k-1)) & 1 != outcome
@@ -280,12 +280,12 @@ function _measure_z_single!(ρ::Matrix{ComplexF64}, k::Int, N::Int)
             end
         end
     end
-    
+
     # Renormalize
     if prob_outcome > 1e-15
         ρ ./= prob_outcome
     end
-    
+
     return outcome
 end
 
@@ -311,24 +311,24 @@ Projective measurement of specified qubits in given basis.
 
 # Basis options
 - `:z` — Computational basis (all qubits)
-- `:x` — Hadamard basis (all qubits)  
+- `:x` — Hadamard basis (all qubits)
 - `:y` — Y-eigenbasis (all qubits)
 - `[:x, :z, :y]` — Different basis per qubit
 - `O::Matrix` — General observable (requires diagonalization)
 """
 function projective_measurement!(ψ::Vector{ComplexF64}, qubits::Vector{Int}, basis::Symbol, N::Int)
     outcomes = Int[]
-    
+
     for k in qubits
         if basis == :z
             push!(outcomes, _measure_z_single!(ψ, k, N))
-            
+
         elseif basis == :x
             # X-basis: H → Z-measure → H
             apply_hadamard_psi!(ψ, k, N)
             push!(outcomes, _measure_z_single!(ψ, k, N))
             apply_hadamard_psi!(ψ, k, N)
-            
+
         elseif basis == :y
             # Y-basis: S† → H → Z-measure → H → S
             apply_sdagger_psi!(ψ, k, N)
@@ -340,7 +340,7 @@ function projective_measurement!(ψ::Vector{ComplexF64}, qubits::Vector{Int}, ba
             error("Unknown basis: $basis. Use :z, :x, :y, or provide Vector/Matrix.")
         end
     end
-    
+
     return outcomes, ψ
 end
 
@@ -348,7 +348,7 @@ end
 function projective_measurement!(ψ::Vector{ComplexF64}, qubits::Vector{Int}, bases::Vector{Symbol}, N::Int)
     @assert length(qubits) == length(bases) "Must specify basis for each qubit"
     outcomes = Int[]
-    
+
     for (k, basis) in zip(qubits, bases)
         if basis == :z
             push!(outcomes, _measure_z_single!(ψ, k, N))
@@ -364,7 +364,7 @@ function projective_measurement!(ψ::Vector{ComplexF64}, qubits::Vector{Int}, ba
             apply_s_psi!(ψ, k, N)
         end
     end
-    
+
     return outcomes, ψ
 end
 
@@ -372,35 +372,35 @@ end
 function projective_measurement!(ψ::Vector{ComplexF64}, O::Matrix{ComplexF64}, N::Int)
     dim = 1 << N
     @assert size(O) == (dim, dim) "Observable must be $dim × $dim"
-    
+
     # Diagonalize: O = U D U†
     F = eigen(Hermitian(O))
     eigenvalues = F.values
     U = F.vectors
-    
+
     # Transform to eigenbasis
     ψ_eigenbasis = U' * ψ
-    
+
     # Compute probabilities
     probs = [abs2(ψ_eigenbasis[i]) for i in 1:dim]
-    
+
     # Sample eigenstate
     outcome_idx = sample_from_probabilities(probs)
     eigenvalue = eigenvalues[outcome_idx]
-    
+
     # Collapse to eigenstate in original basis
     fill!(ψ, zero(ComplexF64))
     @inbounds for i in 1:dim
         ψ[i] = U[i, outcome_idx]
     end
-    
+
     return eigenvalue, ψ
 end
 
 # Density matrix versions
 function projective_measurement!(ρ::Matrix{ComplexF64}, qubits::Vector{Int}, basis::Symbol, N::Int)
     outcomes = Int[]
-    
+
     for k in qubits
         if basis == :z
             push!(outcomes, _measure_z_single!(ρ, k, N))
@@ -410,7 +410,7 @@ function projective_measurement!(ρ::Matrix{ComplexF64}, qubits::Vector{Int}, ba
             error("X/Y basis for density matrix not yet implemented. Use :z or pure states.")
         end
     end
-    
+
     return outcomes, ρ
 end
 
@@ -436,12 +436,12 @@ function sample_state(ρ::Matrix{ComplexF64}, qubits::Vector{Int}, basis::Symbol
     if basis != :z
         error("Only Z-basis sampling implemented for density matrices")
     end
-    
+
     dim = 1 << N
     probs = [real(ρ[i, i]) for i in 1:dim]
     outcome_idx = sample_from_probabilities(probs)
     outcome_bits = outcome_idx - 1
-    
+
     return [(outcome_bits >> (k-1)) & 1 for k in qubits]
 end
 
@@ -483,40 +483,40 @@ bitstring, ψ = projective_measurement_all!(ψ, 10)  # ~20× faster than qubit-b
 """
 function projective_measurement_all!(ψ::Vector{ComplexF64}, N::Int)
     dim = 1 << N
-    
+
     # Compute probabilities
     probs = [abs2(ψ[i]) for i in 1:dim]
-    
+
     # Sample outcome index (1-based)
     outcome_idx = sample_from_probabilities(probs)
     outcome_bits = outcome_idx - 1  # 0-based for bit operations
-    
+
     # Extract bitstring
     bitstring = [(outcome_bits >> (k-1)) & 1 for k in 1:N]
-    
+
     # Collapse to basis state
     fill!(ψ, zero(ComplexF64))
     ψ[outcome_idx] = 1.0
-    
+
     return bitstring, ψ
 end
 
 """Fast Z-basis measurement for density matrix."""
 function projective_measurement_all!(ρ::Matrix{ComplexF64}, N::Int)
     dim = 1 << N
-    
+
     # Sample from diagonal (populations)
     probs = [real(ρ[i, i]) for i in 1:dim]
     outcome_idx = sample_from_probabilities(probs)
     outcome_bits = outcome_idx - 1
-    
+
     # Extract bitstring
     bitstring = [(outcome_bits >> (k-1)) & 1 for k in 1:N]
-    
+
     # Collapse to |outcome⟩⟨outcome|
     fill!(ρ, zero(ComplexF64))
     ρ[outcome_idx, outcome_idx] = 1.0
-    
+
     return bitstring, ρ
 end
 
@@ -554,15 +554,15 @@ reset_state!(ψ, [1, 3], [:zero, :plus], N)
 """
 function reset_state!(ψ::Vector{ComplexF64}, qubits::Vector{Int}, target_states::Vector{Symbol}, N::Int)
     @assert length(qubits) == length(target_states) "Must specify target for each qubit"
-    
+
     for (k, target) in zip(qubits, target_states)
         # First measure in Z-basis to collapse
         _measure_z_single!(ψ, k, N)
-        
+
         # Then force to target state
         _force_qubit_state!(ψ, k, target, N)
     end
-    
+
     return ψ
 end
 
@@ -584,7 +584,7 @@ Assumes qubit has already been measured/collapsed.
 function _force_qubit_state!(ψ::Vector{ComplexF64}, k::Int, target::Symbol, N::Int)
     dim = 1 << N
     mask = 1 << (k - 1)
-    
+
     if target == :zero
         # Force to |0⟩: zero out all |1⟩ states for qubit k
         @inbounds for i in 0:(dim-1)
@@ -595,7 +595,7 @@ function _force_qubit_state!(ψ::Vector{ComplexF64}, k::Int, target::Symbol, N::
             end
         end
         _normalize!(ψ)
-        
+
     elseif target == :one
         # Force to |1⟩
         @inbounds for i in 0:(dim-1)
@@ -606,22 +606,22 @@ function _force_qubit_state!(ψ::Vector{ComplexF64}, k::Int, target::Symbol, N::
             end
         end
         _normalize!(ψ)
-        
+
     elseif target == :plus
         # Force to |+⟩ = (|0⟩ + |1⟩)/√2
         # First force to |0⟩, then apply Hadamard
         _force_qubit_state!(ψ, k, :zero, N)
         apply_hadamard_psi!(ψ, k, N)
-        
+
     elseif target == :minus
         # Force to |−⟩ = (|0⟩ - |1⟩)/√2
         _force_qubit_state!(ψ, k, :one, N)
         apply_hadamard_psi!(ψ, k, N)
-        
+
     else
         error("Unknown target state: $target. Use :zero, :one, :plus, :minus.")
     end
-    
+
     return ψ
 end
 
@@ -637,7 +637,7 @@ end
 # Density matrix version
 function reset_state!(ρ::Matrix{ComplexF64}, qubits::Vector{Int}, target_states::Vector{Symbol}, N::Int)
     @assert length(qubits) == length(target_states) "Must specify target for each qubit"
-    
+
     for (k, target) in zip(qubits, target_states)
         if target == :zero
             _force_qubit_rho!(ρ, k, 0, N)
@@ -647,7 +647,7 @@ function reset_state!(ρ::Matrix{ComplexF64}, qubits::Vector{Int}, target_states
             error("For density matrices, only :zero and :one targets implemented")
         end
     end
-    
+
     return ρ
 end
 
@@ -686,7 +686,7 @@ where P_b = |b⟩⟨b| on qubit k, I on others.
 function _force_qubit_rho!(ρ::Matrix{ComplexF64}, k::Int, b::Int, N::Int)
     dim = 1 << N
     mask = 1 << (k - 1)
-    
+
     # Zero out all coherences and populations with wrong bit value
     @inbounds for i in 0:(dim-1)
         bit_i = (i >> (k-1)) & 1
@@ -697,13 +697,13 @@ function _force_qubit_rho!(ρ::Matrix{ComplexF64}, k::Int, b::Int, N::Int)
             end
         end
     end
-    
+
     # Renormalize
     tr = real(sum(ρ[i, i] for i in 1:dim))
     if tr > 1e-15
         ρ ./= tr
     end
-    
+
     return ρ
 end
 
@@ -738,18 +738,17 @@ Explicit alias for reset_state! - reset specified qubits to specified kets.
 reset_qubit!(ψ, [1, 3, 5], [:zero, :one, :plus], N)
 ```
 """
-reset_qubit!(ψ::Vector{ComplexF64}, qubits::Vector{Int}, kets::Vector{Symbol}, N::Int) = 
+reset_qubit!(ψ::Vector{ComplexF64}, qubits::Vector{Int}, kets::Vector{Symbol}, N::Int) =
     reset_state!(ψ, qubits, kets, N)
 
-reset_qubit!(ρ::Matrix{ComplexF64}, qubits::Vector{Int}, kets::Vector{Symbol}, N::Int) = 
+reset_qubit!(ρ::Matrix{ComplexF64}, qubits::Vector{Int}, kets::Vector{Symbol}, N::Int) =
     reset_state!(ρ, qubits, kets, N)
 
 # Single ket for all qubits
-reset_qubit!(ψ::Vector{ComplexF64}, qubits::Vector{Int}, ket::Symbol, N::Int) = 
+reset_qubit!(ψ::Vector{ComplexF64}, qubits::Vector{Int}, ket::Symbol, N::Int) =
     reset_state!(ψ, qubits, ket, N)
 
-reset_qubit!(ρ::Matrix{ComplexF64}, qubits::Vector{Int}, ket::Symbol, N::Int) = 
+reset_qubit!(ρ::Matrix{ComplexF64}, qubits::Vector{Int}, ket::Symbol, N::Int) =
     reset_state!(ρ, qubits, ket, N)
 
 end # module
-

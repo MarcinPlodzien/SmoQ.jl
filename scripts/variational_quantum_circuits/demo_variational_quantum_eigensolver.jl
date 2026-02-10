@@ -8,21 +8,21 @@ DESCRIPTION:
     Demonstrates Variational Quantum Eigensolver (VQE) for finding ground states
     of spin Hamiltonians. The variational circuit is trained to minimize the
     energy expectation value ⟨ψ(θ)|H|ψ(θ)⟩.
-    
+
 VQE ARCHITECTURE:
     |0...0⟩ → [Ansatz U(θ)] → |ψ(θ)⟩ → measure ⟨H⟩
-    
+
     - Ansatz: Parameterized variational circuit U(θ)
     - Energy: E(θ) = ⟨ψ(θ)|H|ψ(θ)⟩
     - Goal: Minimize E(θ) → E_GS (ground state energy)
 
 HAMILTONIAN CONVENTION:
     H = Jx∑XX + Jy∑YY + Jz∑ZZ + hx∑X
-    
+
     Parameters control the sign directly (no hidden minus signs):
     - Jx = -1: Antiferromagnetic XX coupling (spins prefer anti-alignment)
     - Jx = +1: Ferromagnetic XX coupling (spins prefer alignment)
-    
+
     Supported models:
     - XXZ: Jx = Jy ≠ Jz (anisotropic Heisenberg with transverse field)
     - TFIM: Jx = Jy = 0 (transverse field Ising model)
@@ -33,12 +33,12 @@ METRICS TRACKED (9 panels, 3x3 grid):
     - Energy E(θ) vs epochs (with exact E_GS reference line)
     - S_vN at bipartite split vs epochs (entanglement entropy)
     - Fidelity F = |⟨ψ_exact|ψ(θ)⟩|² vs epochs
-    
+
     Row 2: Local observables (mean per qubit)
     - ⟨X⟩ = (1/N) Σᵢ ⟨Xᵢ⟩
     - ⟨Y⟩ = (1/N) Σᵢ ⟨Yᵢ⟩
     - ⟨Z⟩ = (1/N) Σᵢ ⟨Zᵢ⟩
-    
+
     Row 3: Two-body correlators (mean per nearest-neighbor bond)
     - ⟨XX⟩ = (1/(N-1)) Σᵢ ⟨XᵢXᵢ₊₁⟩
     - ⟨YY⟩ = (1/(N-1)) Σᵢ ⟨YᵢYᵢ₊₁⟩
@@ -61,13 +61,13 @@ OPTIMIZER:
     SPSA + Adam hybrid:
     - SPSA: Simultaneous Perturbation Stochastic Approximation for gradients
     - Adam: Adaptive momentum for parameter updates
-    
+
 THEORY - VARIATIONAL PRINCIPLE:
     The quantum variational principle guarantees:
         E(θ) = ⟨ψ(θ)|H|ψ(θ)⟩ ≥ E_GS
-    
+
     for any normalized trial state |ψ(θ)⟩. Equality holds when |ψ(θ)⟩ = |ψ_GS⟩.
-    
+
     The ansatz expressibility determines how closely VQE can approach E_GS.
     Critical ground states (e.g., TFIM at J=h) may require deep circuits
     or all-to-all connectivity to capture long-range correlations.
@@ -117,7 +117,7 @@ println("=" ^ 70)
 # ─────────────────────────────────────────────────────────────────────────────
 # SYSTEM SIZE & TRAINING
 # ─────────────────────────────────────────────────────────────────────────────
-const N_VALUES = [    
+const N_VALUES = [
     6,
     8,
     10,
@@ -175,7 +175,7 @@ println("Ansatzes: $ANSATZ_TYPES")
 function build_ansatz_spec(N, n_layers, ansatz, entangler_gate)
     gates = Tuple{Symbol, Any, Int}[]
     pidx = 0
-    
+
     for layer in 1:n_layers
         # Rotation layer: RY-RZ on each qubit
         for q in 1:N
@@ -184,7 +184,7 @@ function build_ansatz_spec(N, n_layers, ansatz, entangler_gate)
                 push!(gates, (rot, q, pidx))
             end
         end
-        
+
         # Entangling layer
         if ansatz == :brick
             if layer % 2 == 1
@@ -207,7 +207,7 @@ function build_ansatz_spec(N, n_layers, ansatz, entangler_gate)
             error("Unknown ansatz: $ansatz")
         end
     end
-    
+
     # Final rotation layer
     for q in 1:N
         for rot in ROTATION_GATES
@@ -251,7 +251,7 @@ Uses matrix-free bitwise operations.
 function compute_energy(ψ, N, Jx, Jy, Jz, hx)
     dim = 2^N
     E = 0.0
-    
+
     # Local X field: hx * Σ_i X_i
     for i in 1:N
         for k in 0:(dim-1)
@@ -259,23 +259,23 @@ function compute_energy(ψ, N, Jx, Jy, Jz, hx)
             E += hx * real(conj(ψ[k+1]) * ψ[j+1])
         end
     end
-    
+
     # Two-body terms: Jx XX + Jy YY + Jz ZZ
     for i in 1:(N-1)
         j = i + 1  # Nearest-neighbor
         for k in 0:(dim-1)
             bi = (k >> (i-1)) & 1
             bj = (k >> (j-1)) & 1
-            
+
             # ZZ term: diagonal
             zi = 1 - 2*bi
             zj = 1 - 2*bj
             E += Jz * zi * zj * abs2(ψ[k+1])
-            
+
             # XX term: flips both bits
             k_xx = xor(xor(k, 1 << (i-1)), 1 << (j-1))
             E += Jx * real(conj(ψ[k+1]) * ψ[k_xx+1])
-            
+
             # YY term: flips both bits with phase
             # σy|0⟩ = i|1⟩, σy|1⟩ = -i|0⟩
             phase_i = bi == 0 ? im : -im
@@ -284,7 +284,7 @@ function compute_energy(ψ, N, Jx, Jy, Jz, hx)
             E += Jy * real(conj(ψ[k+1]) * phase * ψ[k_xx+1])
         end
     end
-    
+
     return E
 end
 
@@ -308,7 +308,7 @@ end
 function compute_local_observables(ψ, N)
     dim = 2^N
     X_mean, Y_mean, Z_mean = 0.0, 0.0, 0.0
-    
+
     for i in 1:N
         X_i, Y_i, Z_i = 0.0, 0.0, 0.0
         for k in 0:(dim-1)
@@ -326,7 +326,7 @@ function compute_local_observables(ψ, N)
         Y_mean += Y_i
         Z_mean += Z_i
     end
-    
+
     return X_mean/N, Y_mean/N, Z_mean/N
 end
 
@@ -335,33 +335,33 @@ function compute_correlators(ψ, N)
     dim = 2^N
     n_bonds = N - 1
     XX_mean, YY_mean, ZZ_mean = 0.0, 0.0, 0.0
-    
+
     for i in 1:(N-1)
         j = i + 1  # Nearest neighbor
         XX_ij, YY_ij, ZZ_ij = 0.0, 0.0, 0.0
-        
+
         for k in 0:(dim-1)
             bi = (k >> (i-1)) & 1
             bj = (k >> (j-1)) & 1
-            
+
             # ZZ
             ZZ_ij += (1-2*bi) * (1-2*bj) * abs2(ψ[k+1])
-            
+
             # XX: flip both bits
             k_xx = xor(xor(k, 1 << (i-1)), 1 << (j-1))
             XX_ij += real(conj(ψ[k+1]) * ψ[k_xx+1])
-            
+
             # YY: flip both bits with phase
             phase_i = bi == 0 ? im : -im
             phase_j = bj == 0 ? im : -im
             YY_ij += real(conj(ψ[k+1]) * phase_i * phase_j * ψ[k_xx+1])
         end
-        
+
         XX_mean += XX_ij
         YY_mean += YY_ij
         ZZ_mean += ZZ_ij
     end
-    
+
     return XX_mean/n_bonds, YY_mean/n_bonds, ZZ_mean/n_bonds
 end
 
@@ -371,24 +371,24 @@ end
 
 function evaluate_vqe(θ, gates, N, Jx, Jy, Jz, hx, ψ_exact)
     ψ = prepare_ansatz_state(θ, gates, N)
-    
+
     # Energy
     E = compute_energy(ψ, N, Jx, Jy, Jz, hx)
-    
+
     # Bipartite entropy
     S = bipartite_entropy(ψ, N)
-    
+
     # Fidelity with exact ground state
     ψ_norm = ψ / norm(ψ)
     ψ_exact_norm = ψ_exact / norm(ψ_exact)
     F = abs2(dot(ψ_exact_norm, ψ_norm))
-    
+
     # Local observables: ⟨X⟩, ⟨Y⟩, ⟨Z⟩
     X_mean, Y_mean, Z_mean = compute_local_observables(ψ, N)
-    
+
     # Correlators: ⟨XX⟩, ⟨YY⟩, ⟨ZZ⟩
     XX_mean, YY_mean, ZZ_mean = compute_correlators(ψ, N)
-    
+
     return E, S, F, X_mean, Y_mean, Z_mean, XX_mean, YY_mean, ZZ_mean, ψ
 end
 
@@ -419,52 +419,52 @@ end
 
 function train_vqe(N, n_layers, ansatz, entangler_gate, ham_config; n_epochs=500, lr=0.02)
     name, Jx, Jy, Jz, hx, hy, hz = ham_config
-    
+
     # Get exact ground state
     E_gs, ψ_exact = ground_state_xxz(N, Jx, Jy, Jz, hx)
     S_gs = bipartite_entropy(ψ_exact, N)
-    
+
     # Ground state observables for reference
     X_gs, Y_gs, Z_gs = compute_local_observables(ψ_exact, N)
     XX_gs, YY_gs, ZZ_gs = compute_correlators(ψ_exact, N)
-    
+
     # Build ansatz
     n_params, gates = build_ansatz_spec(N, n_layers, ansatz, entangler_gate)
     θ = 0.1 * randn(n_params)
-    
+
     # Optimizer
     spsa = SPSA()
     opt = Optimisers.setup(Adam(lr), θ)
-    
+
     # Training history
     energies, entropies, fidelities = Float64[], Float64[], Float64[]
     X_hist, Y_hist, Z_hist = Float64[], Float64[], Float64[]
     XX_hist, YY_hist, ZZ_hist = Float64[], Float64[], Float64[]
-    
+
     total_time = @elapsed for ep in 1:n_epochs
         cost = θ_t -> begin
             ψ = prepare_ansatz_state(θ_t, gates, N)
             compute_energy(ψ, N, Jx, Jy, Jz, hx)
         end
-        
+
         g = spsa_grad!(spsa, cost, θ)
         opt, θ = Optimisers.update(opt, θ, g)
-        
+
         E, S, F, X, Y, Z, XX, YY, ZZ, _ = evaluate_vqe(θ, gates, N, Jx, Jy, Jz, hx, ψ_exact)
         push!(energies, E); push!(entropies, S); push!(fidelities, F)
         push!(X_hist, X); push!(Y_hist, Y); push!(Z_hist, Z)
         push!(XX_hist, XX); push!(YY_hist, YY); push!(ZZ_hist, ZZ)
-        
+
         if ep % 50 == 0
             ΔE = E - E_gs
-            @printf("    [%s|L=%d] ep=%d: E = %.6f (ΔE = %.2e), S = %.4f, F = %.4f\n", 
+            @printf("    [%s|L=%d] ep=%d: E = %.6f (ΔE = %.2e), S = %.4f, F = %.4f\n",
                     ansatz, n_layers, ep, E, ΔE, S, F)
         end
     end
-    
-    @printf("    [%s|L=%d] Training time: %.2fs (%.2f ms/epoch)\n", 
+
+    @printf("    [%s|L=%d] Training time: %.2fs (%.2f ms/epoch)\n",
             ansatz, n_layers, total_time, 1000*total_time/n_epochs)
-    
+
     return (energies=energies, entropies=entropies, fidelities=fidelities,
             X_hist=X_hist, Y_hist=Y_hist, Z_hist=Z_hist,
             XX_hist=XX_hist, YY_hist=YY_hist, ZZ_hist=ZZ_hist,
@@ -492,143 +492,143 @@ for entangler_gate in ENTANGLER_GATES
 
 for N in N_VALUES
     println("\n    N = $N QUBITS")
-    
+
     # Get exact ground state info for reference lines
     E_gs_ref, ψ_exact_ref = ground_state_xxz(N, Jx, Jy, Jz, hx)
     S_gs_ref = bipartite_entropy(ψ_exact_ref, N)
     X_gs_ref, Y_gs_ref, Z_gs_ref = compute_local_observables(ψ_exact_ref, N)
     XX_gs_ref, YY_gs_ref, ZZ_gs_ref = compute_correlators(ψ_exact_ref, N)
     println("      E_GS = $(@sprintf("%.6f", E_gs_ref)), S_GS = $(@sprintf("%.4f", S_gs_ref))")
-    
+
     # Storage for all L values
     results = Dict{Int, NamedTuple}()
-    
+
     for (i, n_layers) in enumerate(L_VALUES)
         println("      L = $n_layers")
         Random.seed!(42 + N*1000 + n_layers*100 + hash(ansatz))
-        
-        res = train_vqe(N, n_layers, ansatz, entangler_gate, ham_config; 
+
+        res = train_vqe(N, n_layers, ansatz, entangler_gate, ham_config;
                         n_epochs=N_EPOCHS, lr=LR)
         results[n_layers] = res
     end
-    
+
     # Create plot: 3 rows x 3 columns
     # Row 1: Energy, Entropy, Fidelity
     # Row 2: <X>, <Y>, <Z>
     # Row 3: <XX>, <YY>, <ZZ>
     rot_str = join([uppercase(string(r)[2]) for r in ROTATION_GATES], "")
     ent_str = uppercase(string(entangler_gate))
-    
+
     # Title line 1: Model name + ansatz + N
     # Title line 2: General Hamiltonian + parameters
     title_line1 = "VQE: $name | $ansatz | N=$N"
     title_line2 = "H = Jxx∑XX + Jyy∑YY + Jzz∑ZZ + hx∑X  |  Jxx=$Jx, Jyy=$Jy, Jzz=$Jz, hx=$hx"
-    
+
     plt = plot(layout=(3, 3), size=(1500, 1200),
                plot_title="$title_line1\n$title_line2",
                margin=5Plots.mm, left_margin=12Plots.mm, bottom_margin=8Plots.mm,
                titlefontsize=12, guidefontsize=11, tickfontsize=9, legendfontsize=9)
-    
+
     # Row 1: Energy, Entropy, Fidelity
     for (i, n_layers) in enumerate(L_VALUES)
         data = results[n_layers]
         time_str = @sprintf("%.1fs", data.time)
         final_E = @sprintf("%.4f", data.energies[end])
-        plot!(plt[1], data.energies, lw=2, color=colors[mod1(i, length(colors))], 
+        plot!(plt[1], data.energies, lw=2, color=colors[mod1(i, length(colors))],
               label="L=$n_layers ($time_str) → $final_E",
               xlabel="Epoch", ylabel="Energy E(θ)",
               title="Energy", legend=:topright)
     end
     hline!(plt[1], [E_gs_ref], lw=2, color=:black, ls=:dash, label="GS=$(@sprintf("%.2f", E_gs_ref))")
-    
+
     for (i, n_layers) in enumerate(L_VALUES)
         data = results[n_layers]
         final_S = @sprintf("%.4f", data.entropies[end])
-        plot!(plt[2], data.entropies, lw=2, color=colors[mod1(i, length(colors))], 
+        plot!(plt[2], data.entropies, lw=2, color=colors[mod1(i, length(colors))],
               label="L=$n_layers → $final_S",
               xlabel="Epoch", ylabel="Sᵥₙ",
               title="Entanglement Entropy", legend=:topright)
     end
     hline!(plt[2], [S_gs_ref], lw=2, color=:black, ls=:dash, label="GS=$(@sprintf("%.3f", S_gs_ref))")
-    
+
     for (i, n_layers) in enumerate(L_VALUES)
         data = results[n_layers]
         final_F = @sprintf("%.4f", data.fidelities[end])
-        plot!(plt[3], data.fidelities, lw=2, color=colors[mod1(i, length(colors))], 
+        plot!(plt[3], data.fidelities, lw=2, color=colors[mod1(i, length(colors))],
               label="L=$n_layers → $final_F",
               xlabel="Epoch", ylabel="Fidelity F",
               title="Fidelity with GS", legend=:bottomright)
     end
     hline!(plt[3], [1.0], lw=1, color=:black, ls=:dot, label="")
-    
+
     # Row 2: Local observables <X>, <Y>, <Z>
     for (i, n_layers) in enumerate(L_VALUES)
         data = results[n_layers]
         final_X = @sprintf("%.4f", data.X_hist[end])
-        plot!(plt[4], data.X_hist, lw=2, color=colors[mod1(i, length(colors))], 
+        plot!(plt[4], data.X_hist, lw=2, color=colors[mod1(i, length(colors))],
               label="L=$n_layers → $final_X",
               xlabel="Epoch", ylabel="⟨X⟩",
               title="Mean Local ⟨X⟩", legend=:topright)
     end
     hline!(plt[4], [X_gs_ref], lw=2, color=:black, ls=:dash, label="GS=$(@sprintf("%.3f", X_gs_ref))")
-    
+
     for (i, n_layers) in enumerate(L_VALUES)
         data = results[n_layers]
         final_Y = @sprintf("%.4f", data.Y_hist[end])
-        plot!(plt[5], data.Y_hist, lw=2, color=colors[mod1(i, length(colors))], 
+        plot!(plt[5], data.Y_hist, lw=2, color=colors[mod1(i, length(colors))],
               label="L=$n_layers → $final_Y",
               xlabel="Epoch", ylabel="⟨Y⟩",
               title="Mean Local ⟨Y⟩", legend=:topright)
     end
     hline!(plt[5], [Y_gs_ref], lw=2, color=:black, ls=:dash, label="GS=$(@sprintf("%.3f", Y_gs_ref))")
-    
+
     for (i, n_layers) in enumerate(L_VALUES)
         data = results[n_layers]
         final_Z = @sprintf("%.4f", data.Z_hist[end])
-        plot!(plt[6], data.Z_hist, lw=2, color=colors[mod1(i, length(colors))], 
+        plot!(plt[6], data.Z_hist, lw=2, color=colors[mod1(i, length(colors))],
               label="L=$n_layers → $final_Z",
               xlabel="Epoch", ylabel="⟨Z⟩",
               title="Mean Local ⟨Z⟩", legend=:topright)
     end
     hline!(plt[6], [Z_gs_ref], lw=2, color=:black, ls=:dash, label="GS=$(@sprintf("%.3f", Z_gs_ref))")
-    
+
     # Row 3: Correlators <XX>, <YY>, <ZZ>
     for (i, n_layers) in enumerate(L_VALUES)
         data = results[n_layers]
         final_XX = @sprintf("%.4f", data.XX_hist[end])
-        plot!(plt[7], data.XX_hist, lw=2, color=colors[mod1(i, length(colors))], 
+        plot!(plt[7], data.XX_hist, lw=2, color=colors[mod1(i, length(colors))],
               label="L=$n_layers → $final_XX",
               xlabel="Epoch", ylabel="⟨XX⟩",
               title="Mean NN ⟨XX⟩", legend=:topright)
     end
     hline!(plt[7], [XX_gs_ref], lw=2, color=:black, ls=:dash, label="GS=$(@sprintf("%.3f", XX_gs_ref))")
-    
+
     for (i, n_layers) in enumerate(L_VALUES)
         data = results[n_layers]
         final_YY = @sprintf("%.4f", data.YY_hist[end])
-        plot!(plt[8], data.YY_hist, lw=2, color=colors[mod1(i, length(colors))], 
+        plot!(plt[8], data.YY_hist, lw=2, color=colors[mod1(i, length(colors))],
               label="L=$n_layers → $final_YY",
               xlabel="Epoch", ylabel="⟨YY⟩",
               title="Mean NN ⟨YY⟩", legend=:topright)
     end
     hline!(plt[8], [YY_gs_ref], lw=2, color=:black, ls=:dash, label="GS=$(@sprintf("%.3f", YY_gs_ref))")
-    
+
     for (i, n_layers) in enumerate(L_VALUES)
         data = results[n_layers]
         final_ZZ = @sprintf("%.4f", data.ZZ_hist[end])
-        plot!(plt[9], data.ZZ_hist, lw=2, color=colors[mod1(i, length(colors))], 
+        plot!(plt[9], data.ZZ_hist, lw=2, color=colors[mod1(i, length(colors))],
               label="L=$n_layers → $final_ZZ",
               xlabel="Epoch", ylabel="⟨ZZ⟩",
               title="Mean NN ⟨ZZ⟩", legend=:topright)
     end
     hline!(plt[9], [ZZ_gs_ref], lw=2, color=:black, ls=:dash, label="GS=$(@sprintf("%.3f", ZZ_gs_ref))")
-    
+
     # Save plot
     fname = lowercase(name)
     base_fname = "vqe_$(fname)_$(ansatz)_N$(N)_R$(rot_str)_$(ent_str)"
     savefig(plt, joinpath(OUTPUT_DIR, "fig_$base_fname.png"))
     println("      → Saved: fig_$base_fname.png")
-    
+
     # Save data
     data_dir = joinpath(OUTPUT_DIR, "data")
     mkpath(data_dir)
@@ -642,7 +642,7 @@ for N in N_VALUES
             println(f, "# XX_GS=$(data.XX_gs), YY_GS=$(data.YY_gs), ZZ_GS=$(data.ZZ_gs)")
             println(f, "epoch,energy,entropy,fidelity,X,Y,Z,XX,YY,ZZ")
             for ep in 1:length(data.energies)
-                @printf(f, "%d,%.8f,%.8f,%.8f,%.8f,%.8f,%.8f,%.8f,%.8f,%.8f\n", 
+                @printf(f, "%d,%.8f,%.8f,%.8f,%.8f,%.8f,%.8f,%.8f,%.8f,%.8f\n",
                         ep, data.energies[ep], data.entropies[ep], data.fidelities[ep],
                         data.X_hist[ep], data.Y_hist[ep], data.Z_hist[ep],
                         data.XX_hist[ep], data.YY_hist[ep], data.ZZ_hist[ep])
@@ -660,4 +660,3 @@ println("\n" * "=" ^ 70)
 println("  VQE DEMO COMPLETE")
 println("=" ^ 70)
 println("\nDone!")
-

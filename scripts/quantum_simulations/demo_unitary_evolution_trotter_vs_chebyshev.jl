@@ -61,29 +61,29 @@ timing_data = []
 
 for N in TEST_SIZES
     println("\n--- N = $N ---")
-    
+
     dim = 1 << N
     n_trotter_steps = floor(Int, T_max / dt)
-    
+
     if (dim * 16 / 1e9) > 64  # Skip if > 64GB
         println("  SKIPPED (too large)")
         continue
     end
-    
+
     # Build Hamiltonian parameters and gates
-    params = build_hamiltonian_parameters(N, 1; 
-        J_x_direction=(Jxx, Jyy, Jzz), 
+    params = build_hamiltonian_parameters(N, 1;
+        J_x_direction=(Jxx, Jyy, Jzz),
         J_y_direction=(0.0, 0.0, 0.0),
         h_field=(hx, 0.0, 0.0))
-    
+
     gates = precompute_trotter_gates_bitwise_cpu(params, dt)
-    
+
     ψ0 = zeros(ComplexF64, dim); ψ0[1] = 1.0
-    
+
     # Pre-compute spectral bounds
     E_min, E_max = estimate_spectral_range_lanczos(params)
     spectral_bounds = (E_min, E_max)
-    
+
     # =========== TROTTER ===========
     ψ_tr = copy(ψ0)
     print("  Trotter ($n_trotter_steps steps): ")
@@ -93,7 +93,7 @@ for N in TEST_SIZES
         end
     end
     println("$(format_time(t_trotter)) ($(round(t_trotter, digits=2))s)")
-    
+
     # =========== CHEBYSHEV ===========
     ψ_ch = copy(ψ0); M_max = 0
     print("  Chebyshev ($(N_time_shots-1) steps): ")
@@ -104,11 +104,11 @@ for N in TEST_SIZES
         end
     end
     println("$(format_time(t_cheb)) ($(round(t_cheb, digits=2))s) (M_max=$M_max)")
-    
+
     # Fidelity
     F_final = abs(dot(ψ_tr, ψ_ch))^2
     println("  Fidelity: $(round(F_final, digits=10))")
-    
+
     push!(timing_data, (N=N, t_tr=t_trotter, t_ch=t_cheb, M=M_max, F=F_final))
 end
 
@@ -121,7 +121,7 @@ println("="^70)
 println("  N  | Trotter(s) | Cheb(s) | M  | Fidelity")
 println("  " * "-"^50)
 for d in timing_data
-    @printf("  %2d | %10.2f | %7.2f | %2d | %.10f\n", 
+    @printf("  %2d | %10.2f | %7.2f | %2d | %.10f\n",
             d.N, d.t_tr, d.t_ch, d.M, d.F)
 end
 
@@ -129,22 +129,22 @@ if length(timing_data) > 0
     Ns = [d.N for d in timing_data]
     t_tr_s = [d.t_tr for d in timing_data]
     t_ch_s = [d.t_ch for d in timing_data]
-    
+
     # Row 1: Linear y-scale
     p11 = plot(Ns, t_tr_s, label="Trotter", lw=2, marker=:circle, ms=5, color=:blue,
                xlabel="N (qubits)", ylabel="Time (s)", title="Linear N, Linear Time", legend=:topleft)
     plot!(p11, Ns, t_ch_s, label="Chebyshev", lw=2, marker=:square, ms=5, color=:red)
-    
+
     p12 = plot(Ns, t_tr_s, label="Trotter", lw=2, marker=:circle, ms=5, color=:blue,
                xlabel="log₂(dim) = N", ylabel="Time (s)", title="Log₂(dim), Linear Time", legend=:topleft)
     plot!(p12, Ns, t_ch_s, label="Chebyshev", lw=2, marker=:square, ms=5, color=:red)
-    
+
     # Row 2: Log10 y-scale
     p21 = plot(Ns, t_tr_s, label="Trotter", lw=2, marker=:circle, ms=5, color=:blue,
-               xlabel="N (qubits)", ylabel="Time (s)", title="Linear N, Log₁₀ Time", 
+               xlabel="N (qubits)", ylabel="Time (s)", title="Linear N, Log₁₀ Time",
                legend=:topleft, yscale=:log10)
     plot!(p21, Ns, t_ch_s, label="Chebyshev", lw=2, marker=:square, ms=5, color=:red)
-    
+
     p22 = plot(Ns, t_tr_s, label="Trotter", lw=2, marker=:circle, ms=5, color=:blue,
                xlabel="log₂(dim) = N", ylabel="Time (s)", title="Log₂(dim), Log₁₀ Time",
                legend=:topleft, yscale=:log10)

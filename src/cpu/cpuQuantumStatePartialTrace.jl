@@ -19,7 +19,7 @@ Standard Partial Trace:
   - partial_trace(rho::Matrix, trace_qubits, N)   Trace from density matrix
 
 Region-Splitting Partial Trace:
-  - partial_trace_regions(psi, trace_sites, N)    Returns tuple of DMs for 
+  - partial_trace_regions(psi, trace_sites, N)    Returns tuple of DMs for
                                                    disconnected kept regions
   - partial_trace_regions(rho, trace_sites, N)    Same for density matrices
 
@@ -68,16 +68,16 @@ Returns:
 function partial_trace(ψ::Vector{ComplexF64}, trace_qubits, N::Int)
     trace_set = Set(trace_qubits)
     keep_indices = [q for q in 1:N if !(q in trace_set)]
-    
+
     N_keep = length(keep_indices)
     N_trace = N - N_keep
     dim_keep = 1 << N_keep
     dim_trace = 1 << N_trace
-    
+
     # 0-indexed bit positions
     keep_bits = [k - 1 for k in keep_indices]
     trace_bits = [k - 1 for k in sort(collect(trace_set))]
-    
+
     # Precompute trace -> full index mapping
     trace_to_full = Vector{Int}(undef, dim_trace)
     @inbounds for t in 0:(dim_trace-1)
@@ -89,7 +89,7 @@ function partial_trace(ψ::Vector{ComplexF64}, trace_qubits, N::Int)
         end
         trace_to_full[t+1] = idx
     end
-    
+
     # Precompute keep -> full index mapping
     keep_to_full = Vector{Int}(undef, dim_keep)
     @inbounds for k in 0:(dim_keep-1)
@@ -101,27 +101,27 @@ function partial_trace(ψ::Vector{ComplexF64}, trace_qubits, N::Int)
         end
         keep_to_full[k+1] = idx
     end
-    
+
     # Compute reduced density matrix: ρ[i,j] = Σ_t ψ[i⊕t] ψ*[j⊕t]
     ρ = zeros(ComplexF64, dim_keep, dim_keep)
-    
+
     @inbounds for i_keep in 0:(dim_keep-1)
         i_base = keep_to_full[i_keep+1]
         for j_keep in 0:(dim_keep-1)
             j_base = keep_to_full[j_keep+1]
             val = zero(ComplexF64)
-            
+
             for t in 0:(dim_trace-1)
                 t_contrib = trace_to_full[t+1]
                 i_full = i_base | t_contrib
                 j_full = j_base | t_contrib
                 val += ψ[i_full + 1] * conj(ψ[j_full + 1])
             end
-            
+
             ρ[i_keep + 1, j_keep + 1] = val
         end
     end
-    
+
     return ρ
 end
 
@@ -141,18 +141,18 @@ Returns:
 function partial_trace(ρ::Matrix{ComplexF64}, trace_qubits, N::Int)
     trace_set = Set(trace_qubits)
     keep_qubits = [q for q in 1:N if !(q in trace_set)]
-    
+
     n_trace = length(trace_qubits)
     n_keep = N - n_trace
     dim_trace = 1 << n_trace
     dim_keep = 1 << n_keep
-    
+
     # 0-indexed bit positions
     keep_bits = [k - 1 for k in keep_qubits]
     trace_bits = [k - 1 for k in sort(collect(trace_set))]
-    
+
     ρ_reduced = zeros(ComplexF64, dim_keep, dim_keep)
-    
+
     @inbounds for i_keep in 0:(dim_keep-1)
         # Build base index for kept qubits
         i_base = 0
@@ -161,7 +161,7 @@ function partial_trace(ρ::Matrix{ComplexF64}, trace_qubits, N::Int)
                 i_base |= (1 << full_bit)
             end
         end
-        
+
         for j_keep in 0:(dim_keep-1)
             j_base = 0
             for (bit_idx, full_bit) in enumerate(keep_bits)
@@ -169,9 +169,9 @@ function partial_trace(ρ::Matrix{ComplexF64}, trace_qubits, N::Int)
                     j_base |= (1 << full_bit)
                 end
             end
-            
+
             val = zero(ComplexF64)
-            
+
             # Sum over traced indices
             for t in 0:(dim_trace-1)
                 i_full = i_base
@@ -184,11 +184,11 @@ function partial_trace(ρ::Matrix{ComplexF64}, trace_qubits, N::Int)
                 end
                 val += ρ[i_full + 1, j_full + 1]
             end
-            
+
             ρ_reduced[i_keep + 1, j_keep + 1] = val
         end
     end
-    
+
     return ρ_reduced
 end
 
@@ -249,7 +249,7 @@ which correspond to spatially connected qubit regions after tracing operations.
 # Arguments
 - `sites`: Vector of site indices (1-indexed, need not be sorted)
 
-# Returns  
+# Returns
 - Vector of vectors, each inner vector containing consecutive site indices
 
 # Complexity
@@ -267,16 +267,16 @@ find_connected_regions([1,2,3])           # [[1,2,3]]
 function find_connected_regions(sites::Vector{Int})
     # Handle empty input
     isempty(sites) && return Vector{Int}[]
-    
+
     # Sort sites to identify consecutive groups
     sorted_sites = sort(sites)
-    
+
     # Storage for identified regions
     regions = Vector{Int}[]
-    
+
     # Initialize first region with first site
     current_region = [sorted_sites[1]]
-    
+
     # Iterate through remaining sites
     for i in 2:length(sorted_sites)
         if sorted_sites[i] == sorted_sites[i-1] + 1
@@ -288,17 +288,17 @@ function find_connected_regions(sites::Vector{Int})
             current_region = [sorted_sites[i]]
         end
     end
-    
+
     # Don't forget to add the last region
     push!(regions, current_region)
-    
+
     return regions
 end
 
 """
     partial_trace_regions(ψ::Vector{ComplexF64}, trace_sites, N) -> Tuple{Matrix{ComplexF64}...}
 
-Trace out specified sites from pure state and return reduced density matrices 
+Trace out specified sites from pure state and return reduced density matrices
 for each spatially disconnected region of the remaining system.
 
 When tracing out non-contiguous sites, the kept sites may form multiple
@@ -339,7 +339,7 @@ normalize_state!(ψ)
 
 ρ_123, ρ_56, ρ_8, ρ_10 = partial_trace_regions(ψ, [4,7,9], 10)
 # ρ_123: 8×8 (3 qubits)
-# ρ_56:  4×4 (2 qubits)  
+# ρ_56:  4×4 (2 qubits)
 # ρ_8:   2×2 (1 qubit)
 # ρ_10:  2×2 (1 qubit)
 
@@ -353,39 +353,39 @@ See also: [`partial_trace`](@ref), [`find_connected_regions`](@ref)
 function partial_trace_regions(ψ::Vector{ComplexF64}, trace_sites, N::Int)
     # Convert trace_sites to Set for O(1) lookup
     trace_set = Set(trace_sites)
-    
+
     # Determine which sites are kept (complement of traced sites)
     keep_sites = [q for q in 1:N if !(q in trace_set)]
-    
+
     # Validate: must keep at least one site
     isempty(keep_sites) && error("Cannot trace out all sites - no subsystem remains")
-    
+
     # Identify connected regions among kept sites
     regions = find_connected_regions(keep_sites)
-    
+
     # Optimization: if only one connected region, use standard partial_trace
     if length(regions) == 1
         return (partial_trace(ψ, trace_sites, N),)
     end
-    
+
     # For multiple regions: compute reduced DM for each region separately
     # Key insight: for region Rᵢ, we trace out EVERYTHING except Rᵢ
     # This includes both the originally traced sites AND other kept regions
     results = Matrix{ComplexF64}[]
-    
+
     for region in regions
         # Build set of sites in this region
         region_set = Set(region)
-        
+
         # Sites to trace = all sites NOT in this specific region
         sites_to_trace = [q for q in 1:N if !(q in region_set)]
-        
+
         # Compute reduced density matrix for this region
         ρ_region = partial_trace(ψ, sites_to_trace, N)
-        
+
         push!(results, ρ_region)
     end
-    
+
     return Tuple(results)
 end
 
@@ -408,7 +408,7 @@ then this function returns:
 where ρ_{Rᵢ} = Tr_{all except Rᵢ}(ρ)
 
 # Arguments
-- `ρ::Matrix{ComplexF64}`: Density matrix of dimension 2^N × 2^N  
+- `ρ::Matrix{ComplexF64}`: Density matrix of dimension 2^N × 2^N
 - `trace_sites`: Vector/Range of site indices to trace out (1-indexed)
 - `N::Int`: Total number of qubits in the system
 
@@ -439,37 +439,37 @@ See also: [`partial_trace`](@ref), [`find_connected_regions`](@ref)
 function partial_trace_regions(ρ::Matrix{ComplexF64}, trace_sites, N::Int)
     # Convert trace_sites to Set for O(1) lookup
     trace_set = Set(trace_sites)
-    
+
     # Determine which sites are kept (complement of traced sites)
     keep_sites = [q for q in 1:N if !(q in trace_set)]
-    
+
     # Validate: must keep at least one site
     isempty(keep_sites) && error("Cannot trace out all sites - no subsystem remains")
-    
+
     # Identify connected regions among kept sites
     regions = find_connected_regions(keep_sites)
-    
+
     # Optimization: if only one connected region, use standard partial_trace
     if length(regions) == 1
         return (partial_trace(ρ, trace_sites, N),)
     end
-    
+
     # For multiple regions: compute reduced DM for each region separately
     results = Matrix{ComplexF64}[]
-    
+
     for region in regions
         # Build set of sites in this region
         region_set = Set(region)
-        
+
         # Sites to trace = all sites NOT in this specific region
         sites_to_trace = [q for q in 1:N if !(q in region_set)]
-        
+
         # Compute reduced density matrix for this region using bitwise partial trace
         ρ_region = partial_trace(ρ, sites_to_trace, N)
-        
+
         push!(results, ρ_region)
     end
-    
+
     return Tuple(results)
 end
 

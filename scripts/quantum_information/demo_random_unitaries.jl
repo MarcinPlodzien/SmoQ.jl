@@ -192,4 +192,3 @@ println("     apply_2qubit_gate!(psi, U, q1, q2, N) - Two-qubit gate")
 println("   Brick-Wall Circuits:")
 println("     apply_brickwall_layer!(psi, even, odd, N) - One layer")
 println("     random_brickwall!(psi, depth, N)    - Random circuit")
-

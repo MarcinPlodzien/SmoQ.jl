@@ -353,7 +353,7 @@
 # -------------------
 # Instead of:
 #   1. Building 2^N × 2^N density matrix    → O(4^N) memory
-#   2. Computing partial transpose          → O(4^N) operations  
+#   2. Computing partial transpose          → O(4^N) operations
 #   3. Finding all eigenvalues              → O(8^N) operations
 #
 # We compute:
@@ -524,7 +524,7 @@ function make_dicke(N::Int, k::Int)
     # Count combinations
     n_combs = binomial(N, k)
     amp = 1/√n_combs
-    
+
     for idx in 0:(2^N - 1)
         # Count number of 1s in binary representation
         if count_ones(idx) == k
@@ -573,7 +573,7 @@ Analytical negativity for W state with k:(N-k) bipartition.
 
 Derivation:
 - Schmidt coefficients: {√(k/N), √((N-k)/N)}
-- Sum: Σσ = √(k/N) + √((N-k)/N)  
+- Sum: Σσ = √(k/N) + √((N-k)/N)
 - (Σσ)² = 1 + 2√(k(N-k))/N
 - N = ((Σσ)² - 1)/2 = √(k(N-k))/N
 """
@@ -593,7 +593,7 @@ function negativity_dicke_analytical(N::Int, n_exc::Int, k::Int)
     # Compute Schmidt coefficients
     m_min = max(0, n_exc - (N - k))
     m_max = min(k, n_exc)
-    
+
     sigma_sum = 0.0
     for m in m_min:m_max
         if binomial(k, m) > 0 && binomial(N-k, n_exc-m) > 0
@@ -601,7 +601,7 @@ function negativity_dicke_analytical(N::Int, n_exc::Int, k::Int)
             sigma_sum += σ
         end
     end
-    
+
     return (sigma_sum^2 - 1) / 2
 end
 
@@ -638,13 +638,13 @@ And Neg = ((Σσᵢ)² - 1) / 2
 function negativity_schmidt(ψ::Vector{ComplexF64}, N::Int, k::Int)
     dim_kept = 1 << (N - k)    # 2^{N-k}
     dim_traced = 1 << k        # 2^k
-    
+
     # Reshape as matrix: rows = kept subsystem, cols = traced subsystem
     Ψ_mat = reshape(ψ, dim_kept, dim_traced)
-    
+
     # SVD gives Schmidt coefficients
     σ = svdvals(Ψ_mat)
-    
+
     # Pure-state negativity formula
     return (sum(σ)^2 - 1) / 2
 end
@@ -661,7 +661,7 @@ using the full partial transpose method (slow, for verification).
 
 # Arguments
 - `ψ`: State vector of dimension 2^N
-- `N`: Total number of qubits  
+- `N`: Total number of qubits
 - `k`: Number of qubits in subsystem B (last k qubits)
 
 # Algorithm
@@ -682,25 +682,25 @@ function negativity_partial_transpose(ψ::Vector{ComplexF64}, N::Int, k::Int)
     dim_kept = 1 << (N - k)
     dim_traced = 1 << k
     dim_total = 1 << N
-    
+
     # Form full density matrix ρ = |ψ⟩⟨ψ|
     ρ = ψ * ψ'
-    
+
     # Reshape as 4-index tensor: ρ[a, b, a', b']
     # where a indexes kept subsystem (first N-k qubits)
     # and b indexes traced subsystem (last k qubits)
     ρ_reshaped = reshape(ρ, dim_kept, dim_traced, dim_kept, dim_traced)
-    
+
     # Partial transpose over B: swap b and b'
     # (a, b, a', b') → (a, b', a', b)
     ρ_pt = permutedims(ρ_reshaped, (1, 4, 3, 2))
-    
+
     # Reshape back to matrix
     ρ_pt = reshape(ρ_pt, dim_total, dim_total)
-    
+
     # Compute eigenvalues (Hermitian for numerical stability)
     eigs = eigvals(Hermitian(ρ_pt))
-    
+
     # Negativity from trace norm
     return (sum(abs.(eigs)) - 1) / 2
 end
@@ -723,7 +723,7 @@ Returns a DataFrame with columns:
 - time_schmidt: computation time for Schmidt method
 - time_pt: computation time for PT method
 """
-function compare_methods(ψ::Vector{ComplexF64}, N::Int, state_name::String; 
+function compare_methods(ψ::Vector{ComplexF64}, N::Int, state_name::String;
                          max_k_pt::Int=6, analytical_fn::Union{Function,Nothing}=nothing)
     results = DataFrame(
         state = String[],
@@ -736,13 +736,13 @@ function compare_methods(ψ::Vector{ComplexF64}, N::Int, state_name::String;
         time_schmidt_ms = Float64[],
         time_pt_s = Union{Float64, Missing}[]
     )
-    
+
     for k in 1:(N-1)  # Skip trivial cuts k=0 (no cut) and k=N (full trace)
         # Schmidt method (always computed)
         t0 = time()
         neg_s = negativity_schmidt(ψ, N, k)
         t_schmidt = (time() - t0) * 1000  # ms
-        
+
         # Partial transpose method (only for small k due to memory)
         if k <= max_k_pt && (N - k) >= 1
             t0 = time()
@@ -754,7 +754,7 @@ function compare_methods(ψ::Vector{ComplexF64}, N::Int, state_name::String;
             t_pt = missing
             diff_num = missing
         end
-        
+
         # Analytical value (if available)
         if analytical_fn !== nothing
             neg_ana = analytical_fn(k)
@@ -763,10 +763,10 @@ function compare_methods(ψ::Vector{ComplexF64}, N::Int, state_name::String;
             neg_ana = missing
             diff_ana = missing
         end
-        
+
         push!(results, (state_name, k, neg_s, neg_pt, neg_ana, diff_num, diff_ana, t_schmidt, t_pt))
     end
-    
+
     return results
 end
 
@@ -779,20 +779,20 @@ function main()
     println("  PURE-STATE NEGATIVITY: SCHMIDT vs PARTIAL TRANSPOSE COMPARISON")
     println("=" ^ 80)
     println()
-    
+
     # System sizes to test (larger sizes only use Schmidt method)
     N_vals = [6, 8, 10, 11, 12, 14]
-    
+
     all_results = DataFrame()
-    
+
     for N in N_vals
         println("\n" * "=" ^ 60)
         println("  N = $N qubits")
         println("=" ^ 60)
-        
+
         # Only compute PT for small N (it's O(4^N))
         max_k_pt = N <= N_MAX_PT ? N : 0
-        
+
         # Generate test states for this N with their analytical formulas
         states = [
             ("GHZ", make_ghz(N), k -> negativity_ghz_analytical(N, k)),
@@ -800,14 +800,14 @@ function main()
             ("Dicke k=N/2", make_dicke(N, N÷2), k -> negativity_dicke_analytical(N, N÷2, k)),
             ("Random", make_random(N), nothing)  # No analytical formula for random
         ]
-        
+
         for (name, ψ, analytical_fn) in states
             println("─" ^ 80)
             println("  State: $name (N=$N)")
             println("─" ^ 80)
-            
+
             results = compare_methods(ψ, N, "$name (N=$N)"; max_k_pt=max_k_pt, analytical_fn=analytical_fn)
-        
+
         # Print table with analytical column
         println()
         if analytical_fn !== nothing
@@ -817,7 +817,7 @@ function main()
             println("  k │ Neg (Schmidt) │    Neg (PT)   │  Diff (PT)  │ Time (Schmidt) │ Time (PT) │ Speedup")
             println("────┼───────────────┼───────────────┼─────────────┼────────────────┼───────────┼─────────")
         end
-        
+
         for row in eachrow(results)
             if analytical_fn !== nothing
                 # Table with analytical column
@@ -842,16 +842,16 @@ function main()
             end
         end
         println()
-        
+
         append!(all_results, results)
         end  # states loop
     end  # N_vals loop
-    
+
     # Save results
     csv_path = joinpath(OUTPUT_DIR, "negativity_comparison.csv")
     CSV.write(csv_path, all_results)
     println("  Results saved to: demo_negativity/negativity_comparison.csv")
-    
+
     # Summary
     println()
     println("=" ^ 80)

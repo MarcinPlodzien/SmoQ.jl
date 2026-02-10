@@ -8,7 +8,7 @@ PURPOSE:
 --------
 Test and compare all available VQC optimization methods:
 1. Adam + Parameter-Shift gradients (exact, O(2n) evals per gradient)
-2. Adam + Enzyme gradients (exact, O(1) backprop)  
+2. Adam + Enzyme gradients (exact, O(1) backprop)
 3. SPSA (gradient-free, O(2) evals per gradient)
 4. Adam-SPSA (hybrid: SPSA gradient → Adam momentum)
 
@@ -146,7 +146,7 @@ function gradient_spsa(cost_fn, θ::Vector{Float64}, schedule::SPSASchedule)
     k = schedule.k
     a_k = schedule.a / (schedule.A + k)^schedule.α
     c_k = schedule.c / k^schedule.γ
-    
+
     n = length(θ)
     Δ = 2.0 .* (rand(n) .> 0.5) .- 1.0
     f_plus = cost_fn(θ .+ c_k .* Δ)
@@ -163,7 +163,7 @@ end
 function mcwf_energy_parallel(circuit, θ, N, M; base_seed=0)
     dim = 1 << N
     E_samples = zeros(Float64, M)
-    
+
     Threads.@threads for t in 1:M
         ψ = zeros(ComplexF64, dim)
         ψ[1] = 1.0
@@ -171,7 +171,7 @@ function mcwf_energy_parallel(circuit, θ, N, M; base_seed=0)
         apply_circuit!(ψ, circuit, θ)
         E_samples[t] = compute_energy_ket(ψ, N)
     end
-    
+
     return mean(E_samples), std(E_samples)
 end
 
@@ -186,13 +186,13 @@ function train_adam_paramshift(circuit, θ_init, N; n_epochs=100, lr=0.02)
     opt_state = Optimisers.setup(Adam(lr), θ)
     energies = Float64[]
     times = Float64[]
-    
+
     cost_fn = θ -> begin
         ρ = zeros(ComplexF64, dim, dim); ρ[1,1] = 1.0
         apply_circuit!(ρ, circuit, θ)
         compute_energy_dm(ρ, N)
     end
-    
+
     for epoch in 1:n_epochs
         t0 = time()
         E = cost_fn(θ)
@@ -201,7 +201,7 @@ function train_adam_paramshift(circuit, θ_init, N; n_epochs=100, lr=0.02)
         push!(energies, E)
         push!(times, time() - t0)
     end
-    
+
     return θ, energies, mean(times)
 end
 
@@ -212,13 +212,13 @@ function train_adam_enzyme(circuit, θ_init, N; n_epochs=100, lr=0.02)
     opt_state = Optimisers.setup(Adam(lr), θ)
     energies = Float64[]
     times = Float64[]
-    
+
     # Build Enzyme wrapper
     wrapper = build_enzyme_wrapper(circuit)
-    
+
     energy_fn = ρ -> compute_energy_dm(ρ, N)
     cost = make_cost_dm(wrapper, energy_fn)
-    
+
     for epoch in 1:n_epochs
         t0 = time()
         E = cost(θ)
@@ -227,7 +227,7 @@ function train_adam_enzyme(circuit, θ_init, N; n_epochs=100, lr=0.02)
         push!(energies, E)
         push!(times, time() - t0)
     end
-    
+
     return θ, energies, mean(times)
 end
 
@@ -240,13 +240,13 @@ function train_spsa(circuit, θ_init, N; n_epochs=100)
     # Tuned SPSA hyperparams:
     # a=0.2 (conservative step size), c=0.2 (perturbation), A=10% of epochs
     schedule = SPSASchedule(a=0.2, c=0.2, A=0.1*n_epochs)
-    
+
     cost_fn = θ -> begin
         ρ = zeros(ComplexF64, dim, dim); ρ[1,1] = 1.0
         apply_circuit!(ρ, circuit, θ)
         compute_energy_dm(ρ, N)
     end
-    
+
     for epoch in 1:n_epochs
         t0 = time()
         E = cost_fn(θ)
@@ -255,7 +255,7 @@ function train_spsa(circuit, θ_init, N; n_epochs=100)
         push!(energies, E)
         push!(times, time() - t0)
     end
-    
+
     return θ, energies, mean(times)
 end
 
@@ -268,13 +268,13 @@ function train_adam_spsa(circuit, θ_init, N; n_epochs=100, lr=0.02)
     times = Float64[]
     # Same SPSA hyperparams for fair comparison
     schedule = SPSASchedule(a=0.2, c=0.2, A=0.1*n_epochs)
-    
+
     cost_fn = θ -> begin
         ρ = zeros(ComplexF64, dim, dim); ρ[1,1] = 1.0
         apply_circuit!(ρ, circuit, θ)
         compute_energy_dm(ρ, N)
     end
-    
+
     for epoch in 1:n_epochs
         t0 = time()
         E = cost_fn(θ)
@@ -284,7 +284,7 @@ function train_adam_spsa(circuit, θ_init, N; n_epochs=100, lr=0.02)
         push!(energies, E)
         push!(times, time() - t0)
     end
-    
+
     return θ, energies, mean(times)
 end
 
@@ -296,7 +296,7 @@ E_exact, _ = ground_state_xxz(N_QUBITS, Jx, Jy, Jz, h_field)
 @printf("\nExact ground state energy: E = %.6f\n", E_exact)
 
 Random.seed!(42)
-circuit = hardware_efficient_ansatz(N_QUBITS, N_LAYERS; 
+circuit = hardware_efficient_ansatz(N_QUBITS, N_LAYERS;
                                      rotations=[:ry, :rz], noise_type=nothing)
 θ_init = initialize_parameters(circuit; init=:small_random)
 @printf("Ansatz: %d parameters\n\n", length(θ_init))

@@ -27,7 +27,7 @@ using LinearAlgebra
 # Add utils path
 const UTILS_PATH = joinpath(@__DIR__, "..", "utils", "cpu")
 
-# Load VQC modules 
+# Load VQC modules
 include(joinpath(UTILS_PATH, "cpuVariationalQuantumCircuitExecutor.jl"))
 include(joinpath(UTILS_PATH, "cpuVariationalQuantumCircuitGradients.jl"))
 include(joinpath(UTILS_PATH, "cpuVariationalQuantumCircuitOptimizers.jl"))
@@ -151,7 +151,7 @@ println("Initial cost: $(round(cost_fn(θ_init), digits=4))")
 # SPSA optimizer
 opt_spsa = SPSAOptimizer(a=0.2, c=0.1)
 println("\nRunning SPSA optimization (100 iterations)...")
-t_spsa = @elapsed θ_spsa, history_spsa = optimize!(cost_fn, θ_init, opt_spsa; 
+t_spsa = @elapsed θ_spsa, history_spsa = optimize!(cost_fn, θ_init, opt_spsa;
                                                      max_iter=100, verbose=false)
 
 println("  Time: $(round(t_spsa, digits=2)) s")

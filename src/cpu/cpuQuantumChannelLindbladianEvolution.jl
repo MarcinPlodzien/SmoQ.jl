@@ -3,15 +3,15 @@
 #=
 ================================================================================
     cpuQuantumChannelLindbladianEvolution.jl - Lindbladian Master Equation
-    
+
     HIGH-LEVEL INTERFACE with Jump Operators:
-    
+
     dρ/dt = -i[H, ρ] + Σⱼ γⱼ (Lⱼ ρ Lⱼ† - ½{Lⱼ†Lⱼ, ρ})
-    
+
     Supports both:
     - Density Matrix (DM) evolution
     - Monte Carlo Wave Function (MCWF) / Quantum Trajectories
-    
+
     DESIGN: Delegates coherent evolution to existing UnitaryEvolution modules.
 ================================================================================
 =#
@@ -24,7 +24,7 @@ using SparseArrays
 
 # Import from sibling modules
 using ..CPUHamiltonianBuilder: HamiltonianParams, construct_sparse_hamiltonian
-using ..CPUQuantumChannelUnitaryEvolutionTrotter: FastTrotterGate, apply_fast_trotter_step_cpu!, 
+using ..CPUQuantumChannelUnitaryEvolutionTrotter: FastTrotterGate, apply_fast_trotter_step_cpu!,
     precompute_trotter_gates_bitwise_cpu
 using ..CPUQuantumChannelUnitaryEvolutionChebyshev: chebyshev_evolve_psi!, estimate_spectral_range_lanczos
 using ..CPUQuantumChannelUnitaryEvolutionExact: precompute_exact_propagator_cpu, evolve_exact_psi_cpu!, evolve_exact_rho_cpu!
@@ -70,17 +70,17 @@ struct JumpOperator
 end
 
 """Create a jump operator."""
-function create_jump_operator(type::Symbol; 
-                               qubit::Int=1, 
+function create_jump_operator(type::Symbol;
+                               qubit::Int=1,
                                γ::Float64=0.1,
                                matrix::Union{Matrix, Nothing}=nothing)
-    
+
     # Standard 2x2 operators
     σ_minus = ComplexF64[0 1; 0 0]  # |0⟩⟨1|
     σ_plus  = ComplexF64[0 0; 1 0]  # |1⟩⟨0|
     σ_z     = ComplexF64[1 0; 0 -1]
     σ_x     = ComplexF64[0 1; 1 0]
-    
+
     if type == :sigma_minus
         L = σ_minus
     elseif type == :sigma_plus
@@ -95,9 +95,9 @@ function create_jump_operator(type::Symbol;
     else
         error("Unknown jump operator type: $type")
     end
-    
+
     L_dag_L = L' * L
-    
+
     return JumpOperator(type, qubit, γ, L, L_dag_L)
 end
 
@@ -114,17 +114,17 @@ struct LindbladianEvolver
     # System parameters
     N::Int                  # Number of qubits
     dt::Float64             # Time step
-    
+
     # Jump operators
     jump_ops::Vector{JumpOperator}
-    
+
     # Coherent evolution (from existing modules)
     integrator::Symbol      # :exact, :trotter, :chebyshev
     trotter_gates::Union{Vector{FastTrotterGate}, Nothing}
     exact_U::Union{Matrix{ComplexF64}, Nothing}
     H_params::Union{HamiltonianParams, Nothing}
     spectral_bounds::Union{Tuple{Float64, Float64}, Nothing}
-    
+
     # Precomputed for DM evolution
     full_L::Vector{Union{SparseMatrixCSC{ComplexF64}, Nothing}}  # Full-space L operators
     full_L_dag_L::Vector{Union{SparseMatrixCSC{ComplexF64}, Nothing}}
@@ -147,12 +147,12 @@ function create_lindbladian_evolver(H_params::HamiltonianParams,
                                      integrator::Symbol=:trotter)
     N = H_params.N_x * H_params.N_y
     dim = 1 << N
-    
+
     # Precompute coherent evolution (delegate to existing modules)
     trotter_gates = nothing
     exact_U = nothing
     spectral_bounds = nothing
-    
+
     if integrator == :trotter
         trotter_gates = precompute_trotter_gates_bitwise_cpu(H_params, dt)
     elseif integrator == :exact
@@ -160,11 +160,11 @@ function create_lindbladian_evolver(H_params::HamiltonianParams,
     elseif integrator == :chebyshev
         spectral_bounds = estimate_spectral_range_lanczos(H_params)
     end
-    
+
     # Precompute full-space jump operators for DM
     full_L = Vector{Union{SparseMatrixCSC{ComplexF64}, Nothing}}(undef, length(jump_ops))
     full_L_dag_L = Vector{Union{SparseMatrixCSC{ComplexF64}, Nothing}}(undef, length(jump_ops))
-    
+
     for (i, op) in enumerate(jump_ops)
         if op.type in (:sigma_minus, :sigma_plus, :sigma_z, :sigma_x, :custom)
             # Build full-space operator via Kronecker products
@@ -175,7 +175,7 @@ function create_lindbladian_evolver(H_params::HamiltonianParams,
             full_L_dag_L[i] = nothing
         end
     end
-    
+
     return LindbladianEvolver(N, dt, jump_ops, integrator,
                               trotter_gates, exact_U, H_params, spectral_bounds,
                               full_L, full_L_dag_L)
@@ -186,7 +186,7 @@ function _embed_operator(op2::Matrix{ComplexF64}, qubit::Int, N::Int)
     dim = 1 << N
     I2 = sparse(ComplexF64[1 0; 0 1])
     op_sparse = sparse(op2)
-    
+
     # Build kronecker product: I ⊗ ... ⊗ L ⊗ ... ⊗ I
     result = qubit == 1 ? op_sparse : I2
     for q in 2:N
@@ -215,7 +215,7 @@ function lindbladian_evolve_mcwf!(ψ::Vector{ComplexF64}, evolver::LindbladianEv
     N = evolver.N
     dt = evolver.dt
     dim = length(ψ)
-    
+
     # 1. Coherent evolution (unitary part)
     if evolver.integrator == :exact
         evolve_exact_psi_cpu!(ψ, evolver.exact_U)
@@ -225,15 +225,15 @@ function lindbladian_evolve_mcwf!(ψ::Vector{ComplexF64}, evolver::LindbladianEv
         chebyshev_evolve_psi!(ψ, evolver.H_params, evolver.dt;
                               spectral_bounds=evolver.spectral_bounds)
     end
-    
+
     # 2. Stochastic quantum jumps
     for (i, op) in enumerate(evolver.jump_ops)
         γ = op.γ
         qubit = op.qubit
-        
+
         # Compute jump probability: p = γ dt ⟨ψ|L†L|ψ⟩
         p_jump = γ * dt * _expect_LdagL(ψ, op, qubit)
-        
+
         if rand() < p_jump
             # Apply jump: |ψ⟩ → L|ψ⟩ / ||L|ψ⟩||
             _apply_jump!(ψ, op, qubit)
@@ -242,10 +242,10 @@ function lindbladian_evolve_mcwf!(ψ::Vector{ComplexF64}, evolver::LindbladianEv
             # For simplicity, we skip this in first-order approximation
         end
     end
-    
+
     # 3. Renormalize
     ψ ./= norm(ψ)
-    
+
     return ψ
 end
 
@@ -253,7 +253,7 @@ end
 function _expect_LdagL(ψ::Vector{ComplexF64}, op::JumpOperator, qubit::Int)
     dim = length(ψ)
     mask = 1 << (qubit - 1)
-    
+
     if op.type == :sigma_minus
         # L†L = |1⟩⟨1|, so ⟨ψ|L†L|ψ⟩ = Σᵢ |ψᵢ|² where bit(i, qubit) = 1
         result = 0.0
@@ -263,7 +263,7 @@ function _expect_LdagL(ψ::Vector{ComplexF64}, op::JumpOperator, qubit::Int)
             end
         end
         return result
-        
+
     elseif op.type == :sigma_plus
         # L†L = |0⟩⟨0|
         result = 0.0
@@ -273,15 +273,15 @@ function _expect_LdagL(ψ::Vector{ComplexF64}, op::JumpOperator, qubit::Int)
             end
         end
         return result
-        
+
     elseif op.type == :sigma_z
         # L†L = I
         return 1.0
-        
+
     elseif op.type == :sigma_x
         # L†L = I
         return 1.0
-        
+
     else
         # Fall back to explicit calculation
         L = evolver.full_L[findfirst(x -> x === op, evolver.jump_ops)]
@@ -294,7 +294,7 @@ end
 function _apply_jump!(ψ::Vector{ComplexF64}, op::JumpOperator, qubit::Int)
     dim = length(ψ)
     mask = 1 << (qubit - 1)
-    
+
     if op.type == :sigma_minus
         # σ⁻|1⟩ = |0⟩, σ⁻|0⟩ = 0
         @inbounds for i in 0:(dim-1)
@@ -305,7 +305,7 @@ function _apply_jump!(ψ::Vector{ComplexF64}, op::JumpOperator, qubit::Int)
                 ψ[i+1] = 0.0
             end
         end
-        
+
     elseif op.type == :sigma_plus
         # σ⁺|0⟩ = |1⟩, σ⁺|1⟩ = 0
         @inbounds for i in 0:(dim-1)
@@ -316,7 +316,7 @@ function _apply_jump!(ψ::Vector{ComplexF64}, op::JumpOperator, qubit::Int)
                 ψ[i+1] = 0.0
             end
         end
-        
+
     elseif op.type == :sigma_z
         # σᶻ|0⟩ = |0⟩, σᶻ|1⟩ = -|1⟩
         @inbounds for i in 0:(dim-1)
@@ -324,7 +324,7 @@ function _apply_jump!(ψ::Vector{ComplexF64}, op::JumpOperator, qubit::Int)
                 ψ[i+1] = -ψ[i+1]
             end
         end
-        
+
     elseif op.type == :sigma_x
         # σˣ swaps |0⟩ ↔ |1⟩
         @inbounds for i in 0:(dim-1)
@@ -334,7 +334,7 @@ function _apply_jump!(ψ::Vector{ComplexF64}, op::JumpOperator, qubit::Int)
             end
         end
     end
-    
+
     return ψ
 end
 
@@ -351,7 +351,7 @@ One Lindblad step on density matrix:
 function lindbladian_evolve_dm!(ρ::Matrix{ComplexF64}, evolver::LindbladianEvolver)
     N = evolver.N
     dt = evolver.dt
-    
+
     # 1. Coherent evolution (delegate to existing)
     if evolver.integrator == :exact
         evolve_exact_rho_cpu!(ρ, evolver.exact_U)
@@ -360,12 +360,12 @@ function lindbladian_evolve_dm!(ρ::Matrix{ComplexF64}, evolver::LindbladianEvol
     elseif evolver.integrator == :chebyshev
         error("Chebyshev DM evolution requires Liouvillian superoperator - use :exact instead")
     end
-    
+
     # 2. Dissipative part (BITWISE matrix-free for standard operators)
     for (i, op) in enumerate(evolver.jump_ops)
         _apply_dissipator_dm!(ρ, op, dt)
     end
-    
+
     return ρ
 end
 
@@ -379,7 +379,7 @@ function _apply_dissipator_dm!(ρ::Matrix{ComplexF64}, op::JumpOperator, dt::Flo
     dim = size(ρ, 1)
     mask = 1 << (qubit - 1)
     factor = γ * dt
-    
+
     if op.type == :sigma_minus
         # L = σ⁻ = |0⟩⟨1|
         # L†L = |1⟩⟨1| (projects to excited state)
@@ -388,7 +388,7 @@ function _apply_dissipator_dm!(ρ::Matrix{ComplexF64}, op::JumpOperator, dt::Flo
             for i in 0:(dim-1)
                 bit_i = (i >> (qubit - 1)) & 1
                 bit_j = (j >> (qubit - 1)) & 1
-                
+
                 if bit_i == 1 && bit_j == 1
                     # Transfer: ρ[i0,j0] += γ dt ρ[i,j]
                     i0 = xor(i, mask)
@@ -402,7 +402,7 @@ function _apply_dissipator_dm!(ρ::Matrix{ComplexF64}, op::JumpOperator, dt::Flo
                 end
             end
         end
-        
+
     elseif op.type == :sigma_plus
         # L = σ⁺ = |1⟩⟨0|
         # L†L = |0⟩⟨0|
@@ -410,7 +410,7 @@ function _apply_dissipator_dm!(ρ::Matrix{ComplexF64}, op::JumpOperator, dt::Flo
             for i in 0:(dim-1)
                 bit_i = (i >> (qubit - 1)) & 1
                 bit_j = (j >> (qubit - 1)) & 1
-                
+
                 if bit_i == 0 && bit_j == 0
                     # Transfer: ρ[i1,j1] += γ dt ρ[i,j]
                     i1 = xor(i, mask)
@@ -422,7 +422,7 @@ function _apply_dissipator_dm!(ρ::Matrix{ComplexF64}, op::JumpOperator, dt::Flo
                 end
             end
         end
-        
+
     elseif op.type == :sigma_z
         # L = σᶻ, L†L = I
         # D[σᶻ]ρ = σᶻρσᶻ - ρ (pure dephasing)
@@ -431,7 +431,7 @@ function _apply_dissipator_dm!(ρ::Matrix{ComplexF64}, op::JumpOperator, dt::Flo
             for i in 0:(dim-1)
                 bit_i = (i >> (qubit - 1)) & 1
                 bit_j = (j >> (qubit - 1)) & 1
-                
+
                 if bit_i != bit_j
                     # Off-diagonal: decays as exp(-2γt) ≈ 1 - 2γdt
                     ρ[i+1, j+1] *= (1 - 2 * factor)
@@ -439,7 +439,7 @@ function _apply_dissipator_dm!(ρ::Matrix{ComplexF64}, op::JumpOperator, dt::Flo
                 # Diagonal unchanged (σᶻρσᶻ = ρ for diagonal)
             end
         end
-        
+
     elseif op.type == :sigma_x
         # L = σˣ, L†L = I
         # D[σˣ]ρ = σˣρσˣ - ρ
@@ -447,11 +447,11 @@ function _apply_dissipator_dm!(ρ::Matrix{ComplexF64}, op::JumpOperator, dt::Flo
             for i in 0:(dim-1)
                 bit_i = (i >> (qubit - 1)) & 1
                 bit_j = (j >> (qubit - 1)) & 1
-                
+
                 # Swap indices
                 i_flip = xor(i, mask)
                 j_flip = xor(j, mask)
-                
+
                 # D[σˣ]ρ[i,j] = γ dt (ρ[i_flip, j_flip] - ρ[i,j])
                 # Only update once per pair (i < i_flip)
                 if i < i_flip || (i == i_flip && j < j_flip)
@@ -462,7 +462,7 @@ function _apply_dissipator_dm!(ρ::Matrix{ComplexF64}, op::JumpOperator, dt::Flo
                 end
             end
         end
-        
+
     else
         # Fall back to explicit matrix for custom operators (not matrix-free)
         L = evolver.full_L[findfirst(x -> x === op, evolver.jump_ops)]
@@ -472,7 +472,7 @@ function _apply_dissipator_dm!(ρ::Matrix{ComplexF64}, op::JumpOperator, dt::Flo
         anticomm = LdL * ρ + ρ * LdL
         ρ .+= factor * (LρLd - 0.5 * anticomm)
     end
-    
+
     return ρ
 end
 

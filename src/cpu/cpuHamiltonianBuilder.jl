@@ -8,7 +8,7 @@
 OVERVIEW
 --------
 Self-contained module for building QRC Hamiltonians. Includes:
-- Core types: CouplingTerm, FieldTerm, HamiltonianParams  
+- Core types: CouplingTerm, FieldTerm, HamiltonianParams
 - Predefined Hamiltonian types (Heisenberg, TFIM, etc.)
 - Geometry utilities for 2D lattice
 - Sparse Hamiltonian construction (bitwise, no bitwise dependency)
@@ -36,7 +36,7 @@ using SparseArrays
 Two-qubit coupling: H = Jxx·(σx⊗σx) + Jyy·(σy⊗σy) + Jzz·(σz⊗σz)
 
 Note: Jxx/Jyy/Jzz are PAULI operator couplings.
-The SPATIAL direction (x-axis vs y-axis) is determined by which 
+The SPATIAL direction (x-axis vs y-axis) is determined by which
 collection (x_bonds or y_bonds) the term belongs to.
 """
 struct CouplingTerm
@@ -140,11 +140,11 @@ Parse CONFIG Dict structure into tuple format.
 function parse_config_couplings(hamiltonian_couplings::Dict, h_field_dict::Dict)
     J_x = hamiltonian_couplings["x_direction"]
     J_y = hamiltonian_couplings["y_direction"]
-    
+
     J_x_direction = (J_x["Jxx"], J_x["Jyy"], J_x["Jzz"])
     J_y_direction = (J_y["Jxx"], J_y["Jyy"], J_y["Jzz"])
     h_field = (h_field_dict["hx"], h_field_dict["hy"], h_field_dict["hz"])
-    
+
     return (J_x_direction, J_y_direction, h_field)
 end
 
@@ -163,16 +163,16 @@ function build_hamiltonian_parameters(Nx::Int, Ny::Int, ham_type::Symbol; J=1.0,
     return build_hamiltonian_parameters(Nx, Ny; J_x_direction=J_x_direction, J_y_direction=J_y_direction, h_field=h_field)
 end
 
-function build_hamiltonian_parameters(Nx::Int, Ny::Int; 
-                                   J_x_direction::Tuple, 
-                                   J_y_direction::Tuple, 
+function build_hamiltonian_parameters(Nx::Int, Ny::Int;
+                                   J_x_direction::Tuple,
+                                   J_y_direction::Tuple,
                                    h_field::Tuple)
     N = Nx * Ny
-    
+
     # X-direction bonds: horizontal, within each row
-    x_bonds = [CouplingTerm((r-1)*Nx + i, (r-1)*Nx + i + 1, J_x_direction...) 
+    x_bonds = [CouplingTerm((r-1)*Nx + i, (r-1)*Nx + i + 1, J_x_direction...)
                for r in 1:Ny for i in 1:(Nx-1)]
-    
+
     # Y-direction bonds: vertical, between adjacent rows
     y_bonds = CouplingTerm[]
     if Ny >= 2
@@ -185,10 +185,10 @@ function build_hamiltonian_parameters(Nx::Int, Ny::Int;
             end
         end
     end
-    
+
     # Field terms: on all sites
     fields = [FieldTerm(i, h_field...) for i in 1:N]
-    
+
     return HamiltonianParams(N, x_bonds, y_bonds, fields)
 end
 
@@ -199,7 +199,7 @@ function build_hamiltonian_parameters_simple(L::Int, n_rails::Int, ham_type::Sym
     intra_pairs = [(r-1)*L + i => (r-1)*L + i + 1 for r in 1:n_rails for i in 1:(L-1)]
     inter_pairs = [i => L + i for i in 1:L]
     field_sites = collect(1:N)
-    return (N=N, intra_pairs=intra_pairs, inter_pairs=inter_pairs, 
+    return (N=N, intra_pairs=intra_pairs, inter_pairs=inter_pairs,
             field_sites=field_sites, J_intra=J_intra, J_inter=J_inter, field=field)
 end
 
@@ -216,39 +216,39 @@ No bitwise operations dependency - builds COO format from scratch.
 function construct_sparse_hamiltonian(params::HamiltonianParams)
     N = params.N
     dim = 1 << N  # 2^N
-    
+
     # COO format storage
     rows = Int[]
     cols = Int[]
     vals = ComplexF64[]
-    
+
     sizehint!(rows, 4 * N * dim)
     sizehint!(cols, 4 * N * dim)
     sizehint!(vals, 4 * N * dim)
-    
+
     # Process all couplings
     all_couplings = vcat(params.x_bonds, params.y_bonds)
-    
+
     for coup in all_couplings
         i, j = coup.i, coup.j
         Jx, Jy, Jz = coup.Jxx, coup.Jyy, coup.Jzz
-        
+
         stride_i = 1 << (i - 1)
         stride_j = 1 << (j - 1)
         mask = stride_i | stride_j
-        
+
         for k in 0:(dim - 1)
             k_flipped = xor(k, mask)
             bit_i = (k & stride_i) != 0
             bit_j = (k & stride_j) != 0
-            
+
             # XX term
             if abs(Jx) > 1e-14
                 push!(rows, k + 1)
                 push!(cols, k_flipped + 1)
                 push!(vals, Complex(Jx))
             end
-            
+
             # YY term
             if abs(Jy) > 1e-14
                 yy_phase = (bit_i == bit_j) ? -1.0 : 1.0
@@ -256,7 +256,7 @@ function construct_sparse_hamiltonian(params::HamiltonianParams)
                 push!(cols, k_flipped + 1)
                 push!(vals, Complex(Jy * yy_phase))
             end
-            
+
             # ZZ term (diagonal)
             if abs(Jz) > 1e-14
                 zz_sign = (bit_i ? -1.0 : 1.0) * (bit_j ? -1.0 : 1.0)
@@ -266,17 +266,17 @@ function construct_sparse_hamiltonian(params::HamiltonianParams)
             end
         end
     end
-    
+
     # Process local fields
     for field in params.fields
         idx = field.idx
         hx, hy, hz = field.hx, field.hy, field.hz
         stride = 1 << (idx - 1)
-        
+
         for k in 0:(dim - 1)
             bit_k = (k & stride) != 0
             k_flipped = xor(k, stride)
-            
+
             # Z field: diagonal
             if abs(hz) > 1e-14
                 z_sign = bit_k ? -1.0 : 1.0
@@ -284,14 +284,14 @@ function construct_sparse_hamiltonian(params::HamiltonianParams)
                 push!(cols, k + 1)
                 push!(vals, Complex(hz * z_sign))
             end
-            
+
             # X field: off-diagonal
             if abs(hx) > 1e-14
                 push!(rows, k + 1)
                 push!(cols, k_flipped + 1)
                 push!(vals, Complex(hx))
             end
-            
+
             # Y field: off-diagonal with phase
             if abs(hy) > 1e-14
                 y_phase = bit_k ? 1im : -1im
@@ -301,7 +301,7 @@ function construct_sparse_hamiltonian(params::HamiltonianParams)
             end
         end
     end
-    
+
     return sparse(rows, cols, vals, dim, dim)
 end
 

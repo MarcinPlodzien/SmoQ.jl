@@ -74,43 +74,43 @@ the input from τ timesteps ago (memory) or predict τ timesteps ahead (predicti
 """
 function compute_capacity(X, input_seq, tau_range; train_ratio=0.8, alpha=1e-3)
     n_samples = size(X, 1)
-    
+
     # Standardize features
     X_mean, X_std = mean(X, dims=1), std(X, dims=1)
     X_std[X_std .< 1e-12] .= 1.0  # Avoid division by zero
     X_scaled = (X .- X_mean) ./ X_std
-    
+
     C = Float64[]
     preds = Dict{Int, Tuple}()
-    
+
     for τ in tau_range
         # Check if τ is valid
         τ >= n_samples && (push!(C, 0.0); continue)
-        
+
         # Build regression problem: predict input at time (k+τ) from features at time k
         X_effective = X_scaled[1:(n_samples-τ), :]
         y_raw = input_seq[(τ+1):n_samples]
-        
+
         # Standardize targets
         y_mean, y_std = mean(y_raw), std(y_raw)
         y_std < 1e-12 && (y_std = 1.0)
         y_scaled = (y_raw .- y_mean) ./ y_std
-        
+
         n_effective = length(y_scaled)
         n_effective < 10 && (push!(C, 0.0); continue)
-        
+
         # Train/test split
         n_train = floor(Int, n_effective * train_ratio)
-        
+
         # Ridge regression
         weights = ridge_regression(X_effective[1:n_train, :], y_scaled[1:n_train], alpha)
-        
+
         # Predict on test set
         y_predicted = X_effective[n_train+1:end, :] * weights
         y_test_scaled = y_scaled[n_train+1:end]
-        
+
         length(y_test_scaled) < 2 && (push!(C, 0.0); continue)
-        
+
         # Store predictions (denormalized)
         preds[τ] = (
             collect(1:length(y_test_scaled)),           # k_obs
@@ -118,12 +118,12 @@ function compute_capacity(X, input_seq, tau_range; train_ratio=0.8, alpha=1e-3)
             y_test_scaled .* y_std .+ y_mean,           # y_test (denormalized)
             y_predicted .* y_std .+ y_mean              # y_pred (denormalized)
         )
-        
+
         # Capacity = squared correlation
         capacity = std(y_predicted) > 1e-9 && std(y_test_scaled) > 1e-9 ? cor(y_predicted, y_test_scaled)^2 : 0.0
         push!(C, capacity)
     end
-    
+
     return C, sum(C), preds
 end
 
@@ -154,44 +154,44 @@ Prediction capacity measures forecasting ability.
 """
 function compute_prediction_capacity(X, input_seq, tau_range; train_ratio=0.8, alpha=1e-3)
     n_samples = size(X, 1)
-    
+
     # Standardize features
     X_mean, X_std = mean(X, dims=1), std(X, dims=1)
     X_std[X_std .< 1e-12] .= 1.0
     X_scaled = (X .- X_mean) ./ X_std
-    
+
     C = Float64[]
     preds = Dict{Int, Tuple}()
-    
+
     for τ in tau_range
         # Check if τ is valid
         τ >= n_samples && (push!(C, 0.0); continue)
-        
+
         # Build regression problem: predict FUTURE input u(t+τ) from features x(t)
         # Use features from time 1 to (n-τ), predict input from (τ+1) to n
         X_effective = X_scaled[1:(n_samples-τ), :]
         y_raw = input_seq[(τ+1):n_samples]  # Future inputs
-        
+
         # Standardize targets
         y_mean, y_std = mean(y_raw), std(y_raw)
         y_std < 1e-12 && (y_std = 1.0)
         y_scaled = (y_raw .- y_mean) ./ y_std
-        
+
         n_effective = length(y_scaled)
         n_effective < 10 && (push!(C, 0.0); continue)
-        
+
         # Train/test split
         n_train = floor(Int, n_effective * train_ratio)
-        
+
         # Ridge regression
         weights = ridge_regression(X_effective[1:n_train, :], y_scaled[1:n_train], alpha)
-        
+
         # Predict on test set
         y_predicted = X_effective[n_train+1:end, :] * weights
         y_test_scaled = y_scaled[n_train+1:end]
-        
+
         length(y_test_scaled) < 2 && (push!(C, 0.0); continue)
-        
+
         # Store predictions (denormalized)
         preds[τ] = (
             collect(1:length(y_test_scaled)),
@@ -199,12 +199,12 @@ function compute_prediction_capacity(X, input_seq, tau_range; train_ratio=0.8, a
             y_test_scaled .* y_std .+ y_mean,
             y_predicted .* y_std .+ y_mean
         )
-        
+
         # Capacity = squared correlation
         capacity = std(y_predicted) > 1e-9 && std(y_test_scaled) > 1e-9 ? cor(y_predicted, y_test_scaled)^2 : 0.0
         push!(C, capacity)
     end
-    
+
     return C, sum(C), preds
 end
 
@@ -229,34 +229,34 @@ Evaluate prediction task: predict u(t+horizon) from reservoir state at time t.
 """
 function prediction_task(X, input_seq; train_ratio=0.8, horizon=1, alpha=1e-3)
     n = size(X, 1)
-    
+
     # Standardize features
     X_m, X_s = mean(X, dims=1), std(X, dims=1)
     X_s[X_s .< 1e-12] .= 1.0
     X_sc = (X .- X_m) ./ X_s
-    
+
     X_e = X_sc[1:(n-horizon), :]
     y_r = input_seq[(horizon+1):n]
-    
+
     y_m, y_s = mean(y_r), std(y_r)
     y_s < 1e-12 && (y_s = 1.0)
     y_n = (y_r .- y_m) ./ y_s
-    
+
     n_tr = floor(Int, length(y_n) * train_ratio)
-    
+
     W = ridge_regression(X_e[1:n_tr, :], y_n[1:n_tr], alpha)
-    
+
     yp = X_e[n_tr+1:end, :] * W
     yt = y_n[n_tr+1:end]
-    
+
     # Denormalize
     yp_d = yp .* y_s .+ y_m
     yt_d = yt .* y_s .+ y_m
-    
+
     # Metrics
     rmse = sqrt(mean((yp_d .- yt_d).^2))
     r2 = cor(yp, yt)^2
-    
+
     return (y_pred=yp_d, y_test=yt_d, rmse=rmse, r2=r2)
 end
 
@@ -283,23 +283,23 @@ Full task evaluation: compute capacity for all τ and return predictions.
 - `preds`: Dict of predictions for each τ
 - `trained_models`: Dict of trained weight matrices
 """
-function evaluate_task(X, input_seq, tau_range; 
+function evaluate_task(X, input_seq, tau_range;
                        task_type=:prediction, train_ratio=0.8, alpha=1e-3)
-    
+
     n = size(X, 1)
-    
+
     # Standardize features
     X_m, X_s = mean(X, dims=1), std(X, dims=1)
     X_s[X_s .< 1e-12] .= 1.0
     X_sc = (X .- X_m) ./ X_s
-    
+
     c_trace = Float64[]
     preds = Dict{Int, Tuple}()
     trained_models = Dict{Int, Any}()
-    
+
     for τ in tau_range
         τ >= n && (push!(c_trace, 0.0); continue)
-        
+
         # Build regression problem based on task type
         if task_type == :prediction
             # Predict future: u(t+τ) from x(t)
@@ -310,26 +310,26 @@ function evaluate_task(X, input_seq, tau_range;
             X_e = X_sc[(τ+1):n, :]
             y_r = input_seq[1:(n-τ)]
         end
-        
+
         y_m, y_s = mean(y_r), std(y_r)
         y_s < 1e-12 && (y_s = 1.0)
         y_e = (y_r .- y_m) ./ y_s
-        
+
         n_e = length(y_e)
         n_e < 10 && (push!(c_trace, 0.0); continue)
-        
+
         n_tr = floor(Int, n_e * train_ratio)
-        
+
         # Train
         W = ridge_regression(X_e[1:n_tr, :], y_e[1:n_tr], alpha)
         trained_models[τ] = W
-        
+
         # Test
         yp = X_e[n_tr+1:end, :] * W
         yt = y_e[n_tr+1:end]
-        
+
         length(yt) < 2 && (push!(c_trace, 0.0); continue)
-        
+
         # Store predictions
         preds[τ] = (
             collect(1:length(yt)),
@@ -337,12 +337,12 @@ function evaluate_task(X, input_seq, tau_range;
             yt .* y_s .+ y_m,
             yp .* y_s .+ y_m
         )
-        
+
         # Capacity
         capacity = std(yp) > 1e-9 && std(yt) > 1e-9 ? cor(yp, yt)^2 : 0.0
         push!(c_trace, capacity)
     end
-    
+
     return c_trace, sum(c_trace), preds, trained_models
 end
 
@@ -359,7 +359,7 @@ Enables cross-encoding experiments (e.g., train on lookahead, test on causal).
 Fields:
 - weights::Vector{Float64}   - Ridge regression weights
 - X_mean::Vector{Float64}    - Feature means used for standardization
-- X_std::Vector{Float64}     - Feature stds used for standardization  
+- X_std::Vector{Float64}     - Feature stds used for standardization
 - y_mean::Float64            - Target mean
 - y_std::Float64             - Target std
 - n_train::Int               - Number of training samples
@@ -385,11 +385,11 @@ function save_trained_models(filepath::String, trained_models::Dict{Int, Trained
     open(filepath, "w") do io
         println(io, "# TrainedModels export - TaskEvaluationHelper.jl")
         println(io, "# tau\tn_features\tweights...\tX_mean...\tX_std...\ty_mean\ty_std\tn_train\talpha")
-        
+
         for tau in sort(collect(keys(trained_models)))
             m = trained_models[tau]
             n_feat = length(m.weights)
-            
+
             parts = String[]
             push!(parts, string(tau))
             push!(parts, string(n_feat))
@@ -400,7 +400,7 @@ function save_trained_models(filepath::String, trained_models::Dict{Int, Trained
             push!(parts, string(m.y_std))
             push!(parts, string(m.n_train))
             push!(parts, string(m.alpha))
-            
+
             println(io, join(parts, "\t"))
         end
     end
@@ -413,16 +413,16 @@ Loads trained models from file saved by save_trained_models().
 """
 function load_trained_models(filepath::String)::Dict{Int, TrainedModel}
     models = Dict{Int, TrainedModel}()
-    
+
     open(filepath, "r") do io
         for line in eachline(io)
             startswith(line, "#") && continue
             isempty(strip(line)) && continue
-            
+
             parts = split(line, "\t")
             tau = parse(Int, parts[1])
             n_feat = parse(Int, parts[2])
-            
+
             weights = [parse(Float64, parts[2+i]) for i in 1:n_feat]
             X_mean = [parse(Float64, parts[2+n_feat+i]) for i in 1:n_feat]
             X_std = [parse(Float64, parts[2+2*n_feat+i]) for i in 1:n_feat]
@@ -431,11 +431,11 @@ function load_trained_models(filepath::String)::Dict{Int, TrainedModel}
             y_std = parse(Float64, parts[base_idx + 2])
             n_train = parse(Int, parts[base_idx + 3])
             alpha = parse(Float64, parts[base_idx + 4])
-            
+
             models[tau] = TrainedModel(weights, X_mean, X_std, y_mean, y_std, n_train, alpha)
         end
     end
-    
+
     return models
 end
 
@@ -445,11 +445,11 @@ end
 Apply a trained model to new features (e.g., from a different encoding).
 Returns predicted values, test values, and capacity score.
 """
-function apply_trained_model(X_new::Matrix{Float64}, target::Vector{Float64}, 
-                            model::TrainedModel, tau::Int; 
+function apply_trained_model(X_new::Matrix{Float64}, target::Vector{Float64},
+                            model::TrainedModel, tau::Int;
                             task_type::Symbol=:prediction, train_ratio::Float64=0.8)
     n_samples = size(X_new, 1)
-    
+
     if task_type == :prediction
         range_X = 1:(n_samples-tau)
         range_y = (tau+1):n_samples
@@ -457,26 +457,26 @@ function apply_trained_model(X_new::Matrix{Float64}, target::Vector{Float64},
         range_X = (tau+1):n_samples
         range_y = 1:(n_samples-tau)
     end
-    
+
     # Standardize using TRAINING params
     X_scaled = (X_new .- model.X_mean') ./ model.X_std'
     X_eff = X_scaled[range_X, :]
     y_raw = target[range_y]
     y_eff = (y_raw .- model.y_mean) ./ model.y_std
-    
+
     n_eff = length(y_eff)
     n_train = model.n_train
-    
+
     X_test = X_eff[n_train+1:end, :]
     y_test = y_eff[n_train+1:end]
     y_pred = X_test * model.weights
-    
+
     if length(y_test) < 2 || std(y_pred) < 1e-9 || std(y_test) < 1e-9
         c = 0.0
     else
         c = cor(y_pred, y_test)^2
     end
-    
+
     return y_pred, y_test, c
 end
 

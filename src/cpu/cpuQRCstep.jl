@@ -8,7 +8,7 @@ Implements a single step of the QRC protocol with 5 stages using MODULAR
 building blocks from cpuQuantumStateCore and cpuQuantumGates.
 
   1. RESET: Reset input qubits to |0⟩ (via partial trace + collapse)
-  2. ENCODE: Apply Ry(θ) gates to encode input values  
+  2. ENCODE: Apply Ry(θ) gates to encode input values
   3. TENSOR: Create tensor product of encoded input with reservoir
   4. EVOLVE: Apply unitary time evolution
   5. MEASURE: Extract observable expectation values
@@ -35,7 +35,7 @@ module CPUQRCstep
 using LinearAlgebra
 
 # Import from parent modules (loaded by master script before this file)
-using ..CPUQuantumStatePreparation: tensor_product_ket, tensor_product_ket!, tensor_product_rho, 
+using ..CPUQuantumStatePreparation: tensor_product_ket, tensor_product_ket!, tensor_product_rho,
     make_product_ket, make_product_rho, make_ket, make_rho
 using ..CPUQuantumChannelGates: apply_ry_psi!, apply_ry_rho!
 using ..CPUQuantumStatePartialTrace: partial_trace
@@ -66,16 +66,16 @@ This is mathematically equivalent to cos(θ/2)|0⟩ + sin(θ/2)|1⟩
 """
 function encode_input_ry_psi(u_window::Vector{Float64}, L::Int)
     @assert length(u_window) >= L "Input window must have at least L values"
-    
+
     # STEP 1: Create |0⟩^⊗L using modular state preparation
     ψ = make_product_ket(fill(:zero, L))
-    
+
     # STEP 2: Apply Ry(π*u) to each qubit using modular gate
     for k in 1:L
         θ = π * u_window[k]
         apply_ry_psi!(ψ, k, θ, L)
     end
-    
+
     return ψ
 end
 
@@ -95,17 +95,17 @@ Avoids allocation - use in hot loops.
 """
 function encode_input_ry_psi!(ψ_out::Vector{ComplexF64}, u_window::Vector{Float64}, L::Int)
     dim = 1 << L
-    
+
     # Reset to |0...0⟩
     fill!(ψ_out, zero(ComplexF64))
     ψ_out[1] = one(ComplexF64)
-    
+
     # Apply Ry(π*u) to each qubit
     for k in 1:L
         θ = π * u_window[k]
         apply_ry_psi!(ψ_out, k, θ, L)
     end
-    
+
     return nothing
 end
 
@@ -120,16 +120,16 @@ Encode input values into L-qubit density matrix using modular blocks:
 """
 function encode_input_ry_rho(u_window::Vector{Float64}, L::Int)
     @assert length(u_window) >= L "Input window must have at least L values"
-    
+
     # STEP 1: Create |0⟩⟨0|^⊗L
     ρ = make_product_rho(fill(:zero, L))
-    
+
     # STEP 2: Apply Ry(π*u) to each qubit
     for k in 1:L
         θ = π * u_window[k]
         apply_ry_rho!(ρ, k, θ, L)
     end
-    
+
     return ρ
 end
 # ==============================================================================
@@ -193,35 +193,35 @@ Then:
 # Returns:
 - New state vector |ψ_in_new⟩ ⊗ |φ_res⟩
 """
-function qrc_reset_psi(psi::Vector{ComplexF64}, psi_in::Vector{ComplexF64}, 
+function qrc_reset_psi(psi::Vector{ComplexF64}, psi_in::Vector{ComplexF64},
                            L_in::Int, L_res::Int, protocol::Symbol)
     dim_in = 1 << L_in
     dim_res = 1 << L_res
-    
+
     if protocol == :traceout_rail_1 || protocol == :protocol1
         # =====================================================================
         # PROTOCOL 1: Measure INPUT rail, keep RESERVOIR
         # This matches DM's: ρ_res = Tr_input(ρ), then ρ_new = ρ_in ⊗ ρ_res
         # =====================================================================
-        
+
         # Reshape state vector to matrix: M[i,j] = ⟨i_in, j_res | ψ⟩
         # Row index i = input basis state, Column index j = reservoir basis state
         M = reshape(psi, (dim_in, dim_res))
-        
+
         # --- STEP 1: Sample input measurement outcome ---
         # P(input = i) = Σ_j |M[i,j]|² (norm² of row i)
         r = rand()  # Random number for inverse CDF sampling
         cumsum_p = 0.0
         total_prob = 0.0
         outcome = 1  # Default to first state
-        
+
         # Compute total probability (should be 1 if normalized, but compute for safety)
         @inbounds for i in 1:dim_in
             for j in 1:dim_res
                 total_prob += abs2(M[i, j])
             end
         end
-        
+
         # Inverse CDF sampling: find first i where cumsum(P) >= r
         @inbounds for i in 1:dim_in
             row_prob = 0.0
@@ -234,9 +234,9 @@ function qrc_reset_psi(psi::Vector{ComplexF64}, psi_in::Vector{ComplexF64},
                 break
             end
         end
-        
+
         # --- STEP 2: Extract post-measurement reservoir state ---
-        # |φ_res⟩ = (1/||row||) × M[outcome, :] 
+        # |φ_res⟩ = (1/||row||) × M[outcome, :]
         # This is the reservoir state conditioned on measuring input = outcome
         phi_res = zeros(ComplexF64, dim_res)
         norm_sq = 0.0
@@ -244,7 +244,7 @@ function qrc_reset_psi(psi::Vector{ComplexF64}, psi_in::Vector{ComplexF64},
             phi_res[j] = M[outcome, j]
             norm_sq += abs2(M[outcome, j])
         end
-        
+
         # Normalize the reservoir state
         norm_phi = sqrt(norm_sq)
         if norm_phi > 1e-12
@@ -255,30 +255,30 @@ function qrc_reset_psi(psi::Vector{ComplexF64}, psi_in::Vector{ComplexF64},
             # Fallback: if probability is zero, reset to |0...0⟩
             phi_res[1] = 1.0
         end
-        
+
         # --- STEP 3: Tensor new input with collapsed reservoir ---
         # |ψ_new⟩ = |ψ_in_encoded⟩ ⊗ |φ_res⟩
         return tensor_product_ket(psi_in, phi_res, L_in, L_res)
-        
+
     elseif protocol == :traceout_rail_2 || protocol == :protocol2
         # =====================================================================
         # PROTOCOL 2: Measure RESERVOIR rail, keep INPUT (which becomes reservoir)
         # =====================================================================
         M = reshape(psi, (dim_in, dim_res))
-        
+
         # Sample reservoir measurement outcome
         # P(reservoir = j) = Σ_i |M[i,j]|² (norm² of column j)
         r = rand()
         cumsum_p = 0.0
         total_prob = 0.0
         outcome = 1
-        
+
         @inbounds for j in 1:dim_res
             for i in 1:dim_in
                 total_prob += abs2(M[i, j])
             end
         end
-        
+
         @inbounds for j in 1:dim_res
             col_prob = 0.0
             for i in 1:dim_in
@@ -290,7 +290,7 @@ function qrc_reset_psi(psi::Vector{ComplexF64}, psi_in::Vector{ComplexF64},
                 break
             end
         end
-        
+
         # Extract post-measurement input state (becomes new reservoir)
         phi_new_res = zeros(ComplexF64, dim_in)
         norm_sq = 0.0
@@ -306,7 +306,7 @@ function qrc_reset_psi(psi::Vector{ComplexF64}, psi_in::Vector{ComplexF64},
         else
             phi_new_res[1] = 1.0
         end
-        
+
         return tensor_product_ket(psi_in, phi_new_res, L_in, L_in)
     else
         error("Unknown protocol: $protocol. Use :traceout_rail_1 or :traceout_rail_2")
@@ -329,27 +329,27 @@ Avoids allocation - use in hot loops.
 - `L_in`, `L_res`: Number of qubits in input and reservoir rails
 - `protocol`: Reset protocol (:traceout_rail_1 or :traceout_rail_2)
 """
-function qrc_reset_psi!(ψ_out::Vector{ComplexF64}, psi::Vector{ComplexF64}, 
+function qrc_reset_psi!(ψ_out::Vector{ComplexF64}, psi::Vector{ComplexF64},
                         psi_in::Vector{ComplexF64}, phi_res_buf::Vector{ComplexF64},
                         L_in::Int, L_res::Int, protocol::Symbol)
     dim_in = 1 << L_in
     dim_res = 1 << L_res
-    
+
     if protocol == :traceout_rail_1 || protocol == :protocol1
         M = reshape(psi, (dim_in, dim_res))
-        
+
         # Sample input measurement outcome
         r = rand()
         cumsum_p = 0.0
         total_prob = 0.0
         outcome = 1
-        
+
         @inbounds for i in 1:dim_in
             for j in 1:dim_res
                 total_prob += abs2(M[i, j])
             end
         end
-        
+
         @inbounds for i in 1:dim_in
             row_prob = 0.0
             for j in 1:dim_res
@@ -361,7 +361,7 @@ function qrc_reset_psi!(ψ_out::Vector{ComplexF64}, psi::Vector{ComplexF64},
                 break
             end
         end
-        
+
         # Extract and normalize reservoir state into buffer
         norm_sq = 0.0
         @inbounds for j in 1:dim_res
@@ -377,24 +377,24 @@ function qrc_reset_psi!(ψ_out::Vector{ComplexF64}, psi::Vector{ComplexF64},
             fill!(phi_res_buf, zero(ComplexF64))
             phi_res_buf[1] = 1.0
         end
-        
+
         # Tensor product in-place
         tensor_product_ket!(ψ_out, psi_in, phi_res_buf, L_in, L_res)
-        
+
     elseif protocol == :traceout_rail_2 || protocol == :protocol2
         M = reshape(psi, (dim_in, dim_res))
-        
+
         r = rand()
         cumsum_p = 0.0
         total_prob = 0.0
         outcome = 1
-        
+
         @inbounds for j in 1:dim_res
             for i in 1:dim_in
                 total_prob += abs2(M[i, j])
             end
         end
-        
+
         @inbounds for j in 1:dim_res
             col_prob = 0.0
             for i in 1:dim_in
@@ -406,7 +406,7 @@ function qrc_reset_psi!(ψ_out::Vector{ComplexF64}, psi::Vector{ComplexF64},
                 break
             end
         end
-        
+
         # Extract and normalize - use first L_in entries of phi_res_buf
         norm_sq = 0.0
         @inbounds for i in 1:dim_in
@@ -422,7 +422,7 @@ function qrc_reset_psi!(ψ_out::Vector{ComplexF64}, psi::Vector{ComplexF64},
             fill!(view(phi_res_buf, 1:dim_in), zero(ComplexF64))
             phi_res_buf[1] = 1.0
         end
-        
+
         tensor_product_ket!(ψ_out, psi_in, view(phi_res_buf, 1:dim_in), L_in, L_in)
     else
         error("Unknown protocol: $protocol. Use :traceout_rail_1 or :traceout_rail_2")
@@ -457,12 +457,12 @@ Uses modular partial_trace and tensor_product_rho.
 function qrc_reset_rho(rho::Matrix{ComplexF64}, rho_in::Matrix{ComplexF64},
                                L::Int, n_rails::Int, protocol::Symbol)
     N = L * n_rails
-    
+
     if protocol == :traceout_rail_1
         # Trace out qubits 1..L, keep rest
         rho_reservoir = partial_trace(rho, collect(1:L), N)
         return tensor_product_rho(rho_in, rho_reservoir)
-        
+
     elseif protocol == :traceout_rail_2
         # Trace out qubits L+1..2L, keep first L
         trace_qubits = collect((L+1):N)
@@ -490,18 +490,18 @@ Single QRC step using MODULAR building blocks:
 
 All stages use general-purpose quantum operations from the modular libraries.
 """
-function qrc_step_modular_psi!(ψ::Vector{ComplexF64}, 
+function qrc_step_modular_psi!(ψ::Vector{ComplexF64},
                                u_window::Vector{Float64},
                                evolution::NamedTuple,
                                geometry::NamedTuple,
                                evolve_fn,
                                measure_fn)
-    
+
     L, n_rails, N = geometry.L, geometry.n_rails, geometry.N
     reset_type = geometry.reset_type
     dim_in = 1 << L
     dim_res = 1 << L
-    
+
     # ─── STAGE 1: RESET (partial trace + collapse) ───
     if reset_type == :traceout_rail_1
         M = reshape(ψ, (dim_in, dim_res))
@@ -518,24 +518,24 @@ function qrc_step_modular_psi!(ψ::Vector{ComplexF64},
     else
         ψ_reservoir = ψ
     end
-    
+
     # ─── STAGE 2: ENCODE using modular blocks ───
     # |0⟩^⊗L → apply Ry(π*u) to each qubit
     ψ_in = encode_input_ry_psi(u_window, L)
-    
+
     # ─── STAGE 3: TENSOR using modular tensor product ───
     ψ_new = tensor_product_ket(ψ_in, ψ_reservoir, L, L)
-    
+
     # ─── STAGE 4: EVOLVE ───
     if evolution.integrator == :exact
         ψ_new = evolution.U * ψ_new
     elseif evolution.integrator == :trotter
         evolve_fn(ψ_new, evolution.gates, N, evolution.n_substeps)
     end
-    
+
     # ─── STAGE 5: MEASURE ───
     features = measure_fn(ψ_new, L, n_rails)
-    
+
     return ψ_new, features
 end
 
@@ -555,16 +555,16 @@ Single QRC step for DENSITY MATRIX using modular blocks:
   4. **EVOLVE**: U·ρ·U† (exact) or Trotter (approximate)
   5. **MEASURE**: Tr(O·ρ) for each observable
 """
-function qrc_step_modular_rho!(ρ::Matrix{ComplexF64}, 
+function qrc_step_modular_rho!(ρ::Matrix{ComplexF64},
                                u_window::Vector{Float64},
                                evolution::NamedTuple,
                                geometry::NamedTuple,
                                evolve_fn,
                                measure_fn)
-    
+
     L, n_rails, N = geometry.L, geometry.n_rails, geometry.N
     reset_type = geometry.reset_type
-    
+
     # ─── STAGE 1: RESET (partial trace) ───
     if reset_type == :traceout_rail_1
         ρ_reservoir = partial_trace(ρ, collect(1:L), N)
@@ -573,26 +573,25 @@ function qrc_step_modular_rho!(ρ::Matrix{ComplexF64},
     else
         ρ_reservoir = ρ
     end
-    
+
     # ─── STAGE 2: ENCODE using modular blocks ───
     # |0⟩⟨0|^⊗L → apply Ry(π*u) to each qubit
     ρ_in = encode_input_ry_rho(u_window, L)
-    
+
     # ─── STAGE 3: TENSOR using modular tensor product ───
     ρ_new = tensor_product_rho(ρ_in, ρ_reservoir)
-    
+
     # ─── STAGE 4: EVOLVE ───
     if evolution.integrator == :exact
         ρ_new = evolution.U * ρ_new * evolution.U_adj
     elseif evolution.integrator == :trotter
         evolve_fn(ρ_new, evolution.gates, N, evolution.n_substeps)
     end
-    
+
     # ─── STAGE 5: MEASURE ───
     features = measure_fn(ρ_new, L, n_rails)
-    
+
     return ρ_new, features
 end
 
 end # module
-

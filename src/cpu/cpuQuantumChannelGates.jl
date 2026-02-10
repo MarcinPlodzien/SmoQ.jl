@@ -143,16 +143,16 @@ function apply_rx_psi!(ψ::Vector{ComplexF64}, k::Int, θ::Float64, N::Int)
     c = cos(θ / 2)
     s = sin(θ / 2)
     is = -im * s
-    
+
     step = 1 << (k - 1)  # Bit flip distance
     dim = 1 << N
-    
+
     @inbounds for i in 0:(dim-1)
         if (i >> (k-1)) & 1 == 0  # bit k is 0
             j = i + step  # j has bit k = 1
             ψ_i = ψ[i+1]
             ψ_j = ψ[j+1]
-            
+
             # Apply Rx
             ψ[i+1] = c * ψ_i + is * ψ_j
             ψ[j+1] = is * ψ_i + c * ψ_j
@@ -172,16 +172,16 @@ Ry(θ) = | cos(θ/2)  -sin(θ/2) |
 function apply_ry_psi!(ψ::Vector{ComplexF64}, k::Int, θ::Float64, N::Int)
     c = cos(θ / 2)
     s = sin(θ / 2)
-    
+
     step = 1 << (k - 1)
     dim = 1 << N
-    
+
     @inbounds for i in 0:(dim-1)
         if (i >> (k-1)) & 1 == 0
             j = i + step
             ψ_i = ψ[i+1]
             ψ_j = ψ[j+1]
-            
+
             # Apply Ry
             ψ[i+1] = c * ψ_i - s * ψ_j
             ψ[j+1] = s * ψ_i + c * ψ_j
@@ -204,7 +204,7 @@ function apply_rz_psi!(ψ::Vector{ComplexF64}, k::Int, θ::Float64, N::Int)
     # Branchless lookup: ((i >> (k-1)) & 1) gives 0 or 1, +1 for 1-based indexing
     phases = (phase_0, phase_1)
     dim = 1 << N
-    
+
     @inbounds @simd for i in 0:(dim-1)
         ψ[i+1] *= phases[((i >> (k-1)) & 1) + 1]
     end
@@ -223,13 +223,13 @@ function apply_hadamard_psi!(ψ::Vector{ComplexF64}, k::Int, N::Int)
     s = 1 / sqrt(2)
     step = 1 << (k - 1)
     dim = 1 << N
-    
+
     @inbounds for i in 0:(dim-1)
         if (i >> (k-1)) & 1 == 0
             j = i + step
             ψ_i = ψ[i+1]
             ψ_j = ψ[j+1]
-            
+
             ψ[i+1] = s * (ψ_i + ψ_j)
             ψ[j+1] = s * (ψ_i - ψ_j)
         end
@@ -245,7 +245,7 @@ Apply Pauli X (bit flip) to qubit k in-place.
 function apply_pauli_x_psi!(ψ::Vector{ComplexF64}, k::Int, N::Int)
     step = 1 << (k - 1)
     dim = 1 << N
-    
+
     @inbounds for i in 0:(dim-1)
         if (i >> (k-1)) & 1 == 0
             j = i + step
@@ -265,7 +265,7 @@ Y = | 0  -i |
 function apply_pauli_y_psi!(ψ::Vector{ComplexF64}, k::Int, N::Int)
     step = 1 << (k - 1)
     dim = 1 << N
-    
+
     @inbounds for i in 0:(dim-1)
         if (i >> (k-1)) & 1 == 0
             j = i + step
@@ -285,7 +285,7 @@ Apply Pauli Z (phase flip) to qubit k in-place.
 """
 function apply_pauli_z_psi!(ψ::Vector{ComplexF64}, k::Int, N::Int)
     dim = 1 << N
-    
+
     @inbounds for i in 0:(dim-1)
         if (i >> (k-1)) & 1 == 1
             ψ[i+1] = -ψ[i+1]
@@ -306,7 +306,7 @@ S = Rz(π/2) up to global phase.
 """
 function apply_s_psi!(ψ::Vector{ComplexF64}, k::Int, N::Int)
     dim = 1 << N
-    
+
     @inbounds for i in 0:(dim-1)
         if (i >> (k-1)) & 1 == 1  # Bit k is 1
             ψ[i+1] *= im
@@ -327,7 +327,7 @@ S† = Rz(-π/2) up to global phase.
 """
 function apply_sdagger_psi!(ψ::Vector{ComplexF64}, k::Int, N::Int)
     dim = 1 << N
-    
+
     @inbounds for i in 0:(dim-1)
         if (i >> (k-1)) & 1 == 1  # Bit k is 1
             ψ[i+1] *= -im
@@ -360,7 +360,7 @@ T|+⟩ creates "magic" - a resource for quantum advantage.
 function apply_t_psi!(ψ::Vector{ComplexF64}, k::Int, N::Int)
     dim = 1 << N
     phase = exp(im * π / 4)  # e^{iπ/4} = (1 + i)/√2
-    
+
     @inbounds for i in 0:(dim-1)
         if (i >> (k-1)) & 1 == 1  # Bit k is 1
             ψ[i+1] *= phase
@@ -380,7 +380,7 @@ T† = | 1    0        |  = Rz(-π/4) up to global phase
 function apply_tdagger_psi!(ψ::Vector{ComplexF64}, k::Int, N::Int)
     dim = 1 << N
     phase = exp(-im * π / 4)  # e^{-iπ/4}
-    
+
     @inbounds for i in 0:(dim-1)
         if (i >> (k-1)) & 1 == 1
             ψ[i+1] *= phase
@@ -398,7 +398,7 @@ function apply_t_rho!(ρ::Matrix{ComplexF64}, k::Int, N::Int)
     dim = 1 << N
     phase = exp(im * π / 4)
     phase_conj = conj(phase)
-    
+
     @inbounds for i in 0:(dim-1)
         pi = ((i >> (k-1)) & 1 == 1) ? phase : 1.0
         for j in 0:(dim-1)
@@ -418,7 +418,7 @@ function apply_tdagger_rho!(ρ::Matrix{ComplexF64}, k::Int, N::Int)
     dim = 1 << N
     phase = exp(-im * π / 4)
     phase_conj = conj(phase)
-    
+
     @inbounds for i in 0:(dim-1)
         pi = ((i >> (k-1)) & 1 == 1) ? phase : 1.0
         for j in 0:(dim-1)
@@ -447,12 +447,12 @@ This is a non-Clifford gate used in magic state injection and error correction.
 """
 function apply_ccz_psi!(ψ::Vector{ComplexF64}, q1::Int, q2::Int, q3::Int, N::Int)
     dim = 1 << N
-    
+
     @inbounds for i in 0:(dim-1)
         b1 = (i >> (q1-1)) & 1
         b2 = (i >> (q2-1)) & 1
         b3 = (i >> (q3-1)) & 1
-        
+
         if b1 == 1 && b2 == 1 && b3 == 1
             ψ[i+1] = -ψ[i+1]
         end
@@ -471,12 +471,12 @@ Toffoli = | I  0 |  (in 8x8 matrix form, with 2x2 X in bottom-right)
 function apply_toffoli_psi!(ψ::Vector{ComplexF64}, c1::Int, c2::Int, target::Int, N::Int)
     dim = 1 << N
     target_step = 1 << (target - 1)
-    
+
     @inbounds for i in 0:(dim-1)
         bc1 = (i >> (c1-1)) & 1
         bc2 = (i >> (c2-1)) & 1
         bt = (i >> (target-1)) & 1
-        
+
         # Only act when both controls are 1 AND target is 0 (avoid double swap)
         if bc1 == 1 && bc2 == 1 && bt == 0
             j = i + target_step  # flip target
@@ -505,10 +505,10 @@ function apply_rx_rho!(ρ::Matrix{ComplexF64}, k::Int, θ::Float64, N::Int)
     s = sin(θ / 2)
     is = -im * s
     is_dag = im * s  # conjugate
-    
+
     step = 1 << (k - 1)
     dim = 1 << N
-    
+
     # Apply to rows: ρ_new = Rx * ρ
     @inbounds for i in 0:(dim-1)
         if (i >> (k-1)) & 1 == 0
@@ -521,7 +521,7 @@ function apply_rx_rho!(ρ::Matrix{ComplexF64}, k::Int, θ::Float64, N::Int)
             end
         end
     end
-    
+
     # Apply to columns: ρ_new = ρ * Rx†
     @inbounds for j in 0:(dim-1)
         if (j >> (k-1)) & 1 == 0
@@ -534,7 +534,7 @@ function apply_rx_rho!(ρ::Matrix{ComplexF64}, k::Int, θ::Float64, N::Int)
             end
         end
     end
-    
+
     return ρ
 end
 
@@ -546,10 +546,10 @@ Apply Ry(θ) to density matrix: ρ' = Ry(θ) ρ Ry(θ)†
 function apply_ry_rho!(ρ::Matrix{ComplexF64}, k::Int, θ::Float64, N::Int)
     c = cos(θ / 2)
     s = sin(θ / 2)
-    
+
     step = 1 << (k - 1)
     dim = 1 << N
-    
+
     # Apply to rows
     @inbounds for i in 0:(dim-1)
         if (i >> (k-1)) & 1 == 0
@@ -562,7 +562,7 @@ function apply_ry_rho!(ρ::Matrix{ComplexF64}, k::Int, θ::Float64, N::Int)
             end
         end
     end
-    
+
     # Apply to columns: ρ * Ry†
     # Ry† = | c   s |  so column transformation:
     #       |-s   c |  new_j = c * old_j - s * old_jj, new_jj = s * old_j + c * old_jj
@@ -577,7 +577,7 @@ function apply_ry_rho!(ρ::Matrix{ComplexF64}, k::Int, θ::Float64, N::Int)
             end
         end
     end
-    
+
     return ρ
 end
 
@@ -589,9 +589,9 @@ Apply Rz(θ) to density matrix.
 function apply_rz_rho!(ρ::Matrix{ComplexF64}, k::Int, θ::Float64, N::Int)
     phase_0 = exp(-im * θ / 2)
     phase_1 = exp(im * θ / 2)
-    
+
     dim = 1 << N
-    
+
     # Rz is diagonal, so ρ' = Rz ρ Rz†
     # ρ'[i,j] = phase[bit_k(i)] * ρ[i,j] * conj(phase[bit_k(j)])
     @inbounds for i in 0:(dim-1)
@@ -601,7 +601,7 @@ function apply_rz_rho!(ρ::Matrix{ComplexF64}, k::Int, θ::Float64, N::Int)
             ρ[i+1, j+1] *= phase_i * phase_j
         end
     end
-    
+
     return ρ
 end
 
@@ -614,7 +614,7 @@ function apply_hadamard_rho!(ρ::Matrix{ComplexF64}, k::Int, N::Int)
     s = 1 / sqrt(2)
     step = 1 << (k - 1)
     dim = 1 << N
-    
+
     # Apply to rows
     @inbounds for i in 0:(dim-1)
         if (i >> (k-1)) & 1 == 0
@@ -627,7 +627,7 @@ function apply_hadamard_rho!(ρ::Matrix{ComplexF64}, k::Int, N::Int)
             end
         end
     end
-    
+
     # Apply to columns (H† = H)
     @inbounds for j in 0:(dim-1)
         if (j >> (k-1)) & 1 == 0
@@ -640,7 +640,7 @@ function apply_hadamard_rho!(ρ::Matrix{ComplexF64}, k::Int, N::Int)
             end
         end
     end
-    
+
     return ρ
 end
 
@@ -652,7 +652,7 @@ Apply Pauli X to density matrix.
 function apply_pauli_x_rho!(ρ::Matrix{ComplexF64}, k::Int, N::Int)
     step = 1 << (k - 1)
     dim = 1 << N
-    
+
     # Apply to rows
     @inbounds for i in 0:(dim-1)
         if (i >> (k-1)) & 1 == 0
@@ -662,7 +662,7 @@ function apply_pauli_x_rho!(ρ::Matrix{ComplexF64}, k::Int, N::Int)
             end
         end
     end
-    
+
     # Apply to columns
     @inbounds for j in 0:(dim-1)
         if (j >> (k-1)) & 1 == 0
@@ -672,7 +672,7 @@ function apply_pauli_x_rho!(ρ::Matrix{ComplexF64}, k::Int, N::Int)
             end
         end
     end
-    
+
     return ρ
 end
 
@@ -683,7 +683,7 @@ Apply Pauli Z to density matrix.
 """
 function apply_pauli_z_rho!(ρ::Matrix{ComplexF64}, k::Int, N::Int)
     dim = 1 << N
-    
+
     # Z is diagonal with entries ±1
     # ρ'[i,j] = (-1)^{bit_k(i)} * ρ[i,j] * (-1)^{bit_k(j)}
     @inbounds for i in 0:(dim-1)
@@ -693,7 +693,7 @@ function apply_pauli_z_rho!(ρ::Matrix{ComplexF64}, k::Int, N::Int)
             ρ[i+1, j+1] *= sign_i * sign_j
         end
     end
-    
+
     return ρ
 end
 
@@ -739,7 +739,7 @@ WARNING: This operator is NOT unitary. Use for MCWF quantum jumps.
 function apply_sigma_minus_psi!(ψ::Vector{ComplexF64}, k::Int, N::Int)
     dim = 1 << N
     mask = 1 << (k - 1)  # Binary mask with only bit k set
-    
+
     @inbounds for i in 0:(dim-1)
         if (i & mask) != 0  # Bit k is set (qubit in |1⟩)
             j = xor(i, mask)    # XOR flips bit k: target has bit k = 0
@@ -762,7 +762,7 @@ This is the Hermitian conjugate of σ⁻:
 function apply_sigma_plus_psi!(ψ::Vector{ComplexF64}, k::Int, N::Int)
     dim = 1 << N
     mask = 1 << (k - 1)
-    
+
     @inbounds for i in 0:(dim-1)
         if (i & mask) == 0  # Bit k is 0 (qubit in |0⟩)
             j = i | mask     # Set bit k: target has bit k = 1
@@ -785,7 +785,7 @@ function population_excited_psi(ψ::Vector{ComplexF64}, k::Int, N::Int)
     dim = 1 << N
     mask = 1 << (k - 1)
     result = 0.0
-    
+
     @inbounds for i in 0:(dim-1)
         if (i & mask) != 0  # Qubit k is in |1⟩
             result += abs2(ψ[i+1])
@@ -812,7 +812,7 @@ end
 # In the computational basis, σ⁺σ⁻ = |1⟩⟨1| (projector onto excited state).
 #
 # MATRIX ELEMENT RULES for density matrix ρᵢⱼ:
-# - If bit_k(i)=1 AND bit_k(j)=1: 
+# - If bit_k(i)=1 AND bit_k(j)=1:
 #     ρ_{flip(i),flip(j)} += γdt × ρᵢⱼ   (σ⁻ρσ⁺ term: population transfer)
 #     ρᵢⱼ *= (1 - γdt)                    (decay from |1⟩|1⟩ block)
 # - If bit_k(i)=1 XOR bit_k(j)=1 (coherence between |0⟩ and |1⟩):
@@ -833,11 +833,11 @@ Parameter γdt = γ × dt where γ is the decay rate and dt is the time step.
 function apply_sigma_minus_dissipator_rho!(ρ::Matrix{ComplexF64}, k::Int, γdt::Float64, N::Int)
     dim = 1 << N
     mask = 1 << (k - 1)
-    
+
     @inbounds for j in 0:(dim-1), i in 0:(dim-1)
         bi = (i >> (k-1)) & 1  # Extract bit k from row index
         bj = (j >> (k-1)) & 1  # Extract bit k from column index
-        
+
         if bi == 1 && bj == 1
             # Both |1⟩: population transfer |1⟩|1⟩→|0⟩|0⟩ + decay
             i0 = xor(i, mask)  # Flip bit k to 0
@@ -870,7 +870,7 @@ Apply CNOT gate: flip target if control is |1⟩.
 function apply_cnot_psi!(ψ::Vector{ComplexF64}, control::Int, target::Int, N::Int)
     dim = 1 << N
     target_step = 1 << (target - 1)
-    
+
     @inbounds for i in 0:(dim-1)
         # Only act if control bit is 1 and target bit is 0
         if ((i >> (control-1)) & 1 == 1) && ((i >> (target-1)) & 1 == 0)
@@ -914,19 +914,19 @@ When control is |1⟩: apply Ry(θ) = |cos(θ/2)  -sin(θ/2)|
 function apply_cry_psi!(ψ::Vector{ComplexF64}, control::Int, target::Int, θ::Float64, N::Int)
     c = cos(θ / 2)
     s = sin(θ / 2)
-    
+
     dim = 1 << N
     target_step = 1 << (target - 1)
-    
+
     @inbounds for i in 0:(dim-1)
         # Only act if control bit is 1 and target bit is 0
         if ((i >> (control-1)) & 1 == 1) && ((i >> (target-1)) & 1 == 0)
             j = i + target_step  # j has target bit = 1
-            
+
             # Apply Ry rotation to the (i, j) pair
             ψ_i = ψ[i+1]  # |...control=1...target=0...⟩
             ψ_j = ψ[j+1]  # |...control=1...target=1...⟩
-            
+
             # Ry(θ)|0⟩ = cos(θ/2)|0⟩ + sin(θ/2)|1⟩
             # Ry(θ)|1⟩ = -sin(θ/2)|0⟩ + cos(θ/2)|1⟩
             ψ[i+1] = c * ψ_i - s * ψ_j
@@ -945,10 +945,10 @@ Since CRy is Hermitian-parametrized (real Ry), CRy† = CRy(-θ).
 function apply_cry_rho!(ρ::Matrix{ComplexF64}, control::Int, target::Int, θ::Float64, N::Int)
     c = cos(θ / 2)
     s = sin(θ / 2)
-    
+
     dim = 1 << N
     target_step = 1 << (target - 1)
-    
+
     # Apply CRy to rows (left multiply by CRy)
     @inbounds for i in 0:(dim-1)
         if ((i >> (control-1)) & 1 == 1) && ((i >> (target-1)) & 1 == 0)
@@ -961,7 +961,7 @@ function apply_cry_rho!(ρ::Matrix{ComplexF64}, control::Int, target::Int, θ::F
             end
         end
     end
-    
+
     # Apply CRy† to columns (right multiply by CRy†)
     # CRy† has c and -s (since Ry(-θ) = Ry(θ)†)
     @inbounds for i in 0:(dim-1)
@@ -993,29 +993,29 @@ function apply_rxx_psi!(ψ::Vector{ComplexF64}, qi::Int, qj::Int, θ::Float64, N
     c = cos(θ / 2)
     s = sin(θ / 2)
     is = -im * s
-    
+
     dim = 1 << N
     step_i = 1 << (qi - 1)
     step_j = 1 << (qj - 1)
-    
+
     # Process each group of 4 states sharing the same "other" qubits
     @inbounds for base in 0:(dim-1)
         # Skip if qi or qj bit is 1 (we'll handle from the 00 case)
         if ((base >> (qi-1)) & 1 != 0) || ((base >> (qj-1)) & 1 != 0)
             continue
         end
-        
+
         # 4 states in this block
         i00 = base
         i01 = base + step_j
         i10 = base + step_i
         i11 = base + step_i + step_j
-        
+
         ψ00 = ψ[i00+1]
         ψ01 = ψ[i01+1]
         ψ10 = ψ[i10+1]
         ψ11 = ψ[i11+1]
-        
+
         # Apply Rxx
         ψ[i00+1] = c * ψ00 + is * ψ11
         ψ[i01+1] = c * ψ01 + is * ψ10
@@ -1041,26 +1041,26 @@ function apply_ryy_psi!(ψ::Vector{ComplexF64}, qi::Int, qj::Int, θ::Float64, N
     s = sin(θ / 2)
     is = -im * s
     is_neg = im * s
-    
+
     dim = 1 << N
     step_i = 1 << (qi - 1)
     step_j = 1 << (qj - 1)
-    
+
     @inbounds for base in 0:(dim-1)
         if ((base >> (qi-1)) & 1 != 0) || ((base >> (qj-1)) & 1 != 0)
             continue
         end
-        
+
         i00 = base
         i01 = base + step_j
         i10 = base + step_i
         i11 = base + step_i + step_j
-        
+
         ψ00 = ψ[i00+1]
         ψ01 = ψ[i01+1]
         ψ10 = ψ[i10+1]
         ψ11 = ψ[i11+1]
-        
+
         # Apply Ryy
         ψ[i00+1] = c * ψ00 + is_neg * ψ11
         ψ[i01+1] = c * ψ01 + is * ψ10
@@ -1084,9 +1084,9 @@ Diagonal gate:
 function apply_rzz_psi!(ψ::Vector{ComplexF64}, qi::Int, qj::Int, θ::Float64, N::Int)
     phase_same = exp(-im * θ / 2)   # bits equal (00 or 11)
     phase_diff = exp(im * θ / 2)    # bits different (01 or 10)
-    
+
     dim = 1 << N
-    
+
     @inbounds for idx in 0:(dim-1)
         bit_i = (idx >> (qi-1)) & 1
         bit_j = (idx >> (qj-1)) & 1
@@ -1112,7 +1112,7 @@ function apply_cnot_rho!(ρ::Matrix{ComplexF64}, control::Int, target::Int, N::I
     # CNOT is its own inverse, so CNOT† = CNOT
     dim = 1 << N
     target_step = 1 << (target - 1)
-    
+
     # Apply to rows
     @inbounds for i in 0:(dim-1)
         if ((i >> (control-1)) & 1 == 1) && ((i >> (target-1)) & 1 == 0)
@@ -1122,7 +1122,7 @@ function apply_cnot_rho!(ρ::Matrix{ComplexF64}, control::Int, target::Int, N::I
             end
         end
     end
-    
+
     # Apply to columns
     @inbounds for j in 0:(dim-1)
         if ((j >> (control-1)) & 1 == 1) && ((j >> (target-1)) & 1 == 0)
@@ -1132,7 +1132,7 @@ function apply_cnot_rho!(ρ::Matrix{ComplexF64}, control::Int, target::Int, N::I
             end
         end
     end
-    
+
     return ρ
 end
 
@@ -1143,7 +1143,7 @@ Apply CZ to density matrix.
 """
 function apply_cz_rho!(ρ::Matrix{ComplexF64}, qi::Int, qj::Int, N::Int)
     dim = 1 << N
-    
+
     # CZ is diagonal with ±1 entries
     @inbounds for i in 0:(dim-1)
         sign_i = (((i >> (qi-1)) & 1 == 1) && ((i >> (qj-1)) & 1 == 1)) ? -1 : 1
@@ -1164,66 +1164,66 @@ function apply_rxx_rho!(ρ::Matrix{ComplexF64}, qi::Int, qj::Int, θ::Float64, N
     # Build full unitary and apply: ρ' = U ρ U†
     # For now, use matrix multiplication approach
     dim = 1 << N
-    
+
     # Build Rxx matrix for 2 qubits
     c = cos(θ / 2)
     s = sin(θ / 2)
     is = -im * s
-    
+
     # Apply to a copy of ρ via the pure state gate applied to rows and columns
     step_i = 1 << (qi - 1)
     step_j = 1 << (qj - 1)
-    
+
     # Apply U to rows
     ρ_temp = copy(ρ)
     @inbounds for base in 0:(dim-1)
         if ((base >> (qi-1)) & 1 != 0) || ((base >> (qj-1)) & 1 != 0)
             continue
         end
-        
+
         i00 = base
         i01 = base + step_j
         i10 = base + step_i
         i11 = base + step_i + step_j
-        
+
         for col in 1:dim
             ρ00 = ρ[i00+1, col]
             ρ01 = ρ[i01+1, col]
             ρ10 = ρ[i10+1, col]
             ρ11 = ρ[i11+1, col]
-            
+
             ρ_temp[i00+1, col] = c * ρ00 + is * ρ11
             ρ_temp[i01+1, col] = c * ρ01 + is * ρ10
             ρ_temp[i10+1, col] = is * ρ01 + c * ρ10
             ρ_temp[i11+1, col] = is * ρ00 + c * ρ11
         end
     end
-    
+
     # Apply U† to columns
     is_dag = conj(is)
     @inbounds for base in 0:(dim-1)
         if ((base >> (qi-1)) & 1 != 0) || ((base >> (qj-1)) & 1 != 0)
             continue
         end
-        
+
         j00 = base
         j01 = base + step_j
         j10 = base + step_i
         j11 = base + step_i + step_j
-        
+
         for row in 1:dim
             ρ00 = ρ_temp[row, j00+1]
             ρ01 = ρ_temp[row, j01+1]
             ρ10 = ρ_temp[row, j10+1]
             ρ11 = ρ_temp[row, j11+1]
-            
+
             ρ[row, j00+1] = c * ρ00 + is_dag * ρ11
             ρ[row, j01+1] = c * ρ01 + is_dag * ρ10
             ρ[row, j10+1] = is_dag * ρ01 + c * ρ10
             ρ[row, j11+1] = is_dag * ρ00 + c * ρ11
         end
     end
-    
+
     return ρ
 end
 
@@ -1237,64 +1237,64 @@ function apply_ryy_rho!(ρ::Matrix{ComplexF64}, qi::Int, qj::Int, θ::Float64, N
     s = sin(θ / 2)
     is = -im * s
     is_neg = im * s
-    
+
     dim = 1 << N
     step_i = 1 << (qi - 1)
     step_j = 1 << (qj - 1)
-    
+
     ρ_temp = copy(ρ)
-    
+
     # Apply U to rows
     @inbounds for base in 0:(dim-1)
         if ((base >> (qi-1)) & 1 != 0) || ((base >> (qj-1)) & 1 != 0)
             continue
         end
-        
+
         i00 = base
         i01 = base + step_j
         i10 = base + step_i
         i11 = base + step_i + step_j
-        
+
         for col in 1:dim
             ρ00 = ρ[i00+1, col]
             ρ01 = ρ[i01+1, col]
             ρ10 = ρ[i10+1, col]
             ρ11 = ρ[i11+1, col]
-            
+
             ρ_temp[i00+1, col] = c * ρ00 + is_neg * ρ11
             ρ_temp[i01+1, col] = c * ρ01 + is * ρ10
             ρ_temp[i10+1, col] = is * ρ01 + c * ρ10
             ρ_temp[i11+1, col] = is_neg * ρ00 + c * ρ11
         end
     end
-    
+
     # Apply U† to columns
     is_dag = conj(is)
     is_neg_dag = conj(is_neg)
-    
+
     @inbounds for base in 0:(dim-1)
         if ((base >> (qi-1)) & 1 != 0) || ((base >> (qj-1)) & 1 != 0)
             continue
         end
-        
+
         j00 = base
         j01 = base + step_j
         j10 = base + step_i
         j11 = base + step_i + step_j
-        
+
         for row in 1:dim
             ρ00 = ρ_temp[row, j00+1]
             ρ01 = ρ_temp[row, j01+1]
             ρ10 = ρ_temp[row, j10+1]
             ρ11 = ρ_temp[row, j11+1]
-            
+
             ρ[row, j00+1] = c * ρ00 + is_neg_dag * ρ11
             ρ[row, j01+1] = c * ρ01 + is_dag * ρ10
             ρ[row, j10+1] = is_dag * ρ01 + c * ρ10
             ρ[row, j11+1] = is_neg_dag * ρ00 + c * ρ11
         end
     end
-    
+
     return ρ
 end
 
@@ -1306,19 +1306,19 @@ Apply Rzz(θ) to density matrix.
 function apply_rzz_rho!(ρ::Matrix{ComplexF64}, qi::Int, qj::Int, θ::Float64, N::Int)
     phase_same = exp(-im * θ / 2)
     phase_diff = exp(im * θ / 2)
-    
+
     dim = 1 << N
-    
+
     @inbounds for i in 0:(dim-1)
         bit_i1 = (i >> (qi-1)) & 1
         bit_i2 = (i >> (qj-1)) & 1
         phase_i = (bit_i1 == bit_i2) ? phase_same : phase_diff
-        
+
         for j in 0:(dim-1)
             bit_j1 = (j >> (qi-1)) & 1
             bit_j2 = (j >> (qj-1)) & 1
             phase_j = (bit_j1 == bit_j2) ? conj(phase_same) : conj(phase_diff)
-            
+
             ρ[i+1, j+1] *= phase_i * phase_j
         end
     end

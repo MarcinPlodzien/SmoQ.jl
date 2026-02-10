@@ -78,7 +78,7 @@ This provides a perfect test case with KNOWN, LINEAR scaling!
     Key: M₂(T⊗N|+⟩) ≈ 0.4150 × N  (linear scaling!)
 
 
-# COMPUTATIONAL COMPLEXITY COMPARISON  
+# COMPUTATIONAL COMPLEXITY COMPARISON
 ═══════════════════════════════════════════════════════════════════════════════
 
     BRUTE FORCE: O(8^N)                    FWHT: O(N·4^N)
@@ -98,7 +98,7 @@ This provides a perfect test case with KNOWN, LINEAR scaling!
 
     Outputs:
     • figures/fig_sre_M2_plus_vs_T_plus.png  : M₂ vs N plot
-    • figures/fig_sre_time_vs_N.png         : Timing plot  
+    • figures/fig_sre_time_vs_N.png         : Timing plot
     • data/summary_output.txt               : Tabulated results
 
 =#
@@ -179,7 +179,7 @@ Create star graph state: |Star_N⟩
 A star graph has N qubits: 1 central node (qubit 1) and N-1 leaf nodes.
 All leaves are connected to the center via CZ gates.
 
-    Topology:  
+    Topology:
            2
            |
        3 — 1 — 4     (qubit 1 is center)
@@ -258,12 +258,12 @@ std(x) = length(x) > 1 ? sqrt(sum((xi - mean(x))^2 for xi in x) / (length(x) - 1
 function run_benchmark()
     # Output buffer for saving to file
     output_lines = String[]
-    
+
     function log(s::String="")
         push!(output_lines, s)
         println(s)
     end
-    
+
     # Print banner
     log()
     log("╔" * "═"^78 * "╗")
@@ -271,7 +271,7 @@ function run_benchmark()
     log("║" * " "^15 * "Measuring 'Magic' in Quantum States" * " "^26 * "║")
     log("╚" * "═"^78 * "╝")
     log()
-    
+
     log("┌─────────────────────────────────────────────────────────────────────────────┐")
     log("│  PHYSICS BACKGROUND                                                         │")
     log("├─────────────────────────────────────────────────────────────────────────────┤")
@@ -286,27 +286,27 @@ function run_benchmark()
     log("│     + T on center ONLY  (T₁|Star⟩)                                          │")
     log("└─────────────────────────────────────────────────────────────────────────────┘")
     log()
-    
+
     log("Configuration:")
     log("  • Threads: $(Threads.nthreads())")
     log("  • N range: 2 → 14  (4^14 = 268M Pauli strings at N=14)")
     log("  • Complexity: O(8^N) per state")
     log()
-    
+
     # Results storage
     N_vals = 2:10
     results = Dict{String, Dict{Int, NamedTuple}}()
     for state in ["plus", "T_plus", "star", "star_T_all", "star_T_center"]
         results[state] = Dict{Int, NamedTuple}()
     end
-    
+
     # Warmup
     log("[Warmup] JIT compiling with N=4...")
     magic(state_T_plus(4), 4)
     magic(state_star_T_all(4), 4)
     log("[Warmup] Done.")
     log()
-    
+
     # =========================================================================
     # BENCHMARK 1: Product States (T|+)
     # =========================================================================
@@ -319,26 +319,26 @@ function run_benchmark()
     log("  ┌──────┬──────────────┬────────────┬────────────┬───────────┐")
     log("  │   N  │  4^N Paulis  │  M₂(|+⟩)   │  M₂(T|+⟩)  │   time    │")
     log("  ├──────┼──────────────┼────────────┼────────────┼───────────┤")
-    
+
     N_completed = Int[]
     for N in N_vals
         paulis = 4^N
-        
+
         # |+...+⟩ state (stabilizer)
         t_plus = @elapsed M2_plus = magic(state_plus(N), N)
         results["plus"][N] = (M2=M2_plus, time=t_plus, paulis=paulis)
-        
+
         # T⊗N|+...+⟩ state (magical)
         t_T_plus = @elapsed M2_T_plus = magic(state_T_plus(N), N)
         results["T_plus"][N] = (M2=M2_T_plus, time=t_T_plus, paulis=paulis)
-        
+
         push!(N_completed, N)
-        
+
         fmt_t = t_T_plus < 60 ? @sprintf("%.2fs", t_T_plus) : @sprintf("%.1fm", t_T_plus/60)
         line = @sprintf("  │  %2d  │ %12d │   %+.4f   │   %+.4f   │ %9s │",
                         N, paulis, M2_plus, M2_T_plus, fmt_t)
         log(line)
-        
+
         if t_T_plus > 7200
             log("  └──────┴──────────────┴────────────┴────────────┴───────────┘")
             log("  ⚠ Stopping: time limit reached")
@@ -346,7 +346,7 @@ function run_benchmark()
         end
     end
     log("  └──────┴──────────────┴────────────┴────────────┴───────────┘")
-    
+
     # Linear fit
     M2_vals = [results["T_plus"][N].M2 for N in N_completed]
     slope_product = sum(N_completed .* M2_vals) / sum(N_completed.^2)
@@ -354,7 +354,7 @@ function run_benchmark()
     log("  → Linear fit: M₂(T⊗N|+⟩) ≈ $(round(slope_product, digits=4)) × N")
     log("  → Theory:     M₂(T|+⟩)  = 0.4150")
     log()
-    
+
     # =========================================================================
     # BENCHMARK 2: Star Graph States
     # =========================================================================
@@ -377,28 +377,28 @@ function run_benchmark()
     log("  ┌──────┬────────────┬────────────┬────────────┬───────────┐")
     log("  │   N  │ M₂(|Star⟩) │ M₂(T⊗N|S⟩) │ M₂(T₁|S⟩)  │   time    │")
     log("  ├──────┼────────────┼────────────┼────────────┼───────────┤")
-    
+
     for N in N_completed
         paulis = 4^N
-        
+
         # Star graph (stabilizer)
         t_star = @elapsed M2_star = magic(state_star_graph(N), N)
         results["star"][N] = (M2=M2_star, time=t_star, paulis=paulis)
-        
+
         # Star + T on all
         t_all = @elapsed M2_all = magic(state_star_T_all(N), N)
         results["star_T_all"][N] = (M2=M2_all, time=t_all, paulis=paulis)
-        
+
         # Star + T on center only
         t_center = @elapsed M2_center = magic(state_star_T_center(N), N)
         results["star_T_center"][N] = (M2=M2_center, time=t_center, paulis=paulis)
-        
+
         total_time = t_star + t_all + t_center
         fmt_t = total_time < 60 ? @sprintf("%.2fs", total_time) : @sprintf("%.1fm", total_time/60)
         line = @sprintf("  │  %2d  │   %+.4f   │   %+.4f   │   %+.4f   │ %9s │",
                         N, M2_star, M2_all, M2_center, fmt_t)
         log(line)
-        
+
         if total_time > 7200
             log("  └──────┴────────────┴────────────┴────────────┴───────────┘")
             log("  ⚠ Stopping: time limit reached")
@@ -406,17 +406,17 @@ function run_benchmark()
         end
     end
     log("  └──────┴────────────┴────────────┴────────────┴───────────┘")
-    
+
     # Analysis
     M2_all_vals = [results["star_T_all"][N].M2 for N in N_completed]
     M2_center_vals = [results["star_T_center"][N].M2 for N in N_completed]
     slope_all = sum(N_completed .* M2_all_vals) / sum(N_completed.^2)
-    
+
     log()
     log("  → T on ALL nodes:    M₂ ≈ $(round(slope_all, digits=4)) × N  (similar to product)")
     log("  → T on center ONLY:  M₂ ≈ $(round(mean(M2_center_vals), digits=4))   (const? or weak N-dep?)")
     log()
-    
+
     # =========================================================================
     # Summary
     # =========================================================================
@@ -432,7 +432,7 @@ function run_benchmark()
     log(@sprintf("  │  T₁|Star⟩ (1 T gate)   │  M₂ ≈ %.4f      (subextensive)         │", mean(M2_center_vals)))
     log("  └────────────────────────┴────────────────────────────────────────┘")
     log()
-    
+
     # =========================================================================
     # BENCHMARK 3: Method Comparison - Brute Force vs FWHT
     # =========================================================================
@@ -442,12 +442,12 @@ function run_benchmark()
     log()
     log("  Reference: Sierant, Vallès-Muns & Garcia-Saez (2025), arXiv:2601.07824")
     log()
-    
+
     # Accuracy comparison
     log("  ┌──────┬────────────┬────────────┬────────────┐")
     log("  │   N  │ M₂(brute)  │ M₂(FWHT)   │   |diff|   │")
     log("  ├──────┼────────────┼────────────┼────────────┤")
-    
+
     for N in 2:min(10, maximum(N_completed))
         ψ = state_T_plus(N)
         M2_b = magic_brute(ψ, N)
@@ -457,43 +457,43 @@ function run_benchmark()
     end
     log("  └──────┴────────────┴────────────┴────────────┘")
     log()
-    
+
     # Timing comparison
     log("  ┌──────┬────────────────┬────────────────┬────────────┐")
     log("  │   N  │  t(brute) [s]  │  t(FWHT) [s]   │  speedup   │")
     log("  ├──────┼────────────────┼────────────────┼────────────┤")
-    
+
     for N in 2:min(12, maximum(N_completed))
         ψ = state_T_plus(N)
-        
+
         t_brute = @elapsed magic_brute(ψ, N)
         t_fwht = @elapsed magic_fwht(ψ, N)
         speedup = t_brute / max(t_fwht, 1e-9)
-        
-        log(@sprintf("  │  %2d  │    %10.4f    │    %10.6f    │   %6.1f×   │", 
+
+        log(@sprintf("  │  %2d  │    %10.4f    │    %10.6f    │   %6.1f×   │",
                      N, t_brute, t_fwht, speedup))
     end
     log("  └──────┴────────────────┴────────────────┴────────────┘")
     log()
-    
+
     # FWHT extended range (beyond brute force limits)
     log("  FWHT SCALABILITY: Beyond brute force limits (N > 12)")
     log("  ┌──────┬────────────────┬────────────┐")
     log("  │   N  │  t(FWHT) [s]   │   M₂(T|+⟩) │")
     log("  ├──────┼────────────────┼────────────┤")
-    
+
     for N in 13:18
         ψ = state_T_plus(N)
         t_fwht = @elapsed M2 = magic_fwht(ψ, N)
         log(@sprintf("  │  %2d  │    %10.4f    │  %+.4f   │", N, t_fwht, M2))
-        
+
         if t_fwht > 60
             break
         end
     end
     log("  └──────┴────────────────┴────────────┘")
     log()
-    
+
     # Save console output to file
     output_file = joinpath(DATA_DIR, "console_output.txt")
     open(output_file, "w") do f
@@ -502,7 +502,7 @@ function run_benchmark()
         end
     end
     println("  → Console output saved to: data/console_output.txt")
-    
+
     return N_completed, results
 end
 
@@ -512,7 +512,7 @@ end
 
 function generate_plots(N_vals, results)
     println("  Generating plots...")
-    
+
     # Extract data
     M2_plus = [results["plus"][N].M2 for N in N_vals]
     M2_T_plus = [results["T_plus"][N].M2 for N in N_vals]
@@ -520,7 +520,7 @@ function generate_plots(N_vals, results)
     M2_star_T_all = [results["star_T_all"][N].M2 for N in N_vals]
     M2_star_T_center = [results["star_T_center"][N].M2 for N in N_vals]
     times_T_plus = [results["T_plus"][N].time for N in N_vals]
-    
+
     # -------------------------------------------------------------------------
     # Plot 1: M₂ vs N - Product State
     # -------------------------------------------------------------------------
@@ -531,22 +531,22 @@ function generate_plots(N_vals, results)
         title = "Product State: |+...+⟩ vs T⊗N|+...+⟩",
         xticks = collect(N_vals)
     )
-    
+
     scatter!(ax1, N_vals, M2_plus, markersize=12, color=:blue, label="|+...+⟩ (stabilizer)")
     lines!(ax1, N_vals, M2_plus, color=:blue, linewidth=2)
-    
+
     scatter!(ax1, N_vals, M2_T_plus, markersize=12, color=:red, label="T⊗N|+...+⟩ (magic)")
     lines!(ax1, N_vals, M2_T_plus, color=:red, linewidth=2)
-    
+
     # Linear fit
     α = sum(N_vals .* M2_T_plus) / sum(Float64.(N_vals).^2)
     lines!(ax1, N_vals, α .* N_vals, color=:red, linestyle=:dash, linewidth=1,
            label="Linear fit: M₂ ≈ $(round(α, digits=3))N")
-    
+
     axislegend(ax1, position=:lt)
     save(joinpath(FIGURES_DIR, "fig_sre_product_states.png"), fig1, px_per_unit=2)
     println("    → Saved: fig_sre_product_states.png")
-    
+
     # -------------------------------------------------------------------------
     # Plot 2: M₂ vs N - Star Graph States
     # -------------------------------------------------------------------------
@@ -557,20 +557,20 @@ function generate_plots(N_vals, results)
         title = "Star Graph: T on All Nodes vs T on Center Only",
         xticks = collect(N_vals)
     )
-    
+
     scatter!(ax2, N_vals, M2_star, markersize=10, color=:gray, label="|Star⟩ (stabilizer)")
     lines!(ax2, N_vals, M2_star, color=:gray, linewidth=2)
-    
+
     scatter!(ax2, N_vals, M2_star_T_all, markersize=12, color=:red, label="T⊗N|Star⟩ (T on ALL)")
     lines!(ax2, N_vals, M2_star_T_all, color=:red, linewidth=2)
-    
+
     scatter!(ax2, N_vals, M2_star_T_center, markersize=12, color=:purple, label="T₁|Star⟩ (T on center)")
     lines!(ax2, N_vals, M2_star_T_center, color=:purple, linewidth=2)
-    
+
     axislegend(ax2, position=:lt)
     save(joinpath(FIGURES_DIR, "fig_sre_star_graph.png"), fig2, px_per_unit=2)
     println("    → Saved: fig_sre_star_graph.png")
-    
+
     # -------------------------------------------------------------------------
     # Plot 3: Time vs N (log scale)
     # -------------------------------------------------------------------------
@@ -582,10 +582,10 @@ function generate_plots(N_vals, results)
         yscale = log10,
         xticks = collect(N_vals)
     )
-    
+
     scatter!(ax3, N_vals, times_T_plus, markersize=12, color=:red, label="T⊗N|+...+⟩")
     lines!(ax3, N_vals, times_T_plus, color=:red, linewidth=2)
-    
+
     # O(8^N) fit
     if times_T_plus[1] > 0
         c = times_T_plus[1] / 8^N_vals[1]
@@ -593,17 +593,17 @@ function generate_plots(N_vals, results)
         lines!(ax3, N_vals, theoretical, color=:gray, linestyle=:dash, linewidth=2,
                label="O(8^N) fit")
     end
-    
+
     axislegend(ax3, position=:lt)
     text!(ax3, 0.95, 0.05, text="$(Threads.nthreads()) threads",
           align=(:right, :bottom), space=:relative, fontsize=10)
-    
+
     save(joinpath(FIGURES_DIR, "fig_sre_timing.png"), fig3, px_per_unit=2)
     println("    → Saved: fig_sre_timing.png")
-    
+
     # Note: Timing comparison plot skipped - data already shown in console output (Benchmark 3)
     # Recomputing FWHT for N=11-18 would take several minutes.
-    
+
     return fig1, fig2, fig3
 end
 
@@ -613,7 +613,7 @@ end
 
 function save_results(N_vals, results)
     println("  Saving detailed results...")
-    
+
     filepath = joinpath(DATA_DIR, "summary_data.txt")
     open(filepath, "w") do f
         println(f, "# Stabilizer Rényi Entropy (SRE) Benchmark")
@@ -628,10 +628,10 @@ function save_results(N_vals, results)
         println(f, "# - T₁|Star⟩: T gate on CENTER qubit only")
         println(f, "#")
         println(f, "# N    M2_plus    M2_T_plus   M2_star    M2_star_T_all   M2_star_T_center   time[s]")
-        
+
         for N in N_vals
             @printf(f, "%2d   %+.5f   %+.5f   %+.5f   %+.5f        %+.5f          %.3f\n",
-                    N, 
+                    N,
                     results["plus"][N].M2,
                     results["T_plus"][N].M2,
                     results["star"][N].M2,
@@ -650,13 +650,13 @@ end
 function main()
     # Run benchmark (outputs console_output.txt automatically)
     N_vals, results = run_benchmark()
-    
+
     # Generate plots
     generate_plots(N_vals, results)
-    
+
     # Save data
     save_results(N_vals, results)
-    
+
     println()
     println("═"^80)
     println("  COMPLETE - All outputs saved to: demo_stabilizer_renyi_entropy/")

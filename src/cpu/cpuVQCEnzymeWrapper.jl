@@ -94,18 +94,18 @@ function build_enzyme_wrapper(circuit)
     op_qubits = Tuple{Int,Int}[]
     op_param_idx = Int[]
     op_noise_p = Float64[]
-    
+
     for op in circuit.operations
         push!(op_types, op.type)
-        
+
         q1 = length(op.qubits) >= 1 ? op.qubits[1] : 0
         q2 = length(op.qubits) >= 2 ? op.qubits[2] : 0
         push!(op_qubits, (q1, q2))
-        
+
         push!(op_param_idx, op.param_idx)
         push!(op_noise_p, op.p)
     end
-    
+
     return EnzymeCircuitWrapper(
         circuit.N, circuit.n_params,
         op_types, op_qubits, op_param_idx, op_noise_p
@@ -121,19 +121,19 @@ end
 
 Apply circuit to pure state. Enzyme-compatible.
 """
-function apply_circuit_enzyme!(ψ::Vector{ComplexF64}, wrapper::EnzymeCircuitWrapper, 
+function apply_circuit_enzyme!(ψ::Vector{ComplexF64}, wrapper::EnzymeCircuitWrapper,
                                 θ::Vector{Float64})
     N = wrapper.N
-    
+
     for i in eachindex(wrapper.op_types)
         op_type = wrapper.op_types[i]
         q1, q2 = wrapper.op_qubits[i]
         param_idx = wrapper.op_param_idx[i]
         noise_p = wrapper.op_noise_p[i]
-        
+
         # Get angle if parameterized
         angle = param_idx > 0 ? θ[param_idx] : 0.0
-        
+
         # Apply gate
         if op_type == :ry
             apply_ry_psi!(ψ, q1, angle, N)
@@ -169,7 +169,7 @@ function apply_circuit_enzyme!(ψ::Vector{ComplexF64}, wrapper::EnzymeCircuitWra
             nothing
         end
     end
-    
+
     return ψ
 end
 
@@ -185,15 +185,15 @@ Apply circuit to density matrix. Enzyme-compatible.
 function apply_circuit_enzyme!(ρ::Matrix{ComplexF64}, wrapper::EnzymeCircuitWrapper,
                                 θ::Vector{Float64})
     N = wrapper.N
-    
+
     for i in eachindex(wrapper.op_types)
         op_type = wrapper.op_types[i]
         q1, q2 = wrapper.op_qubits[i]
         param_idx = wrapper.op_param_idx[i]
         noise_p = wrapper.op_noise_p[i]
-        
+
         angle = param_idx > 0 ? θ[param_idx] : 0.0
-        
+
         # Apply gate (DM version)
         if op_type == :ry
             apply_ry_rho!(ρ, q1, angle, N)
@@ -223,28 +223,28 @@ function apply_circuit_enzyme!(ρ::Matrix{ComplexF64}, wrapper::EnzymeCircuitWra
             _apply_dephasing_kraus!(ρ, q1, noise_p, N)
         end
     end
-    
+
     return ρ
 end
 
 # Kraus operators for DM mode
 function _apply_depolarizing_kraus!(ρ::Matrix{ComplexF64}, k::Int, p::Float64, N::Int)
     ρ_new = (1 - p) * ρ
-    
+
     ρ_x = copy(ρ)
     apply_pauli_x_rho!(ρ_x, k, N)
     ρ_new .+= (p/3) .* ρ_x
-    
+
     ρ_z = copy(ρ)
     apply_pauli_z_rho!(ρ_z, k, N)
     ρ_new .+= (p/3) .* ρ_z
-    
+
     # Y = -iXZ
     ρ_y = copy(ρ)
     apply_pauli_z_rho!(ρ_y, k, N)
     apply_pauli_x_rho!(ρ_y, k, N)
     ρ_new .+= (p/3) .* ρ_y
-    
+
     ρ .= ρ_new
 end
 
@@ -302,7 +302,7 @@ function gradient_enzyme(cost_fn, θ::Vector{Float64})
     if !ENZYME_AVAILABLE
         error("Enzyme not available")
     end
-    
+
     dθ = zeros(Float64, length(θ))
     θ_copy = copy(θ)
     # Use Const(cost_fn) because the function closes over immutable data
@@ -344,25 +344,25 @@ Compute SPSA gradient estimate with proper scheduling.
 function spsa_gradient(cost_fn, θ::Vector{Float64}, state::SPSAState)
     state.k += 1
     k = state.k
-    
+
     # Scheduled parameters
     a_k = state.a / (state.A + k)^state.α
     c_k = state.c / k^state.γ
-    
+
     # Random perturbation (Bernoulli ±1)
     n = length(θ)
     Δ = 2.0 .* (rand(n) .> 0.5) .- 1.0
-    
+
     # Evaluate cost at ±perturbation
     θ_plus = θ .+ c_k .* Δ
     θ_minus = θ .- c_k .* Δ
-    
+
     f_plus = cost_fn(θ_plus)
     f_minus = cost_fn(θ_minus)
-    
+
     # Gradient estimate
     g = (f_plus - f_minus) ./ (2 * c_k .* Δ)
-    
+
     return g, a_k  # Return gradient and current LR
 end
 

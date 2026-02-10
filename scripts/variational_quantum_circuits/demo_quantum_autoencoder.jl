@@ -9,10 +9,10 @@ DESCRIPTION:
     quantum states. The autoencoder learns to encode an N-qubit input state into
     a (N-k)-qubit latent representation by projecting k "trash" qubits to |0⟩,
     then decodes back to the full Hilbert space with high fidelity.
-    
+
 QUANTUM AUTOENCODER ARCHITECTURE:
     |ψ_in⟩ → [Encoder U(θ)] → [Measure+Reset k qubits] → [Decoder U†(θ)] → |ψ_out⟩
-    
+
     - Encoder: Parameterized variational circuit U(θ)
     - Compression: Trace out (DM) or measure+reset (MCWF) the k trash qubits
     - Decoder: Inverse circuit U†(θ) applied to the reduced + reset state
@@ -20,7 +20,7 @@ QUANTUM AUTOENCODER ARCHITECTURE:
 
 LOSS FUNCTION:
     L = w_fid*(1-F) + w_svn*S_vN + w_ham*H
-    
+
     - F: Fidelity between input and reconstructed state
     - S_vN: von Neumann entropy of trash subsystem (encourages pure trash)
     - H: Hamming distance of measurement outcomes (MCWF only)
@@ -54,42 +54,42 @@ OUTPUT:
     - PNG plots saved on-the-fly to demo_quantum_autoencoder/ folder
 
 THEORY - SCHMIDT RANK AND COMPRESSIBILITY:
-    
+
     Schmidt Decomposition:
     ----------------------
     Any pure bipartite state |ψ⟩_AB can be written as:
         |ψ⟩ = Σᵢ λᵢ |uᵢ⟩_A ⊗ |vᵢ⟩_B
-    
+
     where {|uᵢ⟩} and {|vᵢ⟩} are orthonormal bases for subsystems A and B,
     and λᵢ ≥ 0 are the Schmidt coefficients (Σᵢ λᵢ² = 1).
-    
+
     Schmidt Rank:
     -------------
     The number of non-zero Schmidt coefficients = Schmidt rank r.
     - r = 1: Product state (no entanglement)
     - r > 1: Entangled state
     - r = min(dim_A, dim_B): Maximally entangled in terms of rank
-    
+
     Compressibility via Schmidt Rank:
     ---------------------------------
     For a quantum autoencoder with k trash qubits:
     - Latent space dimension: 2^(N-k)
     - Perfect compression (F=1) possible iff Schmidt rank ≤ 2^(N-k)
-    
+
     Examples:
     - GHZ = (|00...0⟩ + |11...1⟩)/√2
       Schmidt rank = 2 (only 2 terms!) → compressible to k=N-1 (2D latent)
       Maximally entangled in CORRELATIONS, but minimal in SUPPORT.
-    
+
     - Dicke(N,k) = Symmetric superposition of all states with k ones
       Schmidt rank = min(2^(floor(N/2)), binomial(N,k))
       For N=6, k=3: rank = min(8, 20) = 8 → needs at least 3 latent qubits
       High entanglement ENTROPY due to large support.
-    
+
     - W state = (|10...0⟩ + |01...0⟩ + ... + |00...1⟩)/√N
       Schmidt rank = 2 for any bipartition (one term has 1, others have 0)
       Compressible, but entanglement more robust to qubit loss than GHZ.
-    
+
     Key Insight:
     ------------
     "Maximally entangled" ≠ "hardest to compress"!
@@ -149,7 +149,7 @@ println("=" ^ 70)
 #   - N qubits → Hilbert space dimension 2^N
 #   - Larger N = exponentially more expensive (DM: O(4^N), MCWF: O(2^N))
 #   - Recommended: start with N=4-6 for testing, N=8-10 for production
-const N_VALUES = [    
+const N_VALUES = [
     6,
 ]
 
@@ -323,7 +323,7 @@ const INPUT_STATES = [
     :Hamiltonian_GS,   # Ground states from HAMILTONIAN_CONFIGS (loops over all)
     #:GHZ,              # GHZ state: (|000...⟩ + |111...⟩)/√2
     :W,                # W state: (|100...⟩ + |010...⟩ + ...)/√N
-    #:Dicke,            # Dicke state with N/2 excitations    
+    #:Dicke,            # Dicke state with N/2 excitations
     #:Product,          # Product state |+⟩⊗N (separable, baseline)
     #:Custom,          # User-defined custom state (see CUSTOM_STATE below)
 ]
@@ -360,8 +360,8 @@ const OPTIMIZER_TYPES = [
 # Different configs explore: fidelity-only, Hamming-only, or balanced losses.
 const WEIGHT_CONFIGS = [
         (1.0, 0.0, 0.0),             # Fidelity only - primary metric
-        (0.45, 0.1, 0.45),           #  
-        (0.45, 0.45, 0.1),           # 
+        (0.45, 0.1, 0.45),           #
+        (0.45, 0.45, 0.1),           #
 ]
 
 # Global weights (will be updated in loop)
@@ -381,7 +381,7 @@ println("Loss weights: w_fid=$W_FID, w_svn=$W_SVN, w_ham=$W_HAM")
 # Three ansatz types for the encoder circuit:
 #
 # 1. :brick (Brick-layer / Alternating pairs)
-#    Layer structure: [RX-RY-RZ on all qubits] → [CZ on odd pairs: (1,2),(3,4),...] 
+#    Layer structure: [RX-RY-RZ on all qubits] → [CZ on odd pairs: (1,2),(3,4),...]
 #                                              → [CZ on even pairs: (2,3),(4,5),...]
 #    Alternates entanglement pattern each layer. Good for 1D chain systems.
 #
@@ -389,7 +389,7 @@ println("Loss weights: w_fid=$W_FID, w_svn=$W_SVN, w_ham=$W_HAM")
 #    Layer structure: [RX-RY-RZ on all qubits] → [CZ on ALL adjacent pairs: (1,2),(2,3),(3,4),...]
 #    Every layer has same entanglement pattern. Maximum local connectivity.
 #
-# 3. :ring (Periodic boundary / Ring topology)  
+# 3. :ring (Periodic boundary / Ring topology)
 #    Layer structure: [RX-RY-RZ on all qubits] → [CZ on ALL adjacent pairs + (N,1) closing the ring]
 #    Like chain but with periodic boundary conditions. Good for systems with PBC.
 #
@@ -401,7 +401,7 @@ println("Loss weights: w_fid=$W_FID, w_svn=$W_SVN, w_ham=$W_HAM")
 function build_encoder_spec(N::Int, n_layers::Int, ansatz::Symbol, entangler_gate::Symbol=:cz)
     gates = Tuple{Symbol, Any, Int}[]
     pidx = 0
-    
+
     for layer in 1:n_layers
         # Single-qubit rotations: use configurable ROTATION_GATES
         for q in 1:N
@@ -410,7 +410,7 @@ function build_encoder_spec(N::Int, n_layers::Int, ansatz::Symbol, entangler_gat
                 push!(gates, (rot, q, pidx))
             end
         end
-        
+
         # Entanglement pattern depends on ansatz type
         if ansatz == :brick
             # Alternating: odd layers → pairs (1,2),(3,4),...
@@ -457,7 +457,7 @@ function build_encoder_spec(N::Int, n_layers::Int, ansatz::Symbol, entangler_gat
             error("Unknown ansatz: $ansatz. Use :brick, :chain, :ring, :full, :butterfly, :hea, :xxz")
         end
     end
-    
+
     # Final rotation layer
     for q in 1:N
         pidx += 1; push!(gates, (:ry, q, pidx))
@@ -507,17 +507,17 @@ end
 function autoencoder_mcwf!(ψ, θ, gates, trash, N)
     # 1. Encode: compress N-qubit state into (N-k) latent + k trash qubits
     apply_encoder_psi!(ψ, θ, gates, N)
-    
+
     # 2. Projective measurement on trash qubits in Z-basis
     #    Returns bitstring outcomes[i] ∈ {0,1} for each trash qubit
     #    Hamming distance = sum(outcomes) = popcount of measured bitstring
     outcomes, _ = projective_measurement!(ψ, trash, :z, N)
-    
+
     # 3. Reset trash qubits to |0⟩ by applying X gate if measured |1⟩
     for (i, q) in enumerate(trash)
         outcomes[i] == 1 && apply_pauli_x_psi!(ψ, q, N)
     end
-    
+
     # 4. Decode: reconstruct from latent representation
     apply_decoder_psi!(ψ, θ, gates, N)
     return outcomes  # Return measured bitstring for Hamming distance
@@ -549,20 +549,20 @@ end
 function autoencoder_dm!(ρ, θ, gates, trash, N)
     # Encoder
     apply_encoder_rho!(ρ, θ, gates, N)
-    
+
     # Trace out trash qubits (measure + reset = partial trace + tensor |0⟩⟨0|)
     latent = setdiff(1:N, trash)
     ρ_latent = partial_trace(ρ, trash, N)
-    
+
     # Tensor product with |0...0⟩⟨0...0| for trash qubits
     k = length(trash)
     dim_latent = 1 << length(latent)
     dim_trash = 1 << k
     dim_total = 1 << N
-    
+
     # Rebuild full density matrix: ρ_latent ⊗ |0⟩⟨0|_trash
     ρ .= zero(ComplexF64)
-    
+
     # Map: latent qubits stay, trash qubits are |0⟩
     # trash qubits are at positions (N-k+1):N, so their contribution is 0 for |0⟩
     for i_lat in 0:(dim_latent-1)
@@ -582,7 +582,7 @@ function autoencoder_dm!(ρ, θ, gates, trash, N)
             ρ[i_full+1, j_full+1] = ρ_latent[i_lat+1, j_lat+1]
         end
     end
-    
+
     # Decoder
     apply_decoder_rho!(ρ, θ, gates, N)
 end
@@ -637,7 +637,7 @@ function evaluate_dm(ρ_input, θ, gates, trash, N)
     ρ_out = copy(ρ_input)
     autoencoder_dm!(ρ_out, θ, gates, trash, N)
     F = dm_fidelity(ρ_input, ρ_out)
-    
+
     # Only compute S and H if their weights are non-zero (avoids partial_trace for Enzyme)
     if W_SVN > 0.0 || W_HAM > 0.0
         ρ_enc = copy(ρ_input)
@@ -648,7 +648,7 @@ function evaluate_dm(ρ_input, θ, gates, trash, N)
         S = 0.0
         H = 0.0
     end
-    
+
     # Loss = w_fid*(1-F) + w_svn*S + w_ham*H
     L = W_FID*(1-F) + W_SVN*S + W_HAM*H
     return L, F, S, H
@@ -658,17 +658,17 @@ function evaluate_mcwf(ψ_input, θ, gates, trash, N)
     # Encode: compress N-qubit state
     ψ_enc = copy(ψ_input)
     apply_encoder_psi!(ψ_enc, θ, gates, N)
-    
+
     # S_vN on ENCODED state's LATENT subsystem (before reset/decode)
     # This measures how well encoder disentangles trash from latent
     S = latent_entropy_psi(ψ_enc, trash, N)
-    
+
     # Full autoencoder pass for fidelity and Hamming
     ψ = copy(ψ_input)
     outcomes = autoencoder_mcwf!(ψ, θ, gates, trash, N)
     F = abs2(dot(ψ_input, ψ))
     H = sum(outcomes) / length(outcomes)  # Hamming distance
-    
+
     # Loss = w_fid*(1-F) + w_svn*S + w_ham*H
     L = W_FID*(1-F) + W_SVN*S + W_HAM*H
     return L, F, S, H
@@ -677,13 +677,13 @@ end
 function avg_metrics_mcwf(ψ_input, θ, gates, trash, N; n_traj=10)
     Fs, Hs, Ss = Float64[], Float64[], Float64[]
     sL = 0.0
-    
+
     # Time only the MCWF simulation
     sim_time = @elapsed for _ in 1:n_traj
         L, F, S, H = evaluate_mcwf(ψ_input, θ, gates, trash, N)
         sL += L; push!(Fs, F); push!(Ss, S); push!(Hs, H)
     end
-    
+
     # S_vN is computed on ENCODED pure state (same for all trajectories)
     # So just use mean (they should all be identical)
     # Return: mean_loss, mean_F, mean_S, mean_H, std_F, std_H, sim_time
@@ -697,7 +697,7 @@ end
 # Full SPSA with Spall (1998) scheduling: a_k = a/(A+k)^α, c_k = c/k^γ
 mutable struct SPSA
     a::Float64   # Learning rate scale
-    c::Float64   # Perturbation scale  
+    c::Float64   # Perturbation scale
     A::Float64   # Stability constant (usually 10% of max iterations)
     α::Float64   # LR decay exponent (standard: 0.602)
     γ::Float64   # Perturbation decay exponent (standard: 0.101)
@@ -730,25 +730,25 @@ function train_dm(ρ_input, N, k, n_layers, ansatz, entangler_gate, optimizer_ty
     n_params, gates = build_encoder_spec(N, n_layers, ansatz, entangler_gate)
     θ = 0.1 * randn(n_params)
     spsa = SPSA()
-    
+
     # Only setup Adam if using :SPSA_Adam
     opt = optimizer_type == :SPSA_Adam ? Optimisers.setup(Adam(lr), θ) : nothing
-    
+
     fids, ents, hams = Float64[], Float64[], Float64[]
-    
+
     total_time = @elapsed for ep in 1:n_epochs
         cost = θ_t -> evaluate_dm(ρ_input, θ_t, gates, trash, N)[1]
-        
+
         if optimizer_type == :SPSA
             θ = spsa_step!(spsa, cost, θ)  # Pure SPSA with built-in LR scheduling
         else  # :SPSA_Adam
             g = spsa_grad!(spsa, cost, θ)
             opt, θ = Optimisers.update(opt, θ, g)
         end
-        
+
         _, F, S, H = evaluate_dm(ρ_input, θ, gates, trash, N)
         push!(fids, F); push!(ents, S); push!(hams, H)
-        
+
         ep % 50 == 0 && @printf("    [%s|DM|%s] k=%d ep=%d: F = %.4f, SvN = %.4f, D_H = %.4f\n", ansatz, optimizer_type, k, ep, F, S, H)
     end
     @printf("    [%s|DM|%s] k=%d Training time: %.2fs (%.2f ms/epoch)\n", ansatz, optimizer_type, k, total_time, 1000*total_time/n_epochs)
@@ -760,29 +760,29 @@ function train_mcwf(ψ_input, N, k, n_layers, ansatz, entangler_gate, n_traj, op
     n_params, gates = build_encoder_spec(N, n_layers, ansatz, entangler_gate)
     θ = 0.1 * randn(n_params)
     spsa = SPSA()
-    
+
     # Only setup Adam if using :SPSA_Adam
     opt = optimizer_type == :SPSA_Adam ? Optimisers.setup(Adam(lr), θ) : nothing
-    
+
     fids, ents, hams = Float64[], Float64[], Float64[]
     fids_std, hams_std = Float64[], Float64[]
     total_sim_time = 0.0  # Accumulate MCWF simulation time (excludes tomography)
-    
+
     for ep in 1:n_epochs
         cost = θ_t -> avg_metrics_mcwf(ψ_input, θ_t, gates, trash, N; n_traj=5)[1]
-        
+
         if optimizer_type == :SPSA
             θ = spsa_step!(spsa, cost, θ)  # Pure SPSA with built-in LR scheduling
         else  # :SPSA_Adam
             g = spsa_grad!(spsa, cost, θ)
             opt, θ = Optimisers.update(opt, θ, g)
         end
-        
+
         _, F, S, H, σF, σH, sim_t = avg_metrics_mcwf(ψ_input, θ, gates, trash, N; n_traj=n_traj)
         total_sim_time += sim_t
         push!(fids, F); push!(ents, S); push!(hams, H)
         push!(fids_std, σF); push!(hams_std, σH)
-        
+
         ep % 50 == 0 && @printf("    [%s|MCWF-%d|%s] k=%d ep=%d: F = %.4f±%.4f, SvN = %.4f, D_H = %.4f±%.4f\n", ansatz, n_traj, optimizer_type, k, ep, F, σF, S, H, σH)
     end
     @printf("    [%s|MCWF-%d|%s] k=%d Sim time: %.2fs (%.2f ms/epoch, excludes tomography)\n", ansatz, n_traj, optimizer_type, k, total_sim_time, 1000*total_sim_time/n_epochs)
@@ -798,7 +798,7 @@ Prepare input state and return (ψ, ρ, state_name, state_str_for_file)
 """
 function prepare_input_state(state_type::Symbol, N::Int; ham_config=nothing)
     dim = 2^N
-    
+
     if state_type == :Hamiltonian_GS
         # Ground state from HAMILTONIAN_CONFIGS entry
         if ham_config === nothing
@@ -810,13 +810,13 @@ function prepare_input_state(state_type::Symbol, N::Int; ham_config=nothing)
         param_str = "Jxx=$Jxx Jyy=$Jyy Jzz=$Jzz hx=$hx"
         fname_str = "$(lowercase(name))_Jxx$(Jxx)_Jyy$(Jyy)_Jzz$(Jzz)_hx$(hx)"
         return ψ, ψ * ψ', "$name GS ($param_str)", fname_str
-        
+
     elseif state_type == :GHZ
         ψ = zeros(ComplexF64, dim)
         ψ[1] = 1/√2           # |000...0⟩
         ψ[end] = 1/√2         # |111...1⟩
         return ψ, ψ * ψ', "GHZ", "ghz"
-        
+
     elseif state_type == :W
         ψ = zeros(ComplexF64, dim)
         for i in 0:(N-1)
@@ -824,7 +824,7 @@ function prepare_input_state(state_type::Symbol, N::Int; ham_config=nothing)
             ψ[idx] = 1/√N
         end
         return ψ, ψ * ψ', "W", "w"
-        
+
     elseif state_type == :Dicke
         # Dicke state with k = N÷2 excitations
         k_excit = div(N, 2)
@@ -838,12 +838,12 @@ function prepare_input_state(state_type::Symbol, N::Int; ham_config=nothing)
         end
         ψ ./= √count
         return ψ, ψ * ψ', "Dicke_k$(k_excit)", "dicke_k$(k_excit)"
-        
+
     elseif state_type == :Product
         # |+⟩⊗N = (|0⟩ + |1⟩)⊗N / √(2^N)
         ψ = ones(ComplexF64, dim) / √dim
         return ψ, ψ * ψ', "Product_plus", "product"
-        
+
     elseif state_type == :Custom
         # User-defined custom state
         if CUSTOM_STATE === nothing
@@ -854,7 +854,7 @@ function prepare_input_state(state_type::Symbol, N::Int; ham_config=nothing)
         end
         ψ = normalize(CUSTOM_STATE)
         return ψ, ψ * ψ', CUSTOM_STATE_NAME, lowercase(replace(CUSTOM_STATE_NAME, " " => "_"))
-        
+
     else
         error("Unknown state type: $state_type")
     end
@@ -905,11 +905,11 @@ for entangler_gate in ENTANGLER_GATES
 
 for N in N_VALUES
     println("\n      N = $N QUBITS")
-    
+
     # Prepare input state
     ψ_input, ρ_input, state_name, state_str = prepare_input_state(input_state_type, N; ham_config=ham_config)
     println("        State: $state_name")
-    
+
     # k values for this N
     if K_VALUES == :auto
         k_values = sort(unique([N - 3, N - 1]))
@@ -921,10 +921,10 @@ for N in N_VALUES
 
 for n_layers in L_VALUES
     println("        L = $n_layers")
-    
+
     # Storage for all weight configs
     results_w = Dict{Int, Dict{String, Dict{Int, NamedTuple}}}()
-    
+
     # Filenames
     k_str = "k=$(join(k_values, ","))"
     opt_str = String(opt_type)
@@ -932,23 +932,23 @@ for n_layers in L_VALUES
     rot_str = join([uppercase(string(r)[2]) for r in ROTATION_GATES], "")
     ent_str = uppercase(string(entangler_gate))
     base_fname = "qae_$(state_str)_$(ansatz)_N$(N)_L$(n_layers)_R$(rot_str)_$(ent_str)_$(k_fname)_$(opt_str)"
-    
+
     # Train for each weight config → rep → k (innermost)
     for (w_idx, (w_fid, w_svn, w_ham)) in enumerate(WEIGHT_CONFIGS)
         global W_FID, W_SVN, W_HAM = w_fid, w_svn, w_ham
         println("          Weights: F=$w_fid S=$w_svn H=$w_ham")
-        
+
         results_w[w_idx] = Dict{String, Dict{Int, NamedTuple}}()
-        
+
         # Loop over representations and k values (innermost)
         for (rep_type, n_traj) in rep_configs
             key = rep_type == :dm ? "DM" : "MCWF-$n_traj"
             results_w[w_idx][key] = Dict{Int, NamedTuple}()
-            
+
             for k in k_values  # k is innermost (fastest)
                 seed = 42 + k + n_layers*100 + hash(ansatz) + N*1000 + w_idx*10000 + hash(entangler_gate) + hash(opt_type)
                 Random.seed!(seed)
-                
+
                 if rep_type == :dm
                     f, s, h, t = train_dm(ρ_input, N, k, n_layers, ansatz, entangler_gate, opt_type; n_epochs=N_EPOCHS, lr=LR)
                     results_w[w_idx][key][k] = (fids=f, ents=s, hams=h, time=t)
@@ -958,23 +958,23 @@ for n_layers in L_VALUES
                 end
             end
         end
-                
+
                 # INCREMENTAL PLOT: Create/update and save after each weight config
                 # Layout: rows = metrics (1-F, SvN, Dh), columns = weight configs
                 completed_weights = w_idx
-                plt = plot(layout=(3, n_weights), size=(500*n_weights, 1100), 
+                plt = plot(layout=(3, n_weights), size=(500*n_weights, 1100),
                            plot_title="$state_name | $ansatz R:$rot_str $ent_str | N=$N L=$n_layers $k_str | $opt_str",
                            margin=5Plots.mm, left_margin=12Plots.mm, bottom_margin=6Plots.mm,
                            titlefontsize=16, guidefontsize=12, tickfontsize=10, legendfontsize=10,
                            link=:x)
-                
+
                 # Plot all completed weight configs
                 for (col_idx, (pw_fid, pw_svn, pw_ham)) in enumerate(WEIGHT_CONFIGS[1:completed_weights])
                     w_label = "w=($pw_fid,$pw_svn,$pw_ham)"
                     is_last_col = (col_idx == n_weights)
                     is_first_col = (col_idx == 1)
                     xlab = "Epoch"
-                    
+
                     # Row 1: Infidelity (1-F)
                     subplot_1f = (1-1)*n_weights + col_idx
                     for (i, k) in enumerate(k_values)
@@ -991,7 +991,7 @@ for n_layers in L_VALUES
                                       title=w_label,
                                       legend=is_first_col ? :topright : false)
                             else
-                                plot!(plt[subplot_1f], infid, lw=2, color=colors[i], ls=ls, 
+                                plot!(plt[subplot_1f], infid, lw=2, color=colors[i], ls=ls,
                                       label=lbl,
                                       xlabel="", ylabel=is_first_col ? "1-F" : "",
                                       title=w_label,
@@ -1000,19 +1000,19 @@ for n_layers in L_VALUES
                         end
                     end
                     hline!(plt[subplot_1f], [0.0], lw=1, color=:black, ls=:dot, label="")
-                    
+
                     # Row 2: Entropy S_vN
                     subplot_svn = (2-1)*n_weights + col_idx
                     for (i, k) in enumerate(k_values)
                         for (j, rep) in enumerate(rep_keys_local)
                             ls = j == 1 ? :solid : :dash
                             data = results_w[col_idx][rep][k]
-                            plot!(plt[subplot_svn], data.ents, lw=2, color=colors[i], ls=ls, 
+                            plot!(plt[subplot_svn], data.ents, lw=2, color=colors[i], ls=ls,
                                   label="", xlabel="", ylabel=is_first_col ? "Sᵥₙ" : "", legend=false)
                         end
                     end
                     hline!(plt[subplot_svn], [0.0], lw=1, color=:black, ls=:dot, label="")
-                    
+
                     # Row 3: Hamming distance
                     subplot_dh = (3-1)*n_weights + col_idx
                     for (i, k) in enumerate(k_values)
@@ -1024,18 +1024,18 @@ for n_layers in L_VALUES
                                       lw=2, color=colors[i], ls=ls, label="",
                                       xlabel=xlab, ylabel=is_first_col ? "Dₕ" : "", legend=false)
                             else
-                                plot!(plt[subplot_dh], data.hams, lw=2, color=colors[i], ls=ls, 
+                                plot!(plt[subplot_dh], data.hams, lw=2, color=colors[i], ls=ls,
                                       label="", xlabel=xlab, ylabel=is_first_col ? "Dₕ" : "", legend=false)
                             end
                         end
                     end
                     hline!(plt[subplot_dh], [0.0], lw=1, color=:black, ls=:dot, label="")
                 end
-                
+
                 # Save incrementally (overwrites previous version)
                 savefig(plt, joinpath(OUTPUT_DIR, "fig_$base_fname.png"))
                 println("        → Saved: fig_$base_fname.png (weights $w_idx/$n_weights)")
-                
+
                 # === ADDITIONAL LOG-SCALE FIGURE ===
                 # Same layout but with log scale, filtering to positive values only
                 # First, compute row-wise min/max from ALL completed weight configs
@@ -1054,18 +1054,18 @@ for n_layers in L_VALUES
                 ymin_infid = isempty(all_infid) ? 1e-4 : max(minimum(all_infid) / 10, 1e-8)
                 ymin_svn = isempty(all_svn) ? 1e-4 : max(minimum(all_svn) / 10, 1e-8)
                 ymin_dh = isempty(all_dh) ? 1e-4 : max(minimum(all_dh) / 10, 1e-8)
-                
-                plt_log = plot(layout=(3, n_weights), size=(500*n_weights, 1100), 
+
+                plt_log = plot(layout=(3, n_weights), size=(500*n_weights, 1100),
                            plot_title="LOG | $state_name | $ansatz R:$rot_str $ent_str | N=$N L=$n_layers $k_str | $opt_str",
                            margin=5Plots.mm, left_margin=12Plots.mm, bottom_margin=6Plots.mm,
                            titlefontsize=16, guidefontsize=12, tickfontsize=10, legendfontsize=10,
                            link=:x)  # Share x-axis; will set ylims per row
-                
+
                 for (col_idx, (pw_fid, pw_svn, pw_ham)) in enumerate(WEIGHT_CONFIGS[1:w_idx])
                     w_label = "w=($pw_fid,$pw_svn,$pw_ham)"
                     is_first_col = (col_idx == 1)
                     xlab = "Epoch"
-                    
+
                     # Row 1: Infidelity (1-F) log scale - positive only
                     subplot_1f = (1-1)*n_weights + col_idx
                     log_ticks = [10.0^(-i) for i in 0:2:6]  # 1, 0.01, 0.0001, 10^-6
@@ -1080,7 +1080,7 @@ for n_layers in L_VALUES
                             eps = collect(1:length(infid))
                             mask = infid .> 0
                             if any(mask)
-                                plot!(plt_log[subplot_1f], eps[mask], infid[mask], 
+                                plot!(plt_log[subplot_1f], eps[mask], infid[mask],
                                       lw=2, color=colors[i], ls=ls, label=lbl,
                                       xlabel="", ylabel=is_first_col ? "1-F" : "",
                                       title=w_label, ylims=(ymin_infid, 1.0),
@@ -1088,7 +1088,7 @@ for n_layers in L_VALUES
                             end
                         end
                     end
-                    
+
                     # Row 2: Entropy S_vN log scale - positive only
                     subplot_svn = (2-1)*n_weights + col_idx
                     for (i, k) in enumerate(k_values)
@@ -1098,15 +1098,15 @@ for n_layers in L_VALUES
                             eps = collect(1:length(data.ents))
                             mask = data.ents .> 0
                             if any(mask)
-                                plot!(plt_log[subplot_svn], eps[mask], data.ents[mask], 
-                                      lw=2, color=colors[i], ls=ls, label="", 
-                                      xlabel="", ylabel=is_first_col ? "Sᵥₙ" : "", 
+                                plot!(plt_log[subplot_svn], eps[mask], data.ents[mask],
+                                      lw=2, color=colors[i], ls=ls, label="",
+                                      xlabel="", ylabel=is_first_col ? "Sᵥₙ" : "",
                                       ylims=(ymin_svn, 1.0),
                                       legend=false, yscale=:log10)
                             end
                         end
                     end
-                    
+
                     # Row 3: Hamming distance log scale - positive only
                     subplot_dh = (3-1)*n_weights + col_idx
                     dh_ticks = [10.0^(-i) for i in 0:2:6]  # 1, 0.01, 0.0001, 10^-6
@@ -1118,16 +1118,16 @@ for n_layers in L_VALUES
                             eps = collect(1:length(data.hams))
                             mask = data.hams .> 0
                             if any(mask)
-                                plot!(plt_log[subplot_dh], eps[mask], data.hams[mask], 
-                                      lw=2, color=colors[i], ls=ls, label="", 
-                                      xlabel=xlab, ylabel=is_first_col ? "Dₕ" : "", 
+                                plot!(plt_log[subplot_dh], eps[mask], data.hams[mask],
+                                      lw=2, color=colors[i], ls=ls, label="",
+                                      xlabel=xlab, ylabel=is_first_col ? "Dₕ" : "",
                                       ylims=(ymin_dh, 1.0),
                                       legend=false, yscale=:log10)
                             end
                         end
                     end
                 end
-                
+
                 try
                     savefig(plt_log, joinpath(OUTPUT_DIR, "fig_log_$base_fname.png"))
                     println("        → Saved: fig_log_$base_fname.png")
@@ -1135,11 +1135,11 @@ for n_layers in L_VALUES
                     println("        ⚠ Log plot failed (data may have zeros): $e")
                 end
             end # for w_idx
-            
+
             # Save data to data/ subfolder
             data_dir = joinpath(OUTPUT_DIR, "data")
             mkpath(data_dir)
-            
+
             # For first weight config only (main results)
             w_idx = 1
             for k in k_values
@@ -1153,7 +1153,7 @@ for n_layers in L_VALUES
                         @printf(f, "%d,%.8f,%.8f,%.8f\n", ep, dm_data.fids[ep], dm_data.ents[ep], dm_data.hams[ep])
                     end
                 end
-                
+
                 # MCWF data (no svn_std since S_vN computed from single reconstructed ρ)
                 for n_traj in MCWF_TRAJ_VALUES
                     key = "MCWF-$n_traj"
@@ -1163,7 +1163,7 @@ for n_layers in L_VALUES
                         println(f, "# MCWF results: $(ansatz), N=$N, L=$n_layers, k=$k, n_traj=$n_traj")
                         println(f, "epoch,fidelity_mean,fidelity_std,svn,hamming_mean,hamming_std")
                         for ep in 1:length(mcwf_data.fids)
-                            @printf(f, "%d,%.8f,%.8f,%.8f,%.8f,%.8f\n", 
+                            @printf(f, "%d,%.8f,%.8f,%.8f,%.8f,%.8f\n",
                                 ep, mcwf_data.fids[ep], mcwf_data.fids_std[ep],
                                 mcwf_data.ents[ep],
                                 mcwf_data.hams[ep], mcwf_data.hams_std[ep])
@@ -1199,7 +1199,7 @@ for ansatz in ANSATZ_TYPES
         print("      |---|")
         for _ in rep_keys; print("----------|"); end
         println()
-        
+
         # Get k values from results (handles :auto case)
         k_vals_used = sort(collect(keys(results[ansatz][n_layers][first(rep_keys)])))
         for k in k_vals_used

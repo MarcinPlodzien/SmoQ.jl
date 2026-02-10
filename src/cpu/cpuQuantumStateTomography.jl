@@ -62,10 +62,10 @@ S = von_neumann_entropy(ρ)
 function reconstruct_density_matrix(trajectories::Vector{Vector{ComplexF64}})
     M = length(trajectories)
     @assert M > 0 "Need at least one trajectory"
-    
+
     dim = length(trajectories[1])
     ρ = zeros(ComplexF64, dim, dim)
-    
+
     @inbounds for ψ in trajectories
         for j in 1:dim
             for i in 1:dim
@@ -73,7 +73,7 @@ function reconstruct_density_matrix(trajectories::Vector{Vector{ComplexF64}})
             end
         end
     end
-    
+
     ρ ./= M
     return ρ
 end
@@ -96,13 +96,13 @@ function reconstruct_reduced_density_matrix(
 )
     M = length(trajectories)
     @assert M > 0 "Need at least one trajectory"
-    
+
     keep = setdiff(1:N, trace_out)
     n_keep = length(keep)
     d_keep = 1 << n_keep
-    
+
     ρ_red = zeros(ComplexF64, d_keep, d_keep)
-    
+
     for ψ in trajectories
         for i_red in 0:(d_keep-1)
             for j_red in 0:(d_keep-1)
@@ -114,18 +114,18 @@ function reconstruct_reduced_density_matrix(
             end
         end
     end
-    
+
     ρ_red ./= M
     return ρ_red
 end
 
 # Helper function to build full index from reduced and traced parts
-function build_full_index(idx_keep::Int, idx_trace::Int, 
+function build_full_index(idx_keep::Int, idx_trace::Int,
                           keep::Vector{Int}, trace_out::Vector{Int}, N::Int)
     idx_full = 0
     keep_bit = 0
     trace_bit = 0
-    
+
     for q in 1:N
         if q in keep
             bit = (idx_keep >> keep_bit) & 1
@@ -137,7 +137,7 @@ function build_full_index(idx_keep::Int, idx_trace::Int,
             trace_bit += 1
         end
     end
-    
+
     return idx_full
 end
 
@@ -167,7 +167,7 @@ S = von_neumann_entropy(result.rho)
 """
 function analyze_mcwf_trajectories(trajectories::Vector{Vector{ComplexF64}})
     ρ = reconstruct_density_matrix(trajectories)
-    
+
     return (
         rho = ρ,
         purity = real(tr(ρ * ρ)),

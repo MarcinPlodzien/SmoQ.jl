@@ -2,21 +2,21 @@
 #=
 ================================================================================
     4-WAY COMPARISON: DM×{Exact,Trotter} vs MCWF×{Exact,Trotter}
-    
+
     LINDBLADIAN: dρ/dt = -i[H,ρ] + γ Σₖ D[Lₖ]ρ
-    
+
     JUMP OPERATOR: Lₖ = σ_zₖ (pure dephasing)
                    Applied to ALL qubits with rate γ
-    
+
     PHYSICS: ⟨X⟩,⟨Y⟩ → 0 (coherences decay)
              ⟨Z⟩ unchanged (populations preserved)
-    
+
     Methods:
     1. DM + Exact propagator (gold standard)
     2. DM + Trotter gates
     3. MCWF + Exact propagator
     4. MCWF + Trotter gates
-    
+
     All 4 should overlap if implementations are correct!
 ================================================================================
 =#
@@ -93,7 +93,7 @@ println("=" ^ 80)
 # BUILD HAMILTONIAN & PROPAGATORS
 # ==============================================================================
 println("\nBuilding Hamiltonian...")
-H_params = build_hamiltonian_parameters(N, 1; 
+H_params = build_hamiltonian_parameters(N, 1;
     J_x_direction=(1.0, 1.0, 0.5), J_y_direction=(0., 0., 0.), h_field=(1.0, 0., 0.))
 
 # Only build sparse H and exact propagator for small N (memory-intensive)
@@ -124,7 +124,7 @@ dim = 1 << N
 # ψ0[1] = 1.0 / sqrt(2); ψ0[end] = 1.0 / sqrt(2)
 
 # ---- Néel state: |0101...⟩ (commented out) ----
-# neel_index = sum(1 << (k-1) for k in 1:2:N)  
+# neel_index = sum(1 << (k-1) for k in 1:2:N)
 # ψ0 = zeros(ComplexF64, dim)
 # ψ0[neel_index + 1] = 1.0
 
@@ -171,11 +171,11 @@ timing = Dict{String, Float64}()
 if N < DM_CUTOFF
     println("\n" * "-"^50)
     println("1. DM + Exact propagator (gold standard)...")
-    
+
     # Warmup
     ρ_warmup = copy(ρ0)
     lindblad_dm_step!(ρ_warmup, U_exact, N, γ, dt)
-    
+
     # Evolution with fair timing
     ρ = copy(ρ0)
     t_start = time()
@@ -192,7 +192,7 @@ if N < DM_CUTOFF
     end
     timing["DM+Exact"] = time() - t_start
     println("   Done in $(round(timing["DM+Exact"], digits=2))s")
-    
+
     # ==============================================================================
     # 2. DM + TROTTER
     # ==============================================================================
@@ -226,7 +226,7 @@ if N < MCWF_EXACT_CUTOFF
     println("3. MCWF + Exact propagator ($n_traj trajectories)...")
     t_start = time()
     traj_data_exact = zeros(n_steps + 1, 6, n_traj)
-    
+
     Threads.@threads for traj in 1:n_traj
         ψ = copy(ψ0)
         for step in 0:n_steps
@@ -242,7 +242,7 @@ if N < MCWF_EXACT_CUTOFF
         end
         traj % 1000 == 0 && print("   $traj/$n_traj\r")
     end
-    
+
     # Store mean and std for MCWF+Exact
     for (i, o) in enumerate(obs_names)
         results["MCWF+Exact"][o] .= vec(mean(traj_data_exact[:, i, :], dims=2))
@@ -299,34 +299,34 @@ println("Generating 2×3 grid plot with error bands...")
 plots = []
 for obs in obs_names
     p = plot(title=obs, xlabel="t", legend=:topright, ylims=(-1, 1))
-    
+
     # DM methods only if N < DM_CUTOFF
     if N < DM_CUTOFF
         t_dm_exact = round(timing["DM+Exact"], sigdigits=2)
         t_dm_trotter = round(timing["DM+Trotter"], sigdigits=2)
         # DM+Exact (thick blue solid)
         plot!(p, times, results["DM+Exact"][obs], lw=3, color=:blue, label="DM+Exact ($(t_dm_exact)s)")
-        
+
         # DM+Trotter (thick cyan dashed)
         plot!(p, times, results["DM+Trotter"][obs], lw=3, ls=:dash, color=:cyan, label="DM+Trotter ($(t_dm_trotter)s)")
     end
-    
+
     # MCWF+Exact only if N < MCWF_EXACT_CUTOFF
     if N < MCWF_EXACT_CUTOFF
         t_mcwf_exact = round(timing["MCWF+Exact"], sigdigits=2)
-        plot!(p, times, results["MCWF+Exact"][obs], ribbon=2mcwf_exact_std[obs], 
+        plot!(p, times, results["MCWF+Exact"][obs], ribbon=2mcwf_exact_std[obs],
               fillalpha=0.3, lw=2, color=:red, label="MCWF+Exact ($(n_traj)traj, $(t_mcwf_exact)s)")
     end
-    
+
     # MCWF+Trotter with shaded error (orange) - always plotted
     t_mcwf_trotter = round(timing["MCWF+Trotter"], sigdigits=2)
-    plot!(p, times, results["MCWF+Trotter"][obs], ribbon=2mcwf_trotter_std[obs], 
+    plot!(p, times, results["MCWF+Trotter"][obs], ribbon=2mcwf_trotter_std[obs],
           fillalpha=0.3, lw=2, color=:orange, label="MCWF+Trotter ($(n_traj)traj, $(t_mcwf_trotter)s)")
-    
+
     push!(plots, p)
 end
 
-fig = plot(plots..., layout=(2,3), size=(1500, 800), 
+fig = plot(plots..., layout=(2,3), size=(1500, 800),
     plot_title="|ψ₀⟩=|0...0⟩  |  dρ/dt=-i[H,ρ]+γΣᵢ(σᶻᵢρσᶻᵢ-ρ)  |  H=Jˣˣσˣσˣ+Jʸʸσʸσʸ+Jᶻᶻσᶻσᶻ+hˣσˣ  |  N=$N, γ=$γ")
 
 figpath = joinpath(FIGURES_DIR, "fig_lindbladian_$(STATE_NAME)_N$(lpad(N, 2, '0'))_Ntraj$(n_traj).png")

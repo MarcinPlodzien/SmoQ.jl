@@ -114,7 +114,7 @@ measurement, reset, trace out, or Lindbladian block.
 - `basis::Symbol`: Measurement basis (:z, :x, :y)
 - `if_outcome::Int`: Classical conditioning (0=always, >0=apply only if outcomes[if_outcome]==1)
 - `H::Any`: Hamiltonian for Lindbladian
-- `L_ops::Vector`: Jump operators for Lindbladian  
+- `L_ops::Vector`: Jump operators for Lindbladian
 - `dt::Float64`: Time step for analog evolution
 """
 struct CircuitOperation
@@ -169,7 +169,7 @@ gate(:rz, [3], angle=π/4)              # Fixed Rz(π/4)
 gate(:x, [2], if_outcome=1)            # X on qubit 2 only if outcomes[1]==1
 ```
 """
-function gate(type::Symbol, qubits::Vector{Int}; 
+function gate(type::Symbol, qubits::Vector{Int};
               param_idx::Int=0, angle::Float64=0.0, if_outcome::Int=0)
     @assert type in GATE_TYPES "Unknown gate type: $type"
     return CircuitOperation(type, qubits, param_idx, angle, 0.0, :none, :z, if_outcome, nothing, [], 0.0)
@@ -337,14 +337,14 @@ Create a layer of single-qubit rotations on all qubits.
 function single_qubit_rotation_layer(N::Int, param_offset::Int; gates::Vector{Symbol}=[:ry])
     ops = CircuitOperation[]
     idx = param_offset
-    
+
     for gate_type in gates
         for q in 1:N
             push!(ops, gate(gate_type, [q], param_idx=idx))
             idx += 1
         end
     end
-    
+
     return CircuitLayer(ops), idx
 end
 
@@ -355,7 +355,7 @@ Create a layer of entangling gates.
 """
 function entangling_layer(N::Int; topology::Symbol=:chain, gate_type::Symbol=:cz)
     ops = CircuitOperation[]
-    
+
     if topology == :chain
         for q in 1:(N-1)
             push!(ops, gate(gate_type, [q, q+1]))
@@ -372,7 +372,7 @@ function entangling_layer(N::Int; topology::Symbol=:chain, gate_type::Symbol=:cz
     else
         error("Unknown topology: $topology")
     end
-    
+
     return CircuitLayer(ops)
 end
 
@@ -395,7 +395,7 @@ end
 
 Hardware-efficient ansatz: rotation layers + entangling layers.
 """
-function hardware_efficient_ansatz(N::Int, n_layers::Int; 
+function hardware_efficient_ansatz(N::Int, n_layers::Int;
                                     entangler::Symbol=:cz,
                                     topology::Symbol=:chain,
                                     rotations::Vector{Symbol}=[:ry],
@@ -403,27 +403,27 @@ function hardware_efficient_ansatz(N::Int, n_layers::Int;
                                     noise_p::Float64=0.0)
     layers = CircuitLayer[]
     param_idx = 1
-    
+
     for _ in 1:n_layers
         # Rotation layer
         rot_layer, param_idx = single_qubit_rotation_layer(N, param_idx; gates=rotations)
         push!(layers, rot_layer)
-        
+
         # Optional noise after rotations
         if !isnothing(noise_type)
             push!(layers, noise_layer(N, noise_type, p=noise_p))
         end
-        
+
         # Entangling layer
         if N > 1
             push!(layers, entangling_layer(N; topology=topology, gate_type=entangler))
         end
     end
-    
+
     # Final rotation layer
     rot_layer, param_idx = single_qubit_rotation_layer(N, param_idx; gates=rotations)
     push!(layers, rot_layer)
-    
+
     return ParameterizedCircuit(N, layers)
 end
 
@@ -432,7 +432,7 @@ end
 
 Strong entangling ansatz with full Rx-Ry-Rz rotations.
 """
-function strong_entangling_ansatz(N::Int, n_layers::Int; 
+function strong_entangling_ansatz(N::Int, n_layers::Int;
                                    topology::Symbol=:ring,
                                    noise_type::Union{Nothing,Symbol}=nothing,
                                    noise_p::Float64=0.0)
@@ -470,13 +470,13 @@ end
 """
 function get_parameter_info(circuit::ParameterizedCircuit)
     params = NamedTuple{(:param_idx, :gate_type, :qubits, :op_index), Tuple{Int, Symbol, Vector{Int}, Int}}[]
-    
+
     for (i, op) in enumerate(circuit.operations)
         if op.param_idx > 0
             push!(params, (param_idx=op.param_idx, gate_type=op.type, qubits=op.qubits, op_index=i))
         end
     end
-    
+
     sort!(params, by=p -> p.param_idx)
     return params
 end
@@ -494,7 +494,7 @@ Create initial parameter vector for circuit.
 """
 function initialize_parameters(circuit::ParameterizedCircuit; init::Union{Symbol, Number}=:zeros)
     n = circuit.n_params
-    
+
     if init == :zeros
         return zeros(Float64, n)
     elseif init == :random
@@ -521,7 +521,7 @@ angles = extract_gate_angles(circuit, θ)
 """
 function extract_gate_angles(circuit::ParameterizedCircuit, θ::Vector{Float64})
     angles = Dict{Int, Float64}()
-    
+
     for (i, op) in enumerate(circuit.operations)
         if op.param_idx > 0
             angles[i] = θ[op.param_idx]
@@ -529,7 +529,7 @@ function extract_gate_angles(circuit::ParameterizedCircuit, θ::Vector{Float64})
             angles[i] = op.fixed_angle
         end
     end
-    
+
     return angles
 end
 
@@ -540,10 +540,10 @@ Print human-readable description of all variational parameters.
 """
 function describe_parameters(circuit::ParameterizedCircuit)
     info = get_parameter_info(circuit)
-    
+
     println("Circuit has $(circuit.n_params) variational parameters:")
     println("-" ^ 50)
-    
+
     for p in info
         println("  θ[$(p.param_idx)] → $(p.gate_type) on qubit(s) $(p.qubits)")
     end
@@ -560,13 +560,13 @@ end
 function describe_circuit(circuit::ParameterizedCircuit)
     println("ParameterizedCircuit: $(circuit.N) qubits, $(length(circuit.operations)) operations, $(circuit.n_params) parameters")
     println("-" ^ 60)
-    
+
     counts = count_operations(circuit)
-    
+
     gates = filter(kv -> kv[1] in GATE_TYPES, counts)
     noise = filter(kv -> kv[1] in NOISE_TYPES, counts)
     meas = filter(kv -> kv[1] in MEASURE_TYPES || kv[1] in RESET_TYPES, counts)
-    
+
     !isempty(gates) && println("  Gates: ", join(["$k×$v" for (k,v) in gates], ", "))
     !isempty(noise) && println("  Noise: ", join(["$k×$v" for (k,v) in noise], ", "))
     !isempty(meas) && println("  Meas/Reset: ", join(["$k×$v" for (k,v) in meas], ", "))
@@ -605,12 +605,12 @@ circuit = ParameterizedCircuit(N, ops)
 function repeat_layer(layer_fn::Function, L::Int, N::Int; param_offset::Int=1)
     all_ops = CircuitOperation[]
     param_idx = param_offset
-    
+
     for _ in 1:L
         ops, param_idx = layer_fn(N, param_idx)
         append!(all_ops, ops)
     end
-    
+
     return all_ops, param_idx
 end
 
@@ -643,16 +643,16 @@ function repeat_operations(ops::Vector{CircuitOperation}, L::Int; renumber_param
         end
         return result
     end
-    
+
     # Find max param index in one layer
     max_param = 0
     for op in ops
         max_param = max(max_param, op.param_idx)
     end
-    
+
     result = CircuitOperation[]
     offset = 0
-    
+
     for _ in 1:L
         for op in ops
             if op.param_idx > 0
@@ -669,7 +669,7 @@ function repeat_operations(ops::Vector{CircuitOperation}, L::Int; renumber_param
         end
         offset += max_param
     end
-    
+
     return result
 end
 

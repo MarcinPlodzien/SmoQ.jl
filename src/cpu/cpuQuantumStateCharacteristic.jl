@@ -7,7 +7,7 @@
 
 OVERVIEW
 --------
-Functions for characterizing quantum states: entanglement measures, 
+Functions for characterizing quantum states: entanglement measures,
 localization measures, and purity.
 
 No bitwise operations dependency - uses bitwise operations for efficiency.
@@ -56,7 +56,7 @@ Compute IPR = Σᵢ ρᵢᵢ² for density matrix (diagonal localization).
 # Properties
 - IPR = 1 for state localized on single basis state
 - IPR = 1/d for maximally delocalized state
-- Measures basis localization 
+- Measures basis localization
 # Complexity
 O(2^N) for density matrix (single diagonal pass).
 """
@@ -73,7 +73,7 @@ end
 
 Compute IPR = Σᵢ |ψᵢ|⁴ for pure state.
 
-# Complexity  
+# Complexity
 O(2^N) — very cheap, single pass over amplitudes.
 """
 function inverse_participation_ratio(ψ::Vector{ComplexF64})
@@ -206,7 +206,7 @@ Compute entanglement entropy for horizontal (Rail 1 | Rail 2) bipartition using 
 function entanglement_entropy_schmidt_horizontal(ψ::Vector{ComplexF64}, L::Int, n_rails::Int)
     @assert n_rails == 2 "Horizontal cut requires exactly 2 rails"
     d_rail = 2^L
-    
+
     M = zeros(ComplexF64, d_rail, d_rail)
     @inbounds for rail2 in 0:(d_rail-1)
         for rail1 in 0:(d_rail-1)
@@ -214,7 +214,7 @@ function entanglement_entropy_schmidt_horizontal(ψ::Vector{ComplexF64}, L::Int,
             M[rail1+1, rail2+1] = ψ[idx+1]
         end
     end
-    
+
     σs = svdvals(M)
     entropy = 0.0
     @inbounds for σ in σs
@@ -233,10 +233,10 @@ Compute von Neumann entropy for horizontal (Rail 1 | Rail 2) bipartition.
 """
 function entanglement_entropy_horizontal(ρ_full::Matrix{ComplexF64}, L::Int, n_rails::Int)
     @assert n_rails == 2 "Horizontal cut requires exactly 2 rails"
-    
+
     d_rail = 2^L
     ρ_rail2 = zeros(ComplexF64, d_rail, d_rail)
-    
+
     @inbounds for i2 in 0:(d_rail-1)
         for j2 in 0:(d_rail-1)
             for k1 in 0:(d_rail-1)
@@ -246,7 +246,7 @@ function entanglement_entropy_horizontal(ρ_full::Matrix{ComplexF64}, L::Int, n_
             end
         end
     end
-    
+
     return von_neumann_entropy(ρ_rail2)
 end
 
@@ -258,38 +258,38 @@ Compute von Neumann entropy for vertical (Left | Right) bipartition.
 function entanglement_entropy_vertical(ρ_full::Matrix{ComplexF64}, L::Int, n_rails::Int)
     @assert n_rails == 2 "Vertical cut requires exactly 2 rails"
     @assert L % 2 == 0 "Vertical cut requires even L"
-    
+
     L_half = L ÷ 2
     d_left = 2^(2 * L_half)
     d_right = 2^(2 * L_half)
-    
+
     ρ_left = zeros(ComplexF64, d_left, d_left)
     mask_half = (1 << L_half) - 1
-    
+
     @inbounds for i_left in 0:(d_left-1)
         for j_left in 0:(d_left-1)
             i_r1_left = i_left & mask_half
             i_r2_left = (i_left >> L_half) & mask_half
             j_r1_left = j_left & mask_half
             j_r2_left = (j_left >> L_half) & mask_half
-            
+
             for k_right in 0:(d_right-1)
                 k_r1_right = k_right & mask_half
                 k_r2_right = (k_right >> L_half) & mask_half
-                
+
                 i_r1 = i_r1_left | (k_r1_right << L_half)
                 i_r2 = i_r2_left | (k_r2_right << L_half)
                 i_full = (i_r2 << L) | i_r1
-                
+
                 j_r1 = j_r1_left | (k_r1_right << L_half)
                 j_r2 = j_r2_left | (k_r2_right << L_half)
                 j_full = (j_r2 << L) | j_r1
-                
+
                 ρ_left[i_left+1, j_left+1] += ρ_full[i_full+1, j_full+1]
             end
         end
     end
-    
+
     return von_neumann_entropy(ρ_left)
 end
 
@@ -306,7 +306,7 @@ function partial_transpose_rail1(ρ_full::Matrix{ComplexF64}, L::Int)
     d_rail = 2^L
     d_full = 2^(2*L)
     ρ_pt = zeros(ComplexF64, d_full, d_full)
-    
+
     @inbounds for i1 in 0:(d_rail-1)
         for i2 in 0:(d_rail-1)
             for j1 in 0:(d_rail-1)
@@ -320,7 +320,7 @@ function partial_transpose_rail1(ρ_full::Matrix{ComplexF64}, L::Int)
             end
         end
     end
-    
+
     return ρ_pt
 end
 
@@ -361,9 +361,9 @@ function partial_transpose_left(ρ_full::Matrix{ComplexF64}, L::Int)
     L_half = L ÷ 2
     d_full = 2^(2*L)
     d_half = 2^L_half
-    
+
     ρ_pt = zeros(ComplexF64, d_full, d_full)
-    
+
     # Left half = sites 1..L_half on both rails
     # This is more complex - swap left indices while keeping right fixed
     @inbounds for i in 0:(d_full-1)
@@ -371,25 +371,25 @@ function partial_transpose_left(ρ_full::Matrix{ComplexF64}, L::Int)
             # Extract left parts (bits 0..L_half-1 and L..L+L_half-1)
             # and right parts (bits L_half..L-1 and L+L_half..2L-1)
             mask_half = (1 << L_half) - 1
-            
+
             i_r1_left = i & mask_half
             i_r1_right = (i >> L_half) & mask_half
             i_r2_left = (i >> L) & mask_half
             i_r2_right = (i >> (L + L_half)) & mask_half
-            
+
             j_r1_left = j & mask_half
             j_r1_right = (j >> L_half) & mask_half
             j_r2_left = (j >> L) & mask_half
             j_r2_right = (j >> (L + L_half)) & mask_half
-            
+
             # Swap left indices: i_left <-> j_left
             new_i = j_r1_left | (i_r1_right << L_half) | (j_r2_left << L) | (i_r2_right << (L + L_half))
             new_j = i_r1_left | (j_r1_right << L_half) | (i_r2_left << L) | (j_r2_right << (L + L_half))
-            
+
             ρ_pt[new_i+1, new_j+1] = ρ_full[i+1, j+1]
         end
     end
-    
+
     return ρ_pt
 end
 
@@ -402,7 +402,7 @@ Warning: O(2^{4L}) eigenvalue decomposition — expensive!
 function negativity_vertical(ρ_full::Matrix{ComplexF64}, L::Int, n_rails::Int)
     @assert n_rails == 2 "Vertical cut requires exactly 2 rails"
     @assert L % 2 == 0 "Vertical cut requires even L"
-    
+
     ρ_pt = partial_transpose_left(ρ_full, L)
     λs = real.(eigvals(Hermitian(ρ_pt)))
     trace_norm = sum(abs, λs)
