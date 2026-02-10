@@ -16,15 +16,15 @@
 
 We provide a comprehensive set of **numerical experiments** spanning:
 
-| Category | Topics |
-|----------|--------|
-| **Quantum Information Protocols** | Teleportation, entanglement swapping, Bell states, CHSH inequality |
-| **Many-Body Quantum Dynamics** | Spin chain evolution, Heisenberg/XXZ/TFIM models, OAT squeezing |
-| **Open Quantum Systems** | Lindbladian dynamics, DM vs MCWF, noise channels (depolarizing, dephasing, amplitude damping) |
-| **Variational Quantum Circuits** | VQE, quantum autoencoders, parametrized gates, optimizer benchmarks (SPSA, Adam) |
-| **Quantum Metrology** | Quantum Fisher Information, spin squeezing, Heisenberg scaling |
-| **Classical Shadows** | Randomized measurements, observable estimation, state tomography |
-| **Stabilizer Rényi Entropy** | Magic quantification, brute-force and Fast Walsh-Hadamard Transform (FWHT) algorithms |
+|             Category              |                                            Topics                                             |
+| --------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Quantum Information Protocols** | Teleportation, entanglement swapping, Bell states, CHSH inequality                            |
+| **Many-Body Quantum Dynamics**    | Spin chain evolution, Heisenberg/XXZ/TFIM models, OAT squeezing                               |
+| **Open Quantum Systems**          | Lindbladian dynamics, DM vs MCWF, noise channels (depolarizing, dephasing, amplitude damping) |
+| **Variational Quantum Circuits**  | VQE, quantum autoencoders, parametrized gates, optimizer benchmarks (SPSA, Adam)              |
+| **Quantum Metrology**             | Quantum Fisher Information, spin squeezing, Heisenberg scaling                                |
+| **Classical Shadows**             | Randomized measurements, observable estimation, state tomography                              |
+| **Stabilizer Rényi Entropy**      | Magic quantification, brute-force and Fast Walsh-Hadamard Transform (FWHT) algorithms         |
 
 All experiments are provided as ready-to-run demo scripts in the `scripts/` directory.
 
@@ -86,13 +86,13 @@ Simulator for digital and analog quantum computing written in Julia with matrix-
 - **Stochastic trajectories** — MCWF for mixed states without storing ρ
 
 ### Quantum Operations (All Matrix-Free)
-| Category | Operations |
-|----------|------------|
-| **Single-qubit gates** | Rx, Ry, Rz, H, X, Y, Z, S, T, S†, T† |
-| **Two-qubit gates** | CZ, CNOT, SWAP, Rxx, Ryy, Rzz |
-| **Observables** | Pauli strings, in particular ⟨X⟩, ⟨Y⟩, ⟨Z⟩, ⟨XX⟩, ⟨YY⟩, ⟨ZZ⟩ |
-| **Noise channels** | Depolarizing, dephasing, amplitude damping, bit/phase flip |
-| **Measurements** | Projective (X, Y, Z basis), reset, state collapse |
+|        Category        |                          Operations                          |
+| ---------------------- | ------------------------------------------------------------ |
+| **Single-qubit gates** | Rx, Ry, Rz, H, X, Y, Z, S, T, S†, T†                         |
+| **Two-qubit gates**    | CZ, CNOT, SWAP, Rxx, Ryy, Rzz                                |
+| **Observables**        | Pauli strings, in particular ⟨X⟩, ⟨Y⟩, ⟨Z⟩, ⟨XX⟩, ⟨YY⟩, ⟨ZZ⟩ |
+| **Noise channels**     | Depolarizing, dephasing, amplitude damping, bit/phase flip   |
+| **Measurements**       | Projective (X, Y, Z basis), reset, state collapse            |
 
 ### Time Evolution (Analog Simulation)
 - **Trotter decomposition** — matrix-free gate sequences for local Hamiltonians
@@ -207,20 +207,20 @@ SmoQ.jl/
 
 ### Core Modules (`utils/cpu/`)
 
-| Category | Modules | Description |
-|----------|---------|-------------|
-| **State Preparation** | `cpuQuantumStatePreparation.jl` | GHZ, W, Bell, Dicke, cluster, computational basis |
-| **Gates & Observables** | `cpuQuantumChannelGates.jl`, `cpuQuantumStateObservables.jl` | All single/two-qubit gates, Pauli expectations |
-| **Measurements** | `cpuQuantumStateMeasurements.jl`, `cpuQuantumStatePartialTrace.jl` | Projective measurements, partial trace, tomography |
-| **Noise Channels** | `cpuQuantumChannelKrausOperators.jl` | Depolarizing, dephasing, amplitude damping, bit/phase flip |
-| **Unitary Evolution** | `cpuQuantumChannelUnitaryEvolution{Trotter,Chebyshev,Exact}.jl` | Three integrators for Hamiltonian dynamics |
-| **Lindbladian** | `cpuQuantumChannelLindbladianEvolution{DM,MCWF}.jl` | Open system dynamics: density matrix or trajectories |
-| **Hamiltonians** | `cpuHamiltonianBuilder.jl` | Heisenberg, XXZ, TFIM, OAT, custom Hamiltonians |
-| **VQC** | `cpuVariationalQuantumCircuit{Builder,Executor,Gradients,Optimizers}.jl` | Parametrized circuits, SPSA, Adam, parameter-shift |
-| **Metrology** | `cpuQuantumFisherInformation.jl`, `cpuQuantumStateCharacteristic.jl` | QFI, entropy, purity, fidelity, trace distance |
-| **Shadows** | `cpuClassicalShadows.jl` | Pauli/Clifford shadows, observable estimation |
-| **Bell Correlators** | `cpuQuantumStateManyBodyBellCorrelator.jl` | Q_ent, Q_bell entanglement witnesses |
-| **Autodiff** | `cpuVQCEnzymeWrapper.jl` | Enzyme.jl integration for analytic gradients |
+|        Category         |                                 Modules                                  |                        Description                         |
+| ----------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| **State Preparation**   | `cpuQuantumStatePreparation.jl`                                          | GHZ, W, Bell, Dicke, cluster, computational basis          |
+| **Gates & Observables** | `cpuQuantumChannelGates.jl`, `cpuQuantumStateObservables.jl`             | All single/two-qubit gates, Pauli expectations             |
+| **Measurements**        | `cpuQuantumStateMeasurements.jl`, `cpuQuantumStatePartialTrace.jl`       | Projective measurements, partial trace, tomography         |
+| **Noise Channels**      | `cpuQuantumChannelKrausOperators.jl`                                     | Depolarizing, dephasing, amplitude damping, bit/phase flip |
+| **Unitary Evolution**   | `cpuQuantumChannelUnitaryEvolution{Trotter,Chebyshev,Exact}.jl`          | Three integrators for Hamiltonian dynamics                 |
+| **Lindbladian**         | `cpuQuantumChannelLindbladianEvolution{DM,MCWF}.jl`                      | Open system dynamics: density matrix or trajectories       |
+| **Hamiltonians**        | `cpuHamiltonianBuilder.jl`                                               | Heisenberg, XXZ, TFIM, OAT, custom Hamiltonians            |
+| **VQC**                 | `cpuVariationalQuantumCircuit{Builder,Executor,Gradients,Optimizers}.jl` | Parametrized circuits, SPSA, Adam, parameter-shift         |
+| **Metrology**           | `cpuQuantumFisherInformation.jl`, `cpuQuantumStateCharacteristic.jl`     | QFI, entropy, purity, fidelity, trace distance             |
+| **Shadows**             | `cpuClassicalShadows.jl`                                                 | Pauli/Clifford shadows, observable estimation              |
+| **Bell Correlators**    | `cpuQuantumStateManyBodyBellCorrelator.jl`                               | Q_ent, Q_bell entanglement witnesses                       |
+| **Autodiff**            | `cpuVQCEnzymeWrapper.jl`                                                 | Enzyme.jl integration for analytic gradients               |
 
 ---
 
@@ -487,13 +487,13 @@ SmoQ supports simulation of both ideal and noisy quantum circuits. Noise can be 
 
 The following noise channels are available for noisy circuit simulation:
 
-| Channel | Physical Process | Effect on State |
-|---------|-----------------|----------------|
-| **Depolarizing** | Uniform random errors | ρ → (1-p)ρ + (p/3)(XρX + YρY + ZρZ) |
-| **Dephasing** | T₂ decay, phase randomization | Off-diagonal elements decay: ρ₀₁ → √(1-p)·ρ₀₁ |
-| **Amplitude Damping** | T₁ relaxation, spontaneous emission | \|1⟩ → \|0⟩ with rate γ, coherences decay |
-| **Bit Flip** | Classical bit error | X applied with probability p |
-| **Phase Flip** | Phase error | Z applied with probability p |
+|        Channel        |          Physical Process           |                Effect on State                |        |                                  |
+| --------------------- | ----------------------------------- | --------------------------------------------- | ------ | -------------------------------- |
+| **Depolarizing**      | Uniform random errors               | ρ → (1-p)ρ + (p/3)(XρX + YρY + ZρZ)           |        |                                  |
+| **Dephasing**         | T₂ decay, phase randomization       | Off-diagonal elements decay: ρ₀₁ → √(1-p)·ρ₀₁ |        |                                  |
+| **Amplitude Damping** | T₁ relaxation, spontaneous emission | \                                             | 1⟩ → \ | 0⟩ with rate γ, coherences decay |
+| **Bit Flip**          | Classical bit error                 | X applied with probability p                  |        |                                  |
+| **Phase Flip**        | Phase error                         | Z applied with probability p                  |        |                                  |
 
 All noise channels work with both density matrices (exact) and state vectors (MCWF stochastic sampling).
 
@@ -774,12 +774,12 @@ S_ent = get_von_neumann_entropy(ρ_reduced)
 
 SmoQ supports mid-circuit measurements for quantum information protocols:
 
-| Protocol | Key Functions | Demo |
-|----------|--------------|------|
-| Teleportation | `projective_measurement!`, `apply_pauli_x_psi!`, `apply_pauli_z_psi!` | `demo_quantum_info_protocols.jl` |
-| Entanglement Swapping | `partial_trace`, `expect_corr` | `demo_quantum_info_protocols.jl` |
-| GHZ/Bell States | `apply_hadamard_psi!`, `apply_cz_psi!` | `demo_quantum_info_protocols.jl` |
-| CHSH Inequality | `projective_measurement!`, measurement statistics | `demo_quantum_info_protocols.jl` |
+|       Protocol        |                             Key Functions                             |               Demo               |
+| --------------------- | --------------------------------------------------------------------- | -------------------------------- |
+| Teleportation         | `projective_measurement!`, `apply_pauli_x_psi!`, `apply_pauli_z_psi!` | `demo_quantum_info_protocols.jl` |
+| Entanglement Swapping | `partial_trace`, `expect_corr`                                        | `demo_quantum_info_protocols.jl` |
+| GHZ/Bell States       | `apply_hadamard_psi!`, `apply_cz_psi!`                                | `demo_quantum_info_protocols.jl` |
+| CHSH Inequality       | `projective_measurement!`, measurement statistics                     | `demo_quantum_info_protocols.jl` |
 
 See `scripts/quantum_information/demo_quantum_info_protocols.jl` for complete working examples.
 
@@ -811,20 +811,20 @@ HAMILTONIAN_CONFIGS = [
 
 ### Tracked Metrics (3×3 Grid)
 
-| Row | Metrics |
-|-----|--------|
+|  Row  |                      Metrics                       |
+| ----- | -------------------------------------------------- |
 | **1** | Energy E(θ), Entropy Sᵥₙ, Fidelity F with exact GS |
-| **2** | Local observables ⟨X⟩, ⟨Y⟩, ⟨Z⟩ per qubit |
-| **3** | Correlators ⟨XX⟩, ⟨YY⟩, ⟨ZZ⟩ per bond |
+| **2** | Local observables ⟨X⟩, ⟨Y⟩, ⟨Z⟩ per qubit          |
+| **3** | Correlators ⟨XX⟩, ⟨YY⟩, ⟨ZZ⟩ per bond              |
 
 ### Key Components
 
-| Component | Function | Module |
-|-----------|----------|--------|
-| Ansatz | `build_ansatz_spec(N, L, :hea)` | VQE script |
-| Energy | `compute_energy(ψ, N, Jxx, Jyy, Jzz, hx)` | VQE script |
-| Lanczos | `ground_state_xxz(N, Jxx, Jyy, Jzz, hx)` | `CPUQuantumStateLanczos` |
-| Optimizer | SPSA + Adam hybrid | `Optimisers.jl` |
+| Component |                 Function                  |          Module          |
+| --------- | ----------------------------------------- | ------------------------ |
+| Ansatz    | `build_ansatz_spec(N, L, :hea)`           | VQE script               |
+| Energy    | `compute_energy(ψ, N, Jxx, Jyy, Jzz, hx)` | VQE script               |
+| Lanczos   | `ground_state_xxz(N, Jxx, Jyy, Jzz, hx)`  | `CPUQuantumStateLanczos` |
+| Optimizer | SPSA + Adam hybrid                        | `Optimisers.jl`          |
 
 ### Optimizer: SPSA + Adam
 
@@ -852,18 +852,18 @@ Compress N-qubit states to (N-k)-qubit latent representation:
 
 ### Representations
 
-| Mode | Compression | Memory | Noise |
-|------|-------------|--------|-------|
-| **DM** | Exact partial trace | O(4^N) | Deterministic |
-| **MCWF** | Measure + reset | O(2^N) | Stochastic |
+|   Mode   |     Compression     | Memory |     Noise     |
+| -------- | ------------------- | ------ | ------------- |
+| **DM**   | Exact partial trace | O(4^N) | Deterministic |
+| **MCWF** | Measure + reset     | O(2^N) | Stochastic    |
 
 ### Compressibility via Schmidt Rank
 
-| State | Schmidt Rank | Compressibility |
-|-------|-------------|-----------------|
-| GHZ | 2 | Highly compressible (2D subspace) |
-| W | 2 | Compressible, robust to qubit loss |
-| Dicke | O(2^(N/2)) | Hard to compress (high-dimensional) |
+| State | Schmidt Rank |           Compressibility           |
+| ----- | ------------ | ----------------------------------- |
+| GHZ   | 2            | Highly compressible (2D subspace)   |
+| W     | 2            | Compressible, robust to qubit loss  |
+| Dicke | O(2^(N/2))   | Hard to compress (high-dimensional) |
 
 > **Key Insight**: "Maximally entangled" ≠ "hardest to compress"!  
 > GHZ has maximal correlations but lives in a 2D subspace.
@@ -887,26 +887,26 @@ SmoQ provides a complete quantum simulation pipeline:
 
 **2. Time Evolution**
 
-| Mode | Description |
-|------|-------------|
-| **Digital (gates)** | Parametrized circuits: Rx, Ry, Rz, CNOT, CZ, etc. |
+|           Mode           |                       Description                        |
+| ------------------------ | -------------------------------------------------------- |
+| **Digital (gates)**      | Parametrized circuits: Rx, Ry, Rz, CNOT, CZ, etc.        |
 | **Analog (Hamiltonian)** | Continuous evolution under H: Heisenberg, XXZ, TFIM, OAT |
 
 **3. Open vs Closed Systems**
 
-| System | Representation | Memory | Method |
-|--------|---------------|--------|--------|
-| **Closed** | Pure state \|ψ⟩ | O(2^N) | Unitary evolution |
-| **Open (exact)** | Density matrix ρ | O(4^N) | Lindblad master equation |
-| **Open (stochastic)** | MCWF trajectories | O(2^N) | Quantum jump unraveling |
+|        System         |  Representation   | Memory |          Method          |                   |
+| --------------------- | ----------------- | ------ | ------------------------ | ----------------- |
+| **Closed**            | Pure state \      | ψ⟩     | O(2^N)                   | Unitary evolution |
+| **Open (exact)**      | Density matrix ρ  | O(4^N) | Lindblad master equation |                   |
+| **Open (stochastic)** | MCWF trajectories | O(2^N) | Quantum jump unraveling  |                   |
 
 **4. Time Integrators**
 
-| Integrator | Use case |
-|------------|----------|
-| **Exact** | Matrix exponential, reference accuracy |
-| **Trotter** | Product formula decomposition, controllable error |
-| **Chebyshev** | Polynomial expansion, good for long times |
+|  Integrator   |                     Use case                      |
+| ------------- | ------------------------------------------------- |
+| **Exact**     | Matrix exponential, reference accuracy            |
+| **Trotter**   | Product formula decomposition, controllable error |
+| **Chebyshev** | Polynomial expansion, good for long times         |
 
 ### Quantum Information Protocols (`demo_quantum_info_protocols.jl`)
 
@@ -930,19 +930,19 @@ Many-body entanglement witnesses with local basis optimization:
 
 ### Many-Body Quantum Dynamics (Closed Systems)
 
-| Script | Key Features |
-|--------|--------------|
-| `demo_pure_state_time_evolution.jl` | Heisenberg/XXZ/TFIM chains, Trotter vs Chebyshev vs Exact integrators, entropy growth, magnetization dynamics |
-| `demo_one_axis_twisting.jl` | H = χ Σᵢ<ⱼ ZᵢZⱼ dynamics (zero Trotter error), spin squeezing ξ²_S (Kitagawa-Ueda) and ξ²_R (Wineland), QFI/N² normalized, scales to N=26 |
-| `demo_OAT_plus_Haar.jl` | OAT preparation + Haar scrambling, Page curve for entanglement entropy, QFI preservation under scrambling |
-| `demo_unitary_evolution_trotter_vs_chebyshev.jl` | Integrator accuracy comparison, Trotter error analysis, Chebyshev polynomial convergence |
+|                      Script                      |                                                               Key Features                                                                |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `demo_pure_state_time_evolution.jl`              | Heisenberg/XXZ/TFIM chains, Trotter vs Chebyshev vs Exact integrators, entropy growth, magnetization dynamics                             |
+| `demo_one_axis_twisting.jl`                      | H = χ Σᵢ<ⱼ ZᵢZⱼ dynamics (zero Trotter error), spin squeezing ξ²_S (Kitagawa-Ueda) and ξ²_R (Wineland), QFI/N² normalized, scales to N=26 |
+| `demo_OAT_plus_Haar.jl`                          | OAT preparation + Haar scrambling, Page curve for entanglement entropy, QFI preservation under scrambling                                 |
+| `demo_unitary_evolution_trotter_vs_chebyshev.jl` | Integrator accuracy comparison, Trotter error analysis, Chebyshev polynomial convergence                                                  |
 
 ### Open Quantum Systems (Dissipative Dynamics)
 
-| Script | Key Features |
-|--------|--------------|
-| `demo_lidbladian_dm_exact_trotter_mcwf_exact_trotter_comparison.jl` | Systematic 2×2 comparison: DM vs MCWF × Exact vs Trotter, trajectory convergence, purity decay |
-| `demo_quantum_channels.jl` | All noise channels: depolarizing, dephasing, amplitude damping, bit/phase flip; Kraus operator formalism |
+|                               Script                                |                                               Key Features                                               |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `demo_lidbladian_dm_exact_trotter_mcwf_exact_trotter_comparison.jl` | Systematic 2×2 comparison: DM vs MCWF × Exact vs Trotter, trajectory convergence, purity decay           |
+| `demo_quantum_channels.jl`                                          | All noise channels: depolarizing, dephasing, amplitude damping, bit/phase flip; Kraus operator formalism |
 
 ### Variational Quantum Circuits
 
@@ -961,15 +961,15 @@ Full support for parametrized quantum circuits in both **pure state** and **nois
 
 **Application demos:**
 
-| Script | Description |
-|--------|-------------|
-| `demo_variational_quantum_eigensolver.jl` | Ground state energy of spin chains (XXZ, TFIM, XY); hardware-efficient ansatz; energy/fidelity tracking |
-| `demo_variational_quantum_eigensolver_and_classical_shadow.jl` | VQE with shadow-based Hamiltonian estimation — reduced measurement overhead |
-| `demo_vqe_dm_vs_mcwf.jl` | Noisy VQE: systematic DM vs MCWF comparison |
-| `demo_quantum_autoencoder.jl` | Quantum state compression: encode GHZ/W/Dicke states into fewer qubits |
-| `demo_VQC_optimizers.jl` | Optimizer shootout: SPSA vs Adam vs gradient descent |
-| `demo_VQC_noisy_benchmark.jl` | How noise affects training convergence |
-| `demo_parametrized_gates.jl` | All rotation gates (Rx, Ry, Rz, CRx, Rxx, ...) with gradient verification |
+|                             Script                             |                                               Description                                               |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `demo_variational_quantum_eigensolver.jl`                      | Ground state energy of spin chains (XXZ, TFIM, XY); hardware-efficient ansatz; energy/fidelity tracking |
+| `demo_variational_quantum_eigensolver_and_classical_shadow.jl` | VQE with shadow-based Hamiltonian estimation — reduced measurement overhead                             |
+| `demo_vqe_dm_vs_mcwf.jl`                                       | Noisy VQE: systematic DM vs MCWF comparison                                                             |
+| `demo_quantum_autoencoder.jl`                                  | Quantum state compression: encode GHZ/W/Dicke states into fewer qubits                                  |
+| `demo_VQC_optimizers.jl`                                       | Optimizer shootout: SPSA vs Adam vs gradient descent                                                    |
+| `demo_VQC_noisy_benchmark.jl`                                  | How noise affects training convergence                                                                  |
+| `demo_parametrized_gates.jl`                                   | All rotation gates (Rx, Ry, Rz, CRx, Rxx, ...) with gradient verification                               |
 
 ### Quantum Metrology & Fisher Information
 
@@ -983,11 +983,11 @@ Quantum Fisher Information (QFI) quantifies the ultimate precision limit for est
 
 **Demos:**
 
-| Script | Description |
-|--------|-------------|
+|                Script                |                                       Description                                        |
+| ------------------------------------ | ---------------------------------------------------------------------------------------- |
 | `demo_quantum_fisher_information.jl` | QFI calculation for various states, SQL vs Heisenberg comparison, generator optimization |
-| `demo_one_axis_twisting.jl` | OAT Hamiltonian dynamics, ξ²_S and ξ²_R squeezing parameters, QFI/N² scaling up to N=26 |
-| `run_heisenberg_scaling.jl` | Full protocol: GHZ preparation → phase encoding → Haar scrambling → shadow estimation |
+| `demo_one_axis_twisting.jl`          | OAT Hamiltonian dynamics, ξ²_S and ξ²_R squeezing parameters, QFI/N² scaling up to N=26  |
+| `run_heisenberg_scaling.jl`          | Full protocol: GHZ preparation → phase encoding → Haar scrambling → shadow estimation    |
 
 ### Classical Shadows & Tomography (`demo_classical_shadows.jl`)
 
@@ -995,11 +995,11 @@ Classical shadows provide an efficient way to learn properties of quantum states
 
 **Three measurement protocols** with different tradeoffs:
 
-| Protocol | How it works | Best for | Sample complexity |
-|----------|--------------|----------|-------------------|
-| **Pauli** (`:pauli`) | Random X/Y/Z basis per qubit | k-local observables | O(3^k / ε²) |
-| **Local Clifford** (`:local_clifford`) | Random single-qubit Clifford (24 gates) | Better variance, same locality | Improved constants |
-| **Global Clifford** (`:global_clifford`) | Full N-qubit random Clifford | Global properties, fidelity | O(2^N) but optimal |
+|                 Protocol                 |              How it works               |            Best for            | Sample complexity  |
+| ---------------------------------------- | --------------------------------------- | ------------------------------ | ------------------ |
+| **Pauli** (`:pauli`)                     | Random X/Y/Z basis per qubit            | k-local observables            | O(3^k / ε²)        |
+| **Local Clifford** (`:local_clifford`)   | Random single-qubit Clifford (24 gates) | Better variance, same locality | Improved constants |
+| **Global Clifford** (`:global_clifford`) | Full N-qubit random Clifford            | Global properties, fidelity    | O(2^N) but optimal |
 
 **What the demo covers:**
 - **Shadow collection**: Generate measurement outcomes from prepared states (GHZ, W, Haar random)
@@ -1023,12 +1023,12 @@ Tools for preparing, measuring, and quantifying properties of quantum states.
 
 **Demos:**
 
-| Script | Description |
-|--------|-------------|
-| `demo_state_preparation.jl` | Create and verify GHZ, W, Bell, cluster, Dicke states |
-| `demo_random_unitaries.jl` | Haar-random unitaries, brick-wall circuit depth study |
-| `demo_measurements.jl` | Projective X/Y/Z measurements, Born rule verification |
-| `demo_negativity.jl` | Entanglement negativity for mixed states, partial transpose |
+|           Script            |                         Description                         |
+| --------------------------- | ----------------------------------------------------------- |
+| `demo_state_preparation.jl` | Create and verify GHZ, W, Bell, cluster, Dicke states       |
+| `demo_random_unitaries.jl`  | Haar-random unitaries, brick-wall circuit depth study       |
+| `demo_measurements.jl`      | Projective X/Y/Z measurements, Born rule verification       |
+| `demo_negativity.jl`        | Entanglement negativity for mixed states, partial transpose |
 
 ### Running Demos
 
