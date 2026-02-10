@@ -1,0 +1,14 @@
+# SmoQ.jl benchmark - 2026-02-07T02:39:40.857
+# Precision: ComplexF64, Optimization: Gate Fusion + @simd
+# 100 shots, shared circuits (seed=42)
+# N	Time_s
+2	0.000102
+4	0.000115
+6	0.000150
+8	0.000273
+10	0.000730
+12	0.002802
+14	0.010672
+16	0.045555
+18	0.176558
+20	0.932729
