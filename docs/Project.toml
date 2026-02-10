@@ -1,0 +1,3 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+SmoQ = "88a165fe-3db0-4a84-bc99-224d2334a599"
