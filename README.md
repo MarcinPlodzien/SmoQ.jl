@@ -74,7 +74,7 @@ MCWF allows simulation of **open quantum systems at the same memory cost as clos
 
 ## Features
 
-Simulator for digital and analog quantum computing written in Julia with matrix-free implementation for operators, observables, and gates. Supports open and closed quantum systems, unitary and Lindbladian dynamics, and noisy quantum circuits. Open systems can be simulated via density matrices or Monte Carlo wave function (MCWF) trajectories. Focus on quantum information, quantum metrology, and quantum simulation. See `scripts_*/demo_*.jl` for examples.
+Simulator for digital and analog quantum computing written in Julia with matrix-free implementation for operators, observables, and gates. Supports open and closed quantum systems, unitary and Lindbladian dynamics, and noisy quantum circuits. Open systems can be simulated via density matrices or Monte Carlo wave function (MCWF) trajectories. Focus on quantum information, quantum metrology, and quantum simulation. See `scripts/*/demo_*.jl` for examples.
 
 <p align="center">
   <img src="assets/hero.jpg" alt="SmoQ.jl" width="600">
@@ -176,10 +176,10 @@ println("QFI/N^2 = ", F_Q / N^2)   # Heisenberg scaling: ~1 for pure GHZ
 
 ```bash
 # From the SmoQ.jl directory, run any demo with multithreading:
-julia --threads=auto --project=. scripts_quantum_information/demo_quantum_info_protocols.jl
+julia --threads=auto --project=. scripts/quantum_information/demo_quantum_info_protocols.jl
 
 # Or specify thread count explicitly:
-julia --threads=8 --project=. scripts_quantum_simulations/demo_one_axis_twisting.jl
+julia --threads=8 --project=. scripts/quantum_simulations/demo_one_axis_twisting.jl
 
 # The --project=. flag loads dependencies from Project.toml
 ```
@@ -190,14 +190,19 @@ julia --threads=8 --project=. scripts_quantum_simulations/demo_one_axis_twisting
 
 ```
 SmoQ.jl/
-├── scripts_quantum_information/     # Bell states, shadows, metrology, entropy
-├── scripts_variational_quantum_circuits/  # VQE, autoencoders, optimizers
-├── scripts_quantum_simulations/     # Time evolution, Lindbladian, channels
-├── utils/
-│   ├── cpu/                         # Core simulation modules (32 files)
-│   └── helpers/                     # Data, plotting, evaluation utilities
-├── assets/                          # Logo, images
-└── Project.toml                     # Dependencies
+├── assets/                           # Logo, images
+├── docs/                             # Documentation         
+├── Project.toml                      # Dependencies 
+├── scripts
+│   ├── quantum_information/          # Bell states, shadows, metrology, entropy
+│   ├── quantum_simulations/          # Time evolution, Lindbladian, channels
+│   └── variational_quantum_circuits/ # VQE, autoencoders, optimizers
+├── SmoQ.jl_benchmarks/               # Benchmarks against other solvers
+├── src
+│   ├── cpu/                         # Core simulation modules (32 files) 
+│   ├── helpers/                     # Utility functions and data structures
+│   └── SmoQ.jl                      # Package module
+└── test/                            # Package tests
 ```
 
 ### Core Modules (`utils/cpu/`)
@@ -289,7 +294,7 @@ For Hamiltonian evolution |ψ(t)⟩ = exp(-iHt)|ψ(0)⟩:
 ### Trotter Decomposition (Matrix-Free)
 
 ```julia
-using .CPUQuantumChannelUnitaryEvolutionTrotter
+using SmoQ.CPUQuantumChannelUnitaryEvolutionTrotter
 
 # Define local Hamiltonian (e.g., Heisenberg chain)
 H_params = HamiltonianParameters(
@@ -312,7 +317,7 @@ end
 For high-accuracy evolution without Trotter error:
 
 ```julia
-using .CPUQuantumChannelUnitaryEvolutionChebyshev
+using SmoQ.CPUQuantumChannelUnitaryEvolutionChebyshev
 
 ψ_evolved = evolve_chebyshev_psi_cpu(ψ, H_params, t, N; order=50)
 ```
@@ -332,7 +337,7 @@ $$\frac{d\rho}{dt} = -i[H,\rho] + \sum_j \gamma_j \left( L_j \rho L_j^\dagger - 
 Full ρ evolution — exact but requires O(4^N) memory:
 
 ```julia
-using .CPUQuantumChannelLindbladianEvolution
+using SmoQ.CPUQuantumChannelLindbladianEvolution
 
 jump_ops = [
     create_jump_operator(:sigma_minus, qubit=1, γ=0.1),  # Decay
@@ -372,7 +377,7 @@ end
 Apply decoherence via Kraus operators (works for both DM and MCWF):
 
 ```julia
-using .CPUQuantumChannelKrausOperators
+using SmoQ.CPUQuantumChannelKrausOperators
 
 # Depolarizing: ρ → (1-p)ρ + (p/3)(XρX + YρY + ZρZ)
 apply_channel_depolarizing!(state, p, qubits, N)
@@ -393,7 +398,7 @@ apply_channel_phase_flip!(state, p, qubits, N)
 Bitwise projective measurements with state collapse:
 
 ```julia
-using .CPUQuantumStateMeasurements
+using SmoQ.CPUQuantumStateMeasurements
 
 # Measure single qubit in Z-basis (collapses state)
 outcome, ψ = projective_measurement!(ψ, [qubit], :z, N)
@@ -417,7 +422,7 @@ reset_state!(ψ, :zero, N)                    # Reset all to |0⟩
 Haar-random unitaries and scrambling circuits:
 
 ```julia
-using .CPUQuantumChannelRandomUnitaries
+using SmoQ.CPUQuantumChannelRandomUnitaries
 
 # Generate Haar-random unitary (up to ~10 qubits practical)
 U_1q = random_unitary(1)   # 2×2 random unitary
@@ -442,7 +447,7 @@ apply_brickwall!(ψ, depth, gates_even, gates_odd, N)
 Several test Hamiltonians are implemented for 1D chains and ladder/grid geometries:
 
 ```julia
-using .CPUHamiltonianBuilder
+using SmoQ.CPUHamiltonianBuilder
 
 # Pre-defined Hamiltonian types
 # :heisenberg    - Heisenberg XXX with transverse field
@@ -461,7 +466,7 @@ H_chain = build_hamiltonian_parameters(L, 1, :TFIM_ZZ_X; J=1.0, h=1.0)
 A demonstration script for One-Axis Twisting (OAT) dynamics is included, showcasing spin squeezing generation and QFI scaling:
 
 ```julia
-# Run OAT simulation (see scripts_quantum_simulations/demo_one_axis_twisting.jl)
+# Run OAT simulation (see scripts/quantum_simulations/demo_one_axis_twisting.jl)
 # Evolves under H_OAT = χ Jz² and tracks:
 # - Spin squeezing ξ²(t)
 # - Quantum Fisher Information F_Q(t)
@@ -495,7 +500,7 @@ All noise channels work with both density matrices (exact) and state vectors (MC
 ### Building Circuits
 
 ```julia
-using .CPUVariationalQuantumCircuitBuilder
+using SmoQ.CPUVariationalQuantumCircuitBuilder
 
 # Hardware-efficient ansatz
 circuit = hardware_efficient_ansatz(N, n_layers=4,
@@ -593,7 +598,7 @@ SmoQ features a specialized **Adam+SPSA** optimizer designed for noisy, high-dim
 Gradient-free optimization suitable for noisy cost functions:
 
 ```julia
-using .CPUVariationalQuantumCircuitOptimizers
+using SmoQ.CPUVariationalQuantumCircuitOptimizers
 
 cost(θ) = compute_energy(execute_circuit(circuit, θ), H_params)
 
@@ -631,7 +636,7 @@ opt = AdamOptimizer(
 SmoQ uses **Enzyme.jl** for efficient automatic differentiation of quantum circuits. Enzyme operates at the LLVM level, providing near-optimal gradient computation without the overhead of tape-based AD systems:
 
 ```julia
-using .CPUVQCEnzymeWrapper
+using SmoQ.CPUVQCEnzymeWrapper
 
 # Compute gradients via Enzyme AD
 gradients = compute_gradients_enzyme(circuit, θ, cost_fn)
@@ -670,7 +675,7 @@ $$\Delta\theta \geq \frac{1}{\sqrt{F_Q}}$$
 SmoQ computes QFI for arbitrary parameter encodings using matrix-free generator application:
 
 ```julia
-using .CPUQuantumFisherInformation
+using SmoQ.CPUQuantumFisherInformation
 
 # QFI for parameter θ encoded via generator G = Σᵢ σᵢʸ
 # State evolution: |ψ(θ)⟩ = exp(-iθG/2)|ψ(0)⟩
@@ -731,7 +736,7 @@ squeezing_dB = 10 * log10(ξ²_R)
 ### State Characterization
 
 ```julia
-using .CPUQuantumStateCharacteristic
+using SmoQ.CPUQuantumStateCharacteristic
 
 # Purity: Tr(ρ²) ∈ [1/d, 1]
 purity = get_purity(ρ)
@@ -753,7 +758,7 @@ trace_dist = get_trace_distance(ρ1, ρ2)
 Compute reduced density matrices for subsystem analysis:
 
 ```julia
-using .CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePartialTrace
 
 # Trace out qubits to get reduced state
 qubits_to_trace = [3, 4, 5]  # Trace out qubits 3, 4, 5
@@ -776,7 +781,7 @@ SmoQ supports mid-circuit measurements for quantum information protocols:
 | GHZ/Bell States | `apply_hadamard_psi!`, `apply_cz_psi!` | `demo_quantum_info_protocols.jl` |
 | CHSH Inequality | `projective_measurement!`, measurement statistics | `demo_quantum_info_protocols.jl` |
 
-See `scripts_quantum_information/demo_quantum_info_protocols.jl` for complete working examples.
+See `scripts/quantum_information/demo_quantum_info_protocols.jl` for complete working examples.
 
 ---
 
@@ -833,7 +838,7 @@ where Δ is a random perturbation vector. Adam smooths the noisy SPSA gradient w
 
 **Reference**: J. C. Spall, "Multivariate stochastic approximation using a simultaneous perturbation gradient approximation," *IEEE Transactions on Automatic Control*, 37(3):332-341, 1992.
 
-See `scripts_variational_quantum_circuits/demo_variational_quantum_eigensolver.jl` for full implementation.
+See `scripts/variational_quantum_circuits/demo_variational_quantum_eigensolver.jl` for full implementation.
 
 ---
 
@@ -863,13 +868,13 @@ Compress N-qubit states to (N-k)-qubit latent representation:
 > **Key Insight**: "Maximally entangled" ≠ "hardest to compress"!  
 > GHZ has maximal correlations but lives in a 2D subspace.
 
-See `scripts_variational_quantum_circuits/demo_quantum_autoencoder.jl` for DM vs MCWF comparison.
+See `scripts/variational_quantum_circuits/demo_quantum_autoencoder.jl` for DM vs MCWF comparison.
 
 ---
 
 ## Demo Scripts
 
-The `scripts_*/` directories contain comprehensive numerical experiments organized by topic. Each demo is self-contained and produces output figures and data files.
+The `scripts/*/` directories contain comprehensive numerical experiments organized by topic. Each demo is self-contained and produces output figures and data files.
 
 ### Simulation Overview
 
@@ -1029,20 +1034,20 @@ Tools for preparing, measuring, and quantifying properties of quantum states.
 
 ```bash
 # Run any demo with multi-threading (recommended)
-julia --threads=auto --project=. scripts_quantum_simulations/demo_one_axis_twisting.jl
+julia --threads=auto --project=. scripts/quantum_simulations/demo_one_axis_twisting.jl
 
 # Quantum Information:
-julia --project=. scripts_quantum_information/demo_quantum_info_protocols.jl
-julia --project=. scripts_quantum_information/demo_classical_shadows.jl
-julia --project=. scripts_quantum_information/demo_many_body_bell_correlator.jl
+julia --project=. scripts/quantum_information/demo_quantum_info_protocols.jl
+julia --project=. scripts/quantum_information/demo_classical_shadows.jl
+julia --project=. scripts/quantum_information/demo_many_body_bell_correlator.jl
 
 # Variational Quantum Circuits:
-julia --project=. scripts_variational_quantum_circuits/demo_variational_quantum_eigensolver.jl
-julia --project=. scripts_variational_quantum_circuits/demo_quantum_autoencoder.jl
+julia --project=. scripts/variational_quantum_circuits/demo_variational_quantum_eigensolver.jl
+julia --project=. scripts/variational_quantum_circuits/demo_quantum_autoencoder.jl
 
 # Quantum Simulations:
-julia --project=. scripts_quantum_simulations/demo_pure_state_time_evolution.jl
-julia --project=. scripts_quantum_simulations/demo_lidbladian_dm_exact_trotter_mcwf_exact_trotter_comparison.jl
+julia --project=. scripts/quantum_simulations/demo_pure_state_time_evolution.jl
+julia --project=. scripts/quantum_simulations/demo_lidbladian_dm_exact_trotter_mcwf_exact_trotter_comparison.jl
 ```
 
 ---
@@ -1056,39 +1061,6 @@ Qubit:        1    2    3   ...   N
 Bit position: 0    1    2   ...  N-1  (LSB to MSB)
 
 State |i⟩ ↔ basis |bₙ...b₂b₁⟩ where bₖ = (i >> (k-1)) & 1
-```
-
----
-
-## Project Structure
-
-```
-SmoQ.jl/
-├── assets/                     # Logo, images
-├── scripts/                    # Demo scripts (demo_*.jl)
-└── utils/
-    ├── cpu/                    # CPU implementations
-    │   ├── cpuQuantumChannelGates.jl                  # Matrix-free gates
-    │   ├── cpuQuantumStateObservables.jl              # Bitwise observables
-    │   ├── cpuQuantumStatePreparation.jl              # State preparation
-    │   ├── cpuQuantumStateMeasurements.jl             # Projective measurements
-    │   ├── cpuQuantumStatePartialTrace.jl             # Partial trace
-    │   ├── cpuQuantumStateCharacteristic.jl           # Entropy, purity, fidelity
-    │   ├── cpuQuantumStateLanczos.jl                  # Ground state via Lanczos
-    │   ├── cpuQuantumChannelUnitaryEvolutionTrotter.jl   # Trotter evolution
-    │   ├── cpuQuantumChannelUnitaryEvolutionChebyshev.jl # Chebyshev evolution
-    │   ├── cpuQuantumChannelUnitaryEvolutionExact.jl     # Exact evolution
-    │   ├── cpuQuantumChannelLindbladianEvolution.jl      # Lindbladian (DM + MCWF)
-    │   ├── cpuQuantumChannelKrausOperators.jl         # Noise channels
-    │   ├── cpuQuantumChannelRandomUnitaries.jl        # Haar-random unitaries
-    │   ├── cpuQuantumFisherInformation.jl             # QFI, metrology
-    │   ├── cpuVariationalQuantumCircuitBuilder.jl     # Circuit builder
-    │   ├── cpuVariationalQuantumCircuitExecutor.jl    # Circuit execution
-    │   ├── cpuVariationalQuantumCircuitOptimizers.jl  # SPSA, Adam
-    │   ├── cpuVariationalQuantumCircuitCostFunctions.jl # VQE cost functions
-    │   ├── cpuVQCEnzymeWrapper.jl                     # Enzyme AD
-    │   └── cpuHamiltonianBuilder.jl                   # Hamiltonian definitions
-    └── helpers/                # Utility functions
 ```
 
 ---
