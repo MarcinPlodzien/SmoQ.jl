@@ -40,11 +40,8 @@ cpuQuantumStatePartialTrace.jl: partial_trace (for subsystem QFI on ρ)
 module CPUQuantumFisherInformation
 
 using LinearAlgebra
-
-using ..CPUQuantumChannelGates: apply_pauli_x_psi!, apply_pauli_y_psi!, apply_pauli_z_psi!
-using ..CPUQuantumChannelGates: apply_rx_psi!, apply_ry_psi!, apply_rz_psi!
-using ..CPUQuantumChannelGates: apply_rx_rho!, apply_ry_rho!, apply_rz_rho!
-using ..CPUQuantumStatePartialTrace: partial_trace
+using ..CPUQuantumChannelGates
+using ..CPUQuantumStatePartialTrace
 
 # ============================================================================
 # EXPORTS
@@ -76,11 +73,11 @@ function apply_generator!(out::Vector{CDTYPE}, inp::Vector{CDTYPE}, N::Int,
     for q in generator_qubits
         temp = copy(inp)
         if pauli_type == :x
-            apply_pauli_x_psi!(temp, q, N)
+            SmoQ.CPUQuantumChannelGates.CPUQuantumChannelGates.apply_pauli_x_psi!(temp, q, N)
         elseif pauli_type == :y
-            apply_pauli_y_psi!(temp, q, N)
+            CPUQuantumChannelGates.apply_pauli_y_psi!(temp, q, N)
         elseif pauli_type == :z
-            apply_pauli_z_psi!(temp, q, N)
+            CPUQuantumChannelGates.apply_pauli_z_psi!(temp, q, N)
         else
             error("Unknown Pauli type: $pauli_type")
         end
@@ -109,11 +106,11 @@ function encode_parameter!(ψ::Vector{CDTYPE}, θ::Float64, N::Int,
                            generator_qubits::Vector{Int}, pauli_type::Symbol)
     for q in generator_qubits
         if pauli_type == :x
-            apply_rx_psi!(ψ, q, θ, N)
+            CPUQuantumChannelGates.apply_rx_psi!(ψ, q, θ, N)
         elseif pauli_type == :y
-            apply_ry_psi!(ψ, q, θ, N)
+            CPUQuantumChannelGates.apply_ry_psi!(ψ, q, θ, N)
         elseif pauli_type == :z
-            apply_rz_psi!(ψ, q, θ, N)
+            CPUQuantumChannelGates.apply_rz_psi!(ψ, q, θ, N)
         else
             error("Unknown Pauli type: $pauli_type")
         end
@@ -130,11 +127,11 @@ function encode_parameter!(ρ::Matrix{CDTYPE}, θ::Float64, N::Int,
                            generator_qubits::Vector{Int}, pauli_type::Symbol)
     for q in generator_qubits
         if pauli_type == :x
-            apply_rx_rho!(ρ, q, θ, N)
+            CPUQuantumChannelGates.apply_rx_rho!(ρ, q, θ, N)
         elseif pauli_type == :y
-            apply_ry_rho!(ρ, q, θ, N)
+            CPUQuantumChannelGates.apply_ry_rho!(ρ, q, θ, N)
         elseif pauli_type == :z
-            apply_rz_rho!(ρ, q, θ, N)
+            CPUQuantumChannelGates.apply_rz_rho!(ρ, q, θ, N)
         else
             error("Unknown Pauli type: $pauli_type")
         end
@@ -202,7 +199,7 @@ function get_qfi(state::Matrix{CDTYPE}, N::Int,
     gen_qubits_eff = generator_qubits
     if subsystem_qubits !== nothing && Set(subsystem_qubits) != Set(1:N)
         trace_qubits = setdiff(1:N, subsystem_qubits)
-        state = partial_trace(state, collect(trace_qubits), N)
+        state = CPUQuantumStatePartialTrace.partial_trace(state, collect(trace_qubits), N)
         N_eff = length(subsystem_qubits)
         gen_map = Dict(q => findfirst(==(q), sort(subsystem_qubits))
                        for q in generator_qubits if q in subsystem_qubits)
@@ -282,7 +279,7 @@ function _subsystem_qfi_from_vectors(ψ::Vector{CDTYPE}, Gψ::Vector{CDTYPE},
     else
         # General case: use partial trace
         trace_qubits = setdiff(1:N, subsystem_qubits)
-        ρ_sub = partial_trace(ψ, collect(trace_qubits), N)
+        ρ_sub = CPUQuantumStatePartialTrace.partial_trace(ψ, collect(trace_qubits), N)
         # Need derivative too - falls back to SLD
         # For now, just compute QFI of reduced state with local generator
         # This is approximate if generator acts on traced qubits

@@ -130,9 +130,7 @@ module CPUQuantumStateObservables
 
 using LinearAlgebra
 
-# Import from parent modules (loaded by master script before this file)
-using ..CPUQuantumStatePreparation: tensor_product_ket, tensor_product_rho
-using ..CPUQuantumStatePartialTrace: partial_trace
+# Functions will be called with fully qualified names
 
 export expect_local, expect_corr
 export measure_all_observables_state_vector_cpu, measure_all_observables_state_vector_cpu!

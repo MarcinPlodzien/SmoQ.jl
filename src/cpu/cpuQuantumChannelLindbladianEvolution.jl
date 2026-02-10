@@ -27,8 +27,7 @@ using ..CPUHamiltonianBuilder: HamiltonianParams, construct_sparse_hamiltonian
 using ..CPUQuantumChannelUnitaryEvolutionTrotter: FastTrotterGate, apply_fast_trotter_step_cpu!, 
     precompute_trotter_gates_bitwise_cpu
 using ..CPUQuantumChannelUnitaryEvolutionChebyshev: chebyshev_evolve_psi!, estimate_spectral_range_lanczos
-using ..CPUQuantumChannelUnitaryEvolutionExact: precompute_exact_propagator_cpu, evolve_exact_psi_cpu!, evolve_exact_rho_cpu! 
-    evolve_exact_psi_cpu!, evolve_exact_rho_cpu!
+using ..CPUQuantumChannelUnitaryEvolutionExact: precompute_exact_propagator_cpu, evolve_exact_psi_cpu!, evolve_exact_rho_cpu!
 
 export JumpOperator, create_jump_operator
 export LindbladianEvolver, create_lindbladian_evolver

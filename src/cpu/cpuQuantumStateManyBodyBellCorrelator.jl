@@ -117,7 +117,7 @@ using Random
 using Base.Threads
 
 # Import matrix-free gates for optimized bell expectation
-using ..CPUQuantumChannelGates: apply_ry_psi!, apply_rz_psi!, apply_ry_rho!, apply_rz_rho!
+using ..CPUQuantumChannelGates
 
 # Try to import Enzyme for autodiff (optional)
 const ENZYME_AVAILABLE = try
@@ -335,8 +335,8 @@ function bell_expectation_fast(ψ::Vector{ComplexF64}, angles::Vector{Float64})
     @inbounds for k in 1:N
         θ = angles[2k - 1]
         φ = angles[2k]
-        apply_rz_psi!(ψ_work, k, -φ, N)
-        apply_ry_psi!(ψ_work, k, -θ, N)
+        CPUQuantumChannelGates.apply_rz_psi!(ψ_work, k, -φ, N)
+        CPUQuantumChannelGates.apply_ry_psi!(ψ_work, k, -θ, N)
     end
 
     # Now compute ⟨ψ'|σ⁺⊗N|ψ'⟩
@@ -372,8 +372,8 @@ function bell_expectation_fast(ρ::Matrix{ComplexF64}, angles::Vector{Float64})
     @inbounds for k in 1:N
         θ = angles[2k - 1]
         φ = angles[2k]
-        apply_rz_rho!(ρ_work, k, -φ, N)
-        apply_ry_rho!(ρ_work, k, -θ, N)
+        CPUQuantumChannelGates.apply_rz_rho!(ρ_work, k, -φ, N)
+        CPUQuantumChannelGates.apply_ry_rho!(ρ_work, k, -θ, N)
     end
 
     # Tr[ρ'·σ⁺⊗N] = ρ'[|0...0⟩, |1...1⟩] = ρ'[1, d] (matrix element)
