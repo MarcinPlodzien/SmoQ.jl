@@ -1,5 +1,19 @@
 #!/usr/bin/env julia
 #=
+
+# ==============================================================================
+# LOAD MODULES
+# ==============================================================================
+
+using SmoQ.CPUQuantumChannelGates
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumStateMeasurements
+using SmoQ.CPUQuantumStateLanczos
+using SmoQ.CPUQuantumStateCharacteristic
+using SmoQ.CPUVariationalQuantumCircuitCostFunctions
+using SmoQ.CPUQuantumStateTomography
+
 ================================================================================
     demo_quantum_autoencoder.jl - Quantum Autoencoder for State Compression
 ================================================================================
@@ -101,33 +115,28 @@ THEORY - SCHMIDT RANK AND COMPRESSIBILITY:
 =#
 
 using LinearAlgebra
-using Random
-using Printf
-using Plots
-using Statistics
 using Optimisers
+using Plots
+using Printf
+using Random
+using Statistics
+
+
+
 
 const OUTPUT_DIR = joinpath(@__DIR__, "demo_quantum_autoencoder")
 mkpath(OUTPUT_DIR)
 
-const UTILS_CPU = joinpath(@__DIR__, "..", "utils", "cpu")
-include(joinpath(UTILS_CPU, "cpuQuantumChannelGates.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePartialTrace.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePreparation.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateMeasurements.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateLanczos.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateCharacteristic.jl"))
-include(joinpath(UTILS_CPU, "cpuVariationalQuantumCircuitCostFunctions.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateTomography.jl"))
+# Removed UTILS_CPU constant - now using qualified using statements
 
-using .CPUQuantumChannelGates
-using .CPUQuantumStatePartialTrace: partial_trace
-using .CPUQuantumStatePreparation: normalize_state!, make_product_rho
-using .CPUQuantumStateMeasurements: projective_measurement!
-using .CPUQuantumStateLanczos: ground_state_xxz
-using .CPUQuantumStateCharacteristic: von_neumann_entropy
-using .CPUVariationalQuantumCircuitCostFunctions: fidelity
-using .CPUQuantumStateTomography: reconstruct_density_matrix
+using SmoQ.CPUQuantumChannelGates
+using SmoQ.CPUQuantumStatePartialTrace: partial_trace
+using SmoQ.CPUQuantumStatePreparation: normalize_state!, make_product_rho
+using SmoQ.CPUQuantumStateMeasurements: projective_measurement!
+using SmoQ.CPUQuantumStateLanczos: ground_state_xxz
+using SmoQ.CPUQuantumStateCharacteristic: von_neumann_entropy
+using SmoQ.CPUVariationalQuantumCircuitCostFunctions: fidelity
+using SmoQ.CPUQuantumStateTomography: reconstruct_density_matrix
 
 println("=" ^ 70)
 println("  QUANTUM AUTOENCODER - DM vs MCWF Comparison")

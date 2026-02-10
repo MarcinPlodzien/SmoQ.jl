@@ -84,11 +84,26 @@ For each system size N:
 ================================================================================
 =#
 
+using Dates
 using LinearAlgebra
-using Statistics
+using Plots
 using Printf
 using Random
-using Dates
+using SparseArrays
+using Statistics
+using Base.Threads
+
+# ==============================================================================
+# LOAD MODULES
+# ==============================================================================
+
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumStateObservables
+using SmoQ.CPUQuantumStateCharacteristic
+using SmoQ.CPUQuantumChannelUnitaryEvolutionTrotter
+using SmoQ.CPUQuantumChannelUnitaryEvolutionExact
+using SmoQ.CPUHamiltonianBuilder
 
 # ==============================================================================
 #                       STARTUP BANNER
@@ -102,27 +117,6 @@ println("=" ^ 80)
 
 # Setup paths
 SCRIPT_DIR = @__DIR__
-WORKSPACE = dirname(SCRIPT_DIR)
-UTILS_CPU = joinpath(WORKSPACE, "utils", "cpu")
-
-# Include modules (in correct dependency order)
-include(joinpath(UTILS_CPU, "cpuQuantumStatePartialTrace.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePreparation.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateObservables.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateCharacteristic.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumChannelUnitaryEvolutionTrotter.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumChannelUnitaryEvolutionExact.jl"))
-include(joinpath(UTILS_CPU, "cpuHamiltonianBuilder.jl"))
-
-using .CPUQuantumStatePartialTrace
-using .CPUQuantumStatePreparation
-using .CPUQuantumStateObservables
-using .CPUQuantumStateCharacteristic
-using .CPUQuantumChannelUnitaryEvolutionTrotter
-using .CPUQuantumChannelUnitaryEvolutionExact
-using .CPUHamiltonianBuilder
-using SparseArrays
-using Plots
 
 # ==============================================================================
 #                       SIMULATION PARAMETERS

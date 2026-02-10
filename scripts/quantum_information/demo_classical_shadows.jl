@@ -48,21 +48,13 @@ Random.seed!(42)
 # MODULE LOADING
 # ==============================================================================
 
-include("../utils/cpu/cpuQuantumChannelGates.jl")
-include("../utils/cpu/cpuQuantumStateMeasurements.jl")
-include("../utils/cpu/cpuClassicalShadows.jl")
-include("../utils/cpu/cpuQuantumChannelKrausOperators.jl")
-include("../utils/cpu/cpuQuantumStatePartialTrace.jl")
-include("../utils/cpu/cpuQuantumStatePreparation.jl")
-include("../utils/cpu/cpuQuantumStateObservables.jl")
-
-using .CPUQuantumChannelGates
-using .CPUQuantumStateMeasurements
-using .CPUClassicalShadows
-using .CPUQuantumChannelKraus
-using .CPUQuantumStatePreparation
-using .CPUQuantumStatePartialTrace
-using .CPUQuantumStateObservables
+using SmoQ.CPUQuantumChannelGates
+using SmoQ.CPUQuantumStateMeasurements
+using SmoQ.CPUClassicalShadows
+using SmoQ.CPUQuantumChannelKraus
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStateObservables
 
 println("="^70)
 println("  CLASSICAL SHADOWS DEMO")

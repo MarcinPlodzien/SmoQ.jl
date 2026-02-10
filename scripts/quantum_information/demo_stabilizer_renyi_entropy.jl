@@ -103,29 +103,28 @@ This provides a perfect test case with KNOWN, LINEAR scaling!
 
 =#
 
-
-using Printf
-using LinearAlgebra
-using Random
+using CairoMakie
+using CairoMakie
 using Dates
+using LinearAlgebra
+using Pkg
+using Printf
+using Random
+
+
+
+
 
 # Plotting
-using Pkg
 try
-    using CairoMakie
 catch
     Pkg.add("CairoMakie")
-    using CairoMakie
 end
 
 # Include modules
-include("../utils/cpu/cpuStabilizerRenyiEntropyBruteForce.jl")
-include("../utils/cpu/cpuStabilizerRenyiEntropyFastWalshHadamardTransform.jl")
-include("../utils/cpu/cpuQuantumChannelGates.jl")
-
-using .CPUStabilizerRenyiEntropyBruteForce
-using .CPUStabilizerRenyiEntropyFastWalshHadamardTransform
-using .CPUQuantumChannelGates
+using SmoQ.CPUStabilizerRenyiEntropyBruteForce
+using SmoQ.CPUStabilizerRenyiEntropyFastWalshHadamardTransform
+using SmoQ.CPUQuantumChannelGates
 
 # Aliases for the two methods
 const magic_brute = CPUStabilizerRenyiEntropyBruteForce.magic    # O(8^N) brute force

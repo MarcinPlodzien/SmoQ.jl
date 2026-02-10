@@ -1,6 +1,18 @@
 # Date: 2026
 #
 #=
+
+# ==============================================================================
+# LOAD MODULES
+# ==============================================================================
+
+using SmoQ.CPUQuantumChannelGates
+using SmoQ.CPUQuantumChannelKraus
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumStateObservables
+using SmoQ.CPUQuantumStateMeasurements
+
 ================================================================================
     demo_parametrized_gates.jl - Tests for Matrix-Free Parametrized Gates
 ================================================================================
@@ -37,18 +49,16 @@ using LinearAlgebra
 using Printf
 using Random
 
-const UTILS_CPU = joinpath(@__DIR__, "..", "utils", "cpu")
-include(joinpath(UTILS_CPU, "cpuQuantumChannelGates.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumChannelKrausOperators.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePartialTrace.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePreparation.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateObservables.jl"))
 
-using .CPUQuantumChannelGates
-using .CPUQuantumChannelKraus
-using .CPUQuantumStatePartialTrace
-using .CPUQuantumStatePreparation
-using .CPUQuantumStateObservables
+
+
+# Removed UTILS_CPU constant - now using qualified using statements
+
+using SmoQ.CPUQuantumChannelGates
+using SmoQ.CPUQuantumChannelKraus
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumStateObservables
 
 println()
 println("=" ^ 70)
@@ -1084,8 +1094,7 @@ println("  TEST 12: Partial Trace, Measurement, Reset, Full Workflow")
 println("-" ^ 50)
 
 # Include measurements module
-include(joinpath(UTILS_CPU, "cpuQuantumStateMeasurements.jl"))
-using .CPUQuantumStateMeasurements
+using SmoQ.CPUQuantumStateMeasurements
 
 # --- TEST 12A: Partial Trace and partial_trace_regions ---
 println("\n  --- 12A: Partial Trace & partial_trace_regions ---\n")

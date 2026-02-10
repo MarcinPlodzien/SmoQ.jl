@@ -11,25 +11,21 @@ Generates 2x2 timing comparison plots.
 =#
 
 using LinearAlgebra
-using Printf
 using Plots
+using Printf
+
+
+
 
 # Load modules
-const SCRIPT_DIR = @__DIR__
-const UTILS_DIR = joinpath(dirname(SCRIPT_DIR), "utils", "cpu")
-
-include(joinpath(UTILS_DIR, "cpuHamiltonianBuilder.jl"))
-include(joinpath(UTILS_DIR, "cpuQuantumChannelUnitaryEvolutionTrotter.jl"))
-include(joinpath(UTILS_DIR, "cpuQuantumChannelUnitaryEvolutionChebyshev.jl"))
-
-using .CPUHamiltonianBuilder
-using .CPUQuantumChannelUnitaryEvolutionTrotter
-using .CPUQuantumChannelUnitaryEvolutionChebyshev
+using SmoQ.CPUHamiltonianBuilder
+using SmoQ.CPUQuantumChannelUnitaryEvolutionTrotter
+using SmoQ.CPUQuantumChannelUnitaryEvolutionChebyshev
 
 # ==============================================================================
 # CONFIGURATION
 # ==============================================================================
-const OUTPUT_DIR = joinpath(SCRIPT_DIR, "demo_time_integrators_trotter_chebyshev")
+const OUTPUT_DIR = joinpath(@__DIR__, "demo_time_integrators_trotter_chebyshev")
 const FIG_DIR = joinpath(OUTPUT_DIR, "figures")
 mkpath(FIG_DIR)
 

@@ -1,5 +1,17 @@
 #!/usr/bin/env julia
 #=
+
+# ==============================================================================
+# LOAD MODULES
+# ==============================================================================
+
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumStateObservables
+using SmoQ.CPUQuantumStateLanczos
+using SmoQ.CPUVariationalQuantumCircuitExecutor
+using SmoQ.CPUVQCEnzymeWrapper
+
 ================================================================================
     demo_VQC_noisy_benchmark.jl
     VQC Optimizer Benchmark with Noise Models
@@ -18,14 +30,17 @@ Example: fig_N08_MCWF_depolarizing_p0.05.png
 ================================================================================
 =#
 
-using LinearAlgebra
-using Random
-using Printf
-using Plots
-using Statistics
-using Optimisers
-using Base.Threads
 using Base.Iterators: product
+using Base.Threads
+using LinearAlgebra
+using Optimisers
+using Plots
+using Printf
+using Random
+using Statistics
+
+
+
 
 const OUTPUT_DIR = joinpath(@__DIR__, "demo_VQC_noisy_benchmark")
 mkpath(OUTPUT_DIR)
@@ -34,22 +49,16 @@ mkpath(OUTPUT_DIR)
 # LOAD MODULES
 # ==============================================================================
 
-const UTILS_CPU = joinpath(@__DIR__, "..", "utils", "cpu")
+# Removed UTILS_CPU constant - now using qualified using statements
 
-include(joinpath(UTILS_CPU, "cpuQuantumStatePartialTrace.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePreparation.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateObservables.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateLanczos.jl"))
-include(joinpath(UTILS_CPU, "cpuVariationalQuantumCircuitExecutor.jl"))
-include(joinpath(UTILS_CPU, "cpuVQCEnzymeWrapper.jl"))
 
-using .CPUQuantumStatePartialTrace
-using .CPUQuantumStatePreparation
-using .CPUQuantumStateObservables: expect_local, expect_corr
-using .CPUQuantumStateLanczos: ground_state_xxz
-using .CPUVariationalQuantumCircuitExecutor
-using .CPUVariationalQuantumCircuitExecutor.CPUVariationalQuantumCircuitBuilder
-using .CPUVQCEnzymeWrapper
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumStateObservables: expect_local, expect_corr
+using SmoQ.CPUQuantumStateLanczos: ground_state_xxz
+using SmoQ.CPUVariationalQuantumCircuitExecutor
+using SmoQ.CPUVariationalQuantumCircuitExecutor.CPUVariationalQuantumCircuitBuilder
+using SmoQ.CPUVQCEnzymeWrapper
 
 println("=" ^ 70)
 println("  VQC NOISY BENCHMARK (Grid Search)")

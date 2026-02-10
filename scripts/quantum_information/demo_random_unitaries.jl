@@ -2,12 +2,22 @@
 #
 #!/usr/bin/env julia
 #=
+
+# ==============================================================================
+# LOAD MODULES
+# ==============================================================================
+
+using SmoQ.CPUQuantumChannelRandomUnitaries
+
 ================================================================================
     Test suite for cpuQuantumChannelRandomUnitaries.jl
 ================================================================================
 =#
 
 using LinearAlgebra
+
+
+
 
 println("=" ^ 70)
 println("  TESTING QUANTUM CHANNEL: RANDOM UNITARIES")
@@ -19,9 +29,8 @@ WORKSPACE = dirname(SCRIPT_DIR)
 UTILS_CPU = joinpath(WORKSPACE, "utils", "cpu")
 
 # Include module
-include(joinpath(UTILS_CPU, "cpuQuantumChannelRandomUnitaries.jl"))
 
-using .CPUQuantumChannelRandomUnitaries: random_unitary, apply_gate!, apply_2qubit_gate!,
+using SmoQ.CPUQuantumChannelRandomUnitaries: random_unitary, apply_gate!, apply_2qubit_gate!,
     apply_brickwall_layer!, random_brickwall!
 
 # ==============================================================================

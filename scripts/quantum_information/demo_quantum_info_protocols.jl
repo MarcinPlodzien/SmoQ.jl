@@ -1,3 +1,8 @@
+
+using LinearAlgebra
+using Printf
+using Random
+
 #!/usr/bin/env julia
 # ==============================================================================
 # QUANTUM INFORMATION PROTOCOLS DEMO
@@ -11,29 +16,33 @@
 #
 # ==============================================================================
 
-using Printf
-using Random
-using LinearAlgebra
+
+# ==============================================================================
+# LOAD MODULES
+# ==============================================================================
+
+using SmoQ.CPUQuantumChannelGates
+using SmoQ.CPUQuantumChannelKraus
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumStateObservables
+using SmoQ.CPUQuantumStateMeasurements
+using SmoQ.CPUQuantumStateCharacteristic
+using SmoQ.CPUQuantumStateTomography
+using SmoQ.CPUQuantumStatePrintingHelpers
+using SmoQ.CPUQuantumStateTomography
+
 
 # Load modules - same as demo_parametrized_gates.jl
-const UTILS_CPU = joinpath(@__DIR__, "..", "utils", "cpu")
-include(joinpath(UTILS_CPU, "cpuQuantumChannelGates.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumChannelKrausOperators.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePartialTrace.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePreparation.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateObservables.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateMeasurements.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateCharacteristic.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateTomography.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePrintingHelpers.jl"))
+# Removed UTILS_CPU constant - now using qualified using statements
 
-using .CPUQuantumChannelGates
-using .CPUQuantumChannelKraus
-using .CPUQuantumStatePartialTrace
-using .CPUQuantumStatePreparation
-using .CPUQuantumStateObservables
-using .CPUQuantumStateMeasurements
-using .CPUQuantumStateCharacteristic
+using SmoQ.CPUQuantumChannelGates
+using SmoQ.CPUQuantumChannelKraus
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumStateObservables
+using SmoQ.CPUQuantumStateMeasurements
+using SmoQ.CPUQuantumStateCharacteristic
 
 println()
 println("=" ^ 70)
@@ -1407,8 +1416,7 @@ println("     - This is why DM approach is used above for entanglement")
 println()
 
 # Load tomography module for MCWF analysis
-include(joinpath(UTILS_CPU, "cpuQuantumStateTomography.jl"))
-using .CPUQuantumStateTomography
+using SmoQ.CPUQuantumStateTomography
 
 println("  ┌─────────────────────────────────────────────────────────────┐")
 println("  │  MCWF TOMOGRAPHY: CONVERGENCE WITH TRAJECTORY COUNT M      │")

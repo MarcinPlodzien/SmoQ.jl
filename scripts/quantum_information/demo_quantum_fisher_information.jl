@@ -1,5 +1,15 @@
 #!/usr/bin/env julia
 #=
+
+# ==============================================================================
+# LOAD MODULES
+# ==============================================================================
+
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumChannelKraus
+using SmoQ.CPUQuantumFisherInformation
+
 ================================================================================
     QUANTUM FISHER INFORMATION - COMPREHENSIVE DEMO & VERIFICATION SUITE
 ================================================================================
@@ -17,9 +27,13 @@ OUTPUT: All results saved to scripts/demo_quantum_fisher_information/
 ================================================================================
 =#
 
-using Printf
-using LinearAlgebra
+using Dates
 using DelimitedFiles
+using LinearAlgebra
+using Printf
+
+
+
 
 # =============================================================================
 # SETUP
@@ -31,14 +45,10 @@ OUTPUT_DIR = joinpath(SCRIPT_DIR, "demo_quantum_fisher_information")
 mkpath(OUTPUT_DIR)
 
 # Include modules in correct order
-include(joinpath(UTILS_CPU, "cpuQuantumStatePartialTrace.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePreparation.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumChannelKrausOperators.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumFisherInformation.jl"))
 
-using .CPUQuantumStatePreparation: make_ket, make_ghz, make_rho
-using .CPUQuantumChannelKraus: apply_channel_depolarizing!, apply_channel_dephasing!, apply_channel_amplitude_damping!
-using .CPUQuantumFisherInformation
+using SmoQ.CPUQuantumStatePreparation: make_ket, make_ghz, make_rho
+using SmoQ.CPUQuantumChannelKraus: apply_channel_depolarizing!, apply_channel_dephasing!, apply_channel_amplitude_damping!
+using SmoQ.CPUQuantumFisherInformation
 
 # =============================================================================
 # HELPER: Finite Difference ∂ρ/∂θ for SLD verification
@@ -705,7 +715,6 @@ end
 # MAIN
 # =============================================================================
 
-using Dates
 
 function main()
     println("\n" * "=" ^ 70)

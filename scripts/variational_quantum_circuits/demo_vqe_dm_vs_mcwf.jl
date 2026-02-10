@@ -1,6 +1,17 @@
 # Date: 2026
 #
 #=
+
+# ==============================================================================
+# LOAD MODULES
+# ==============================================================================
+
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumStateObservables
+using SmoQ.CPUQuantumStateLanczos
+using SmoQ.CPUVariationalQuantumCircuitExecutor
+
 ================================================================================
     demo_vqe_dm_vs_mcwf.jl - VQE Training with Enzyme Autodiff + Adam
 ================================================================================
@@ -111,13 +122,17 @@ EXPECTATION VALUE (matrix-free):
 ================================================================================
 =#
 
-using LinearAlgebra
-using Random
-using Printf
-using Plots
 using DelimitedFiles
 using Enzyme
+using LinearAlgebra
 using Optimisers
+using Plots
+using Printf
+using Random
+using Statistics  # For mean, std
+
+
+
 
 const OUTPUT_DIR = joinpath(@__DIR__, "demo_noisy_VQC")
 mkpath(OUTPUT_DIR)
@@ -126,20 +141,15 @@ mkpath(OUTPUT_DIR)
 # LOAD MODULES
 # ==============================================================================
 
-const UTILS_CPU = joinpath(@__DIR__, "..", "utils", "cpu")
+# Removed UTILS_CPU constant - now using qualified using statements
 
-include(joinpath(UTILS_CPU, "cpuQuantumStatePartialTrace.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePreparation.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateObservables.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateLanczos.jl"))
-include(joinpath(UTILS_CPU, "cpuVariationalQuantumCircuitExecutor.jl"))
 
-using .CPUQuantumStatePartialTrace
-using .CPUQuantumStatePreparation
-using .CPUQuantumStateObservables: expect_local, expect_corr
-using .CPUQuantumStateLanczos: ground_state_xxz
-using .CPUVariationalQuantumCircuitExecutor
-using .CPUVariationalQuantumCircuitExecutor.CPUVariationalQuantumCircuitBuilder
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumStateObservables: expect_local, expect_corr
+using SmoQ.CPUQuantumStateLanczos: ground_state_xxz
+using SmoQ.CPUVariationalQuantumCircuitExecutor
+using SmoQ.CPUVariationalQuantumCircuitExecutor.CPUVariationalQuantumCircuitBuilder
 
 println("=" ^ 70)
 println("  VQE DEMO: Enzyme Autodiff + Adam Optimizer")
@@ -259,7 +269,6 @@ end
 # TRAINING FUNCTION
 # ==============================================================================
 
-using Statistics  # For mean, std
 
 function train_vqe(cost_fn, θ_init::Vector{Float64}, name::String;
                    n_epochs::Int=100, lr::Float64=0.01)

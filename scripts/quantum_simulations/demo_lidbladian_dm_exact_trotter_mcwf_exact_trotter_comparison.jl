@@ -1,5 +1,19 @@
 #!/usr/bin/env julia
 #=
+
+# ==============================================================================
+# LOAD MODULES
+# ==============================================================================
+
+using SmoQ.CPUHamiltonianBuilder
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumChannelUnitaryEvolutionExact
+using SmoQ.CPUQuantumChannelUnitaryEvolutionTrotter
+using SmoQ.CPUQuantumStateObservables
+using SmoQ.CPUQuantumChannelLindbladianEvolutionDensityMatrix
+using SmoQ.CPUQuantumChannelLindbladianEvolutionMonteCarloWaveFunction
+
 ================================================================================
     4-WAY COMPARISON: DM×{Exact,Trotter} vs MCWF×{Exact,Trotter}
 
@@ -21,29 +35,25 @@
 ================================================================================
 =#
 
+using DelimitedFiles
 using LinearAlgebra
-using Statistics
 using Plots
+using Statistics
+
+
+
 
 SCRIPT_DIR = @__DIR__
 WORKSPACE = dirname(SCRIPT_DIR)
 UTILS_CPU = joinpath(WORKSPACE, "utils", "cpu")
 
-include(joinpath(UTILS_CPU, "cpuHamiltonianBuilder.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePartialTrace.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePreparation.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumChannelUnitaryEvolutionExact.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumChannelUnitaryEvolutionTrotter.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateObservables.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumChannelLindbladianEvolutionDensityMatrix.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumChannelLindbladianEvolutionMonteCarloWaveFunction.jl"))
 
-using .CPUHamiltonianBuilder: build_hamiltonian_parameters, construct_sparse_hamiltonian
-using .CPUQuantumChannelUnitaryEvolutionExact: precompute_exact_propagator_cpu
-using .CPUQuantumChannelUnitaryEvolutionTrotter: precompute_trotter_gates_bitwise_cpu, apply_fast_trotter_step_cpu!, evolve_trotter_rho_cpu!
-using .CPUQuantumStateObservables: expect_local, expect_corr
-using .CPUQuantumChannelLindbladianEvolutionDensityMatrix: lindblad_dm_step!, lindblad_dm_step_trotter!
-using .CPUQuantumChannelLindbladianEvolutionMonteCarloWaveFunction: lindblad_mcwf_step!, lindblad_mcwf_step_trotter!, lindblad_mcwf_batched_step!
+using SmoQ.CPUHamiltonianBuilder: build_hamiltonian_parameters, construct_sparse_hamiltonian
+using SmoQ.CPUQuantumChannelUnitaryEvolutionExact: precompute_exact_propagator_cpu
+using SmoQ.CPUQuantumChannelUnitaryEvolutionTrotter: precompute_trotter_gates_bitwise_cpu, apply_fast_trotter_step_cpu!, evolve_trotter_rho_cpu!
+using SmoQ.CPUQuantumStateObservables: expect_local, expect_corr
+using SmoQ.CPUQuantumChannelLindbladianEvolutionDensityMatrix: lindblad_dm_step!, lindblad_dm_step_trotter!
+using SmoQ.CPUQuantumChannelLindbladianEvolutionMonteCarloWaveFunction: lindblad_mcwf_step!, lindblad_mcwf_step_trotter!, lindblad_mcwf_batched_step!
 
 # ==============================================================================
 # OUTPUT DIRECTORIES
@@ -336,7 +346,6 @@ println("-- Saved figure: $(figpath)")
 # ==============================================================================
 # SAVE DATA TO FILES
 # ==============================================================================
-using DelimitedFiles
 
 println("\nSaving data files...")
 

@@ -95,11 +95,24 @@
 # - fig_N{N}.png: Plots of spin squeezing and QFI vs time
 #
 ################################################################################
+
+# ==============================================================================
+# LOAD MODULES
+# ==============================================================================
+
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumStateObservables
+using SmoQ.CPUQuantumChannelUnitaryEvolutionTrotter
+
 =#
 
 using LinearAlgebra
-using Printf
 using Plots
+using Printf
+
+
+
 
 # ==============================================================================
 # SETUP - Include matrix-free bitwise codebase modules
@@ -109,14 +122,10 @@ UTILS_CPU = joinpath(SCRIPT_DIR, "../utils/cpu")
 OUTPUT_DIR = joinpath(SCRIPT_DIR, "demo_one_axis_twisting")
 mkpath(OUTPUT_DIR)
 
-include(joinpath(UTILS_CPU, "cpuQuantumStatePartialTrace.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePreparation.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateObservables.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumChannelUnitaryEvolutionTrotter.jl"))
 
-using .CPUQuantumStatePreparation: make_ket, normalize_state!
-using .CPUQuantumStateObservables: expect_local, expect_corr
-using .CPUQuantumChannelUnitaryEvolutionTrotter: FastTrotterGate, apply_fast_trotter_step_cpu!
+using SmoQ.CPUQuantumStatePreparation: make_ket, normalize_state!
+using SmoQ.CPUQuantumStateObservables: expect_local, expect_corr
+using SmoQ.CPUQuantumChannelUnitaryEvolutionTrotter: FastTrotterGate, apply_fast_trotter_step_cpu!
 
 # ==============================================================================
 # CONFIGURATION - Easy to modify simulation parameters

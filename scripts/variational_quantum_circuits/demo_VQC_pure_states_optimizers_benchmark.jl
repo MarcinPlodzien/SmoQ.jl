@@ -1,5 +1,17 @@
 #!/usr/bin/env julia
 #=
+
+# ==============================================================================
+# LOAD MODULES
+# ==============================================================================
+
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumStateObservables
+using SmoQ.CPUQuantumStateLanczos
+using SmoQ.CPUVariationalQuantumCircuitExecutor
+using SmoQ.CPUVQCEnzymeWrapper
+
 ================================================================================
     demo_VQC_pure_states_optimizers_benchmark.jl
     Pure State VQC Optimizer Benchmark: SPSA vs Adam-SPSA vs Enzyme+Adam
@@ -27,13 +39,16 @@ Each subplot shows 3 optimizer curves with timing in legend.
 ================================================================================
 =#
 
-using LinearAlgebra
-using Random
-using Printf
-using Plots
-using Statistics
-using Optimisers
 using Base.Threads
+using LinearAlgebra
+using Optimisers
+using Plots
+using Printf
+using Random
+using Statistics
+
+
+
 
 const OUTPUT_DIR = joinpath(@__DIR__, "demo_VQC_pure_state_optimizers_benchmark")
 mkpath(OUTPUT_DIR)
@@ -42,22 +57,16 @@ mkpath(OUTPUT_DIR)
 # LOAD MODULES
 # ==============================================================================
 
-const UTILS_CPU = joinpath(@__DIR__, "..", "utils", "cpu")
+# Removed UTILS_CPU constant - now using qualified using statements
 
-include(joinpath(UTILS_CPU, "cpuQuantumStatePartialTrace.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePreparation.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateObservables.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateLanczos.jl"))
-include(joinpath(UTILS_CPU, "cpuVariationalQuantumCircuitExecutor.jl"))
-include(joinpath(UTILS_CPU, "cpuVQCEnzymeWrapper.jl"))
 
-using .CPUQuantumStatePartialTrace
-using .CPUQuantumStatePreparation
-using .CPUQuantumStateObservables: expect_local, expect_corr
-using .CPUQuantumStateLanczos: ground_state_xxz
-using .CPUVariationalQuantumCircuitExecutor
-using .CPUVariationalQuantumCircuitExecutor.CPUVariationalQuantumCircuitBuilder
-using .CPUVQCEnzymeWrapper
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumStateObservables: expect_local, expect_corr
+using SmoQ.CPUQuantumStateLanczos: ground_state_xxz
+using SmoQ.CPUVariationalQuantumCircuitExecutor
+using SmoQ.CPUVariationalQuantumCircuitExecutor.CPUVariationalQuantumCircuitBuilder
+using SmoQ.CPUVQCEnzymeWrapper
 
 println("=" ^ 70)
 println("  PURE STATE VQC OPTIMIZER BENCHMARK")

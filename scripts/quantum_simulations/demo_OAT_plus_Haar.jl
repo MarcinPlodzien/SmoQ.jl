@@ -41,15 +41,33 @@
 # [3] Płodzień et al., PRL 129, 250402 (2022) - Many-body Bell correlations
 #
 ################################################################################
+
+# ==============================================================================
+# LOAD MODULES
+# ==============================================================================
+
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumChannelGates
+using SmoQ.CPUQuantumStateObservables
+using SmoQ.CPUQuantumChannelUnitaryEvolutionTrotter
+using SmoQ.CPUQuantumChannelRandomUnitaries
+using SmoQ.CPUQuantumStateManyBodyBellCorrelator
+using SmoQ.CPUStabilizerRenyiEntropyFastWalshHadamardTransform
+using SmoQ.CPUQuantumFisherInformation
+
 =#
 
-using LinearAlgebra
-using Printf
-using Plots; gr()
-using Statistics
-using ProgressMeter
 using LaTeXStrings
+using LinearAlgebra
 using Optim  # For L-BFGS fallback
+using Plots; gr()
+using Printf
+using ProgressMeter
+using Statistics
+
+
+
 
 # ==============================================================================
 # SETUP - Include matrix-free bitwise codebase modules
@@ -63,29 +81,20 @@ mkpath(DATA_DIR)
 mkpath(FIG_DIR)
 
 # Core modules - order matters!
-include(joinpath(UTILS_CPU, "cpuQuantumStatePartialTrace.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePreparation.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumChannelGates.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateObservables.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumChannelUnitaryEvolutionTrotter.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumChannelRandomUnitaries.jl"))
 
 # Bell correlator module
-include(joinpath(UTILS_CPU, "cpuQuantumStateManyBodyBellCorrelator.jl"))
 
 # Fast SRE module
-include(joinpath(UTILS_CPU, "cpuStabilizerRenyiEntropyFastWalshHadamardTransform.jl"))
 
 # QFI module
-include(joinpath(UTILS_CPU, "cpuQuantumFisherInformation.jl"))
 
-using .CPUQuantumStatePartialTrace
-using .CPUQuantumStatePreparation: make_ket, normalize_state!
-using .CPUQuantumChannelUnitaryEvolutionTrotter: FastTrotterGate, apply_fast_trotter_step_cpu!
-using .CPUQuantumChannelRandomUnitaries: random_unitary
-using .CPUQuantumStateManyBodyBellCorrelator: get_bell_correlator
-using .CPUStabilizerRenyiEntropyFastWalshHadamardTransform: get_stabilizer_renyi_entropy
-using .CPUQuantumFisherInformation: get_qfi
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation: make_ket, normalize_state!
+using SmoQ.CPUQuantumChannelUnitaryEvolutionTrotter: FastTrotterGate, apply_fast_trotter_step_cpu!
+using SmoQ.CPUQuantumChannelRandomUnitaries: random_unitary
+using SmoQ.CPUQuantumStateManyBodyBellCorrelator: get_bell_correlator
+using SmoQ.CPUStabilizerRenyiEntropyFastWalshHadamardTransform: get_stabilizer_renyi_entropy
+using SmoQ.CPUQuantumFisherInformation: get_qfi
 
 # ==============================================================================
 # CONFIGURATION
@@ -123,7 +132,7 @@ end
 # ==============================================================================
 # COMPUTE QFI - Using module's finite-difference SLD implementation
 # ==============================================================================
-using .CPUQuantumFisherInformation: get_qfi_finite_diff
+using SmoQ.CPUQuantumFisherInformation: get_qfi_finite_diff
 
 """
 Compute maximum QFI over all generator directions using SLD with finite differences.

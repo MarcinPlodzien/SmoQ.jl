@@ -68,17 +68,11 @@ mkpath(DATA_DIR)
 mkpath(FIG_DIR)
 
 # Include modules
-include(joinpath(UTILS_DIR, "cpuQuantumStatePartialTrace.jl"))
-include(joinpath(UTILS_DIR, "cpuQuantumStatePreparation.jl"))
-include(joinpath(UTILS_DIR, "cpuQuantumChannelGates.jl"))
-include(joinpath(UTILS_DIR, "cpuQuantumChannelKrausOperators.jl"))
-include(joinpath(UTILS_DIR, "cpuQuantumStateManyBodyBellCorrelator.jl"))
-
-using .CPUQuantumStatePartialTrace
-using .CPUQuantumStatePreparation
-using .CPUQuantumChannelGates
-using .CPUQuantumChannelKraus
-using .CPUQuantumStateManyBodyBellCorrelator
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumChannelGates
+using SmoQ.CPUQuantumChannelKraus
+using SmoQ.CPUQuantumStateManyBodyBellCorrelator
 
 # =============================================================================
 # CONFIGURATION

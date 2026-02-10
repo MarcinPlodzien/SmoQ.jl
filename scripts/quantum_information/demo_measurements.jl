@@ -20,11 +20,8 @@ using Statistics
 # LOAD MODULES
 # ==============================================================================
 
-include("../utils/cpu/cpuQuantumChannelGates.jl")
-include("../utils/cpu/cpuQuantumStateMeasurements.jl")
-
-using .CPUQuantumChannelGates
-using .CPUQuantumStateMeasurements
+using SmoQ.CPUQuantumChannelGates
+using SmoQ.CPUQuantumStateMeasurements
 
 # ==============================================================================
 # HELPER FUNCTIONS

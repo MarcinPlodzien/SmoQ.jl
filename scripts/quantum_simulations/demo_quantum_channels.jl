@@ -11,6 +11,15 @@
 ################################################################################
 ################################################################################
 
+
+# ==============================================================================
+# LOAD MODULES
+# ==============================================================================
+
+using SmoQ.CPUQuantumChannelKraus
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+
 This script demonstrates matrix-free implementations of quantum noise channels
 using two fundamentally different approaches:
 
@@ -155,9 +164,12 @@ Qubit specification:
 =#
 
 using LinearAlgebra
-using Statistics
 using Printf
 using Random
+using Statistics
+
+
+
 
 println("=" ^ 80)
 println("  DEMO: KRAUS QUANTUM NOISE CHANNELS")
@@ -169,12 +181,9 @@ SCRIPT_DIR = @__DIR__
 WORKSPACE = dirname(SCRIPT_DIR)
 UTILS_CPU = joinpath(WORKSPACE, "utils", "cpu")
 
-include(joinpath(UTILS_CPU, "cpuQuantumChannelKrausOperators.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePartialTrace.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePreparation.jl"))
-using .CPUQuantumStatePartialTrace
-using .CPUQuantumStatePreparation
-using .CPUQuantumChannelKraus
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumChannelKraus
 
 # ==============================================================================
 #                           HELPER FUNCTIONS

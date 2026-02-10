@@ -1,5 +1,21 @@
 #!/usr/bin/env julia
 #=
+
+# ==============================================================================
+# LOAD MODULES
+# ==============================================================================
+
+using SmoQ.CPUQuantumChannelGates
+using SmoQ.CPUQuantumStatePartialTrace
+using SmoQ.CPUQuantumStatePreparation
+using SmoQ.CPUQuantumStateMeasurements
+using SmoQ.CPUQuantumStateLanczos
+using SmoQ.CPUQuantumStateCharacteristic
+using SmoQ.CPUQuantumStateObservables
+using SmoQ.CPUVariationalQuantumCircuitCostFunctions
+using SmoQ.CPUClassicalShadows
+using SmoQ.CPUVQCEnzymeWrapper
+
 ================================================================================
     demo_variational_quantum_eigensolver_and_classical_shadow.jl
 ================================================================================
@@ -92,13 +108,16 @@ AUTHOR:
 ================================================================================
 =#
 
-using LinearAlgebra
-using Random
-using Printf
-using Plots
 using LaTeXStrings
-using Statistics
+using LinearAlgebra
 using Optimisers
+using Plots
+using Printf
+using Random
+using Statistics
+
+
+
 
 # ==============================================================================
 # PATHS & INCLUDES
@@ -108,27 +127,17 @@ mkpath(OUTPUT_DIR)
 mkpath(joinpath(OUTPUT_DIR, "figures"))
 mkpath(joinpath(OUTPUT_DIR, "data"))
 
-const UTILS_CPU = joinpath(@__DIR__, "..", "utils", "cpu")
-include(joinpath(UTILS_CPU, "cpuQuantumChannelGates.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePartialTrace.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePreparation.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateMeasurements.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateLanczos.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateCharacteristic.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStateObservables.jl"))
-include(joinpath(UTILS_CPU, "cpuVariationalQuantumCircuitCostFunctions.jl"))
-include(joinpath(UTILS_CPU, "cpuClassicalShadows.jl"))
-include(joinpath(UTILS_CPU, "cpuVQCEnzymeWrapper.jl"))
+# Removed UTILS_CPU constant - now using qualified using statements
 
-using .CPUQuantumChannelGates
-using .CPUQuantumStatePartialTrace: partial_trace
-using .CPUQuantumStatePreparation: normalize_state!
-using .CPUQuantumStateLanczos: ground_state_xxz
-using .CPUQuantumStateCharacteristic: von_neumann_entropy
-using .CPUQuantumStateObservables: expect_local, expect_corr, get_expectation_pauli_string
-using .CPUVariationalQuantumCircuitCostFunctions: fidelity
-using .CPUClassicalShadows
-using .CPUVQCEnzymeWrapper: make_cost_pure, gradient_enzyme, build_enzyme_wrapper
+using SmoQ.CPUQuantumChannelGates
+using SmoQ.CPUQuantumStatePartialTrace: partial_trace
+using SmoQ.CPUQuantumStatePreparation: normalize_state!
+using SmoQ.CPUQuantumStateLanczos: ground_state_xxz
+using SmoQ.CPUQuantumStateCharacteristic: von_neumann_entropy
+using SmoQ.CPUQuantumStateObservables: expect_local, expect_corr, get_expectation_pauli_string
+using SmoQ.CPUVariationalQuantumCircuitCostFunctions: fidelity
+using SmoQ.CPUClassicalShadows
+using SmoQ.CPUVQCEnzymeWrapper: make_cost_pure, gradient_enzyme, build_enzyme_wrapper
 
 println("=" ^ 70)
 println("  VQE + CLASSICAL SHADOWS DEMO")

@@ -13,6 +13,10 @@ DEMONSTRATES:
 ================================================================================
 =#
 
+using LinearAlgebra
+
+
+
 println("="^70)
 println("  VARIATIONAL QUANTUM CIRCUIT (VQC) DEMONSTRATION")
 println("="^70)
@@ -22,22 +26,18 @@ println()
 # SETUP
 # ==============================================================================
 
-using LinearAlgebra
 
-# Add utils path
-const UTILS_PATH = joinpath(@__DIR__, "..", "utils", "cpu")
+# Load VQC modules 
+using SmoQ.CPUVariationalQuantumCircuitExecutor
+using SmoQ.CPUVariationalQuantumCircuitGradients
+using SmoQ.CPUVariationalQuantumCircuitOptimizers
+using SmoQ.CPUVariationalQuantumCircuitCostFunctions
 
-# Load VQC modules
-include(joinpath(UTILS_PATH, "cpuVariationalQuantumCircuitExecutor.jl"))
-include(joinpath(UTILS_PATH, "cpuVariationalQuantumCircuitGradients.jl"))
-include(joinpath(UTILS_PATH, "cpuVariationalQuantumCircuitOptimizers.jl"))
-include(joinpath(UTILS_PATH, "cpuVariationalQuantumCircuitCostFunctions.jl"))
-
-using .CPUVariationalQuantumCircuitExecutor
-using .CPUVariationalQuantumCircuitExecutor.CPUVariationalQuantumCircuitBuilder
-using .CPUVariationalQuantumCircuitGradients
-using .CPUVariationalQuantumCircuitOptimizers
-using .CPUVariationalQuantumCircuitCostFunctions
+using SmoQ.CPUVariationalQuantumCircuitExecutor
+using SmoQ.CPUVariationalQuantumCircuitExecutor.CPUVariationalQuantumCircuitBuilder
+using SmoQ.CPUVariationalQuantumCircuitGradients
+using SmoQ.CPUVariationalQuantumCircuitOptimizers
+using SmoQ.CPUVariationalQuantumCircuitCostFunctions
 
 # Simple inline make_ket (to avoid complex module dependencies)
 function make_ket(state::String, N::Int)

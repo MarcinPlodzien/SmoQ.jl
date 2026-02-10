@@ -4,24 +4,20 @@
 Test script for new state preparation and partial trace extensions
 =#
 
+using LinearAlgebra
+
+# ==============================================================================
+# LOAD MODULES
+# ==============================================================================
+
+using SmoQ.CPUQuantumStatePartialTrace: partial_trace, partial_trace_regions, find_connected_regions
+using SmoQ.CPUQuantumStatePreparation: make_ket, make_rho, normalize_state!, make_product_ket, make_initial_rho,
+    tensor, tensor_product, make_maximally_mixed, tensor_product_ket, get_norm, get_trace,
+    make_ghz, make_w, make_bell
+
 println("=" ^ 70)
 println("  TESTING STATE PREPARATION EXTENSIONS")
 println("=" ^ 70)
-
-using LinearAlgebra
-
-# Setup paths
-const PROJECT_ROOT = dirname(dirname(@__FILE__))
-const UTILS_CPU = joinpath(PROJECT_ROOT, "utils", "cpu")
-
-# Load modules in correct order
-include(joinpath(UTILS_CPU, "cpuQuantumStatePartialTrace.jl"))
-include(joinpath(UTILS_CPU, "cpuQuantumStatePreparation.jl"))
-
-using .CPUQuantumStatePartialTrace: partial_trace, partial_trace_regions, find_connected_regions
-using .CPUQuantumStatePreparation: make_ket, make_rho, normalize_state!, make_product_ket, make_initial_rho,
-    tensor, tensor_product, make_maximally_mixed, tensor_product_ket, get_norm, get_trace,
-    make_ghz, make_w, make_bell
 
 # ==============================================================================
 # TEST 1: make_ket string API
